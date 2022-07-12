@@ -1,9 +1,8 @@
 import { Body, Controller, Delete, Get, Inject, Module, Param, Post, Put, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { IsString, IsNotEmpty } from "class-validator";
-import { PublishJobDto } from "./job.dto";
+import { PublishJobDto, UpdateJobAgent } from "./job.dto";
 import { JobService } from "./job.service";
-
 
 
 @ApiTags("jobs")
@@ -36,7 +35,7 @@ export class JobController {
 
   @Post("publish")
   async publishJob(@Body() body: PublishJobDto) {
-    console.log(body.agent_id);
+    console.log(body);
     return await this.jobService.publishJob(body)
   }
 
@@ -51,8 +50,8 @@ export class JobController {
   }
 
   @Put(":job/assign-agent")
-  assignJobAgent(@Param("job") job: string) {
-    return ""
+  async assignJobAgent(@Param("job") job: string, @Body() body: UpdateJobAgent) {
+    return await this.jobService.getJob(job);
   }
 
   @Put(":job/status")

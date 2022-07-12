@@ -14,8 +14,6 @@ export class PublishJobDto {
     @IsNotEmpty()
     initiator_id: string;
 
-
-
     @ApiProperty()
     @IsString()
     @IsNotEmpty()
