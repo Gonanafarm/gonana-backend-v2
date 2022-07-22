@@ -24,7 +24,7 @@ export class GenericService implements ServiceInterface {
         }
     };
 
-    deleteItem = async (item_id: string) => {
+    deleteItem = async (item_id: string): Promise<any> => {
         return await this.dataModel.deleteOne({ _id: item_id });
     };
 
