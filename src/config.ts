@@ -1,8 +1,13 @@
+import { env } from "process";
+
 export default {
   isDev,
   isProd,
   isTest,
-  port: 5000,
+  host:process.env.API_HOST??"http://localhost:5000",
+  paystack_secret: process.env.PAYSTACK_SECRET ?? "sk_test_38b346b48237c58df454d070f9dda48f61d83114",
+  port: process.env.PORT ?? 5000,
+  db: process.env.MONGO_URL ?? "mongodb://127.0.0.1:27017/churchstack",
   mail: {
     from: {
       name: "Your Name",
@@ -23,6 +28,7 @@ export default {
     passwordResetExpireInMs: 60 * 60 * 1000, // 1 hour
     activationExpireInMs: 24 * 60 * 60 * 1000, // 1 day
     saltRounds: 10,
+    secret: process.env.AUTH_SECRET ?? "joshua"
   },
   static: {
     maxAge: isProd() ? "1d" : 0,

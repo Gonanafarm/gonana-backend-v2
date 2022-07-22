@@ -28,7 +28,7 @@ const DEV_TRANSPORTER = {
     AuthModule,
     MorganModule,
     CatalogModule,
-    MongooseModule.forRoot("mongodb://127.0.0.1:27017/churchstack"),
+    MongooseModule.forRoot(config.db),
     JwtModule.register({
       secret: "joshua",
       signOptions: { expiresIn: config.auth.jwtTokenExpireInSec },

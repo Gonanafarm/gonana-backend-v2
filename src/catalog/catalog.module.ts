@@ -16,7 +16,7 @@ import { EventModule } from "../events/events.module";
 @Module({
   controllers: [ProductController, TaxonomyController, PostController, EventController],
   imports: [ProductModule, TaxonomyModule, PostModule, JwtModule.register({
-    secret: "joshua",
+    secret: config.auth.secret,
     signOptions: { expiresIn: config.auth.jwtTokenExpireInSec },
   }), JwtAuthGuard, EventModule]
 })

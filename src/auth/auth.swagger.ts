@@ -1,10 +1,11 @@
 import { DocumentBuilder } from "@nestjs/swagger";
+import config from "../config";
 
 import { setupSwaggerDocument } from "../common/swagger";
 
 export default setupSwaggerDocument(
   "auth",
-  new DocumentBuilder().addServer("http://localhost:5000")
+  new DocumentBuilder().addServer(config.host)
     .setTitle("Authorization Docs")
     .setDescription("Basic user authorization features")
     .setVersion("1.0")
