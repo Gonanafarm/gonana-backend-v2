@@ -104,8 +104,7 @@
     "testEnvironment": "node"
   },
   "packageManager": "yarn@3.1.1",
-  "engines" : { 
-    "npm" : "8.3.1",
-    "node" : "16.14.0"
+  "engines": {
+    "node": "16.0.0"
   }
 }
