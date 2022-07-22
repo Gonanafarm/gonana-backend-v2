@@ -37,7 +37,7 @@ export class EventController {
   }
 
   @Delete(":item")
-  async deleteItem(@Param("item") item: string) {
+  async deleteItem(@Param("item") item: string): Promise<any> {
     return await this.taxonomyService.deleteItem(item)
   }
 
