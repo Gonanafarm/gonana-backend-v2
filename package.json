@@ -50,9 +50,9 @@
     "reflect-metadata": "^0.1.13",
     "rotating-file-stream": "^1.4.3",
     "rxjs": "^7",
+    "superagent": "^8.0.0",
+    "supertest": "^6.2.4",
     "swagger-ui-express": "^4.0.7",
-    "ts-node": "^10.9.1",
-    "tsconfig-paths": "3.12.0",
     "uuid": "8.3.2"
   },
   "devDependencies": {
@@ -67,11 +67,10 @@
     "@types/lodash": "4.14.178",
     "@types/mongoose": "5.11.97",
     "@types/morgan": "1.9.3",
-    "@types/node": "12.6.8",
+    "@types/node": "14.18.2",
     "@types/nodemailer": "6.4.4",
     "@types/passport-jwt": "3.0.6",
     "@types/passport-local": "1.0.34",
-    "@types/supertest": "2.0.8",
     "@types/uuid": "8.3.4",
     "@types/validator": "13.7.1",
     "@typescript-eslint/eslint-plugin": "5.10.0",
@@ -82,9 +81,10 @@
     "npm-run-all": "^4.1.5",
     "prettier": "2.5.1",
     "rimraf": "3.0.2",
-    "supertest": "4.0.2",
     "ts-jest": "24.0.2",
+    "ts-node": "10.4.0",
     "tsc-watch": "4.6.0",
+    "tsconfig-paths": "3.12.0",
     "typescript": "4.5.5"
   },
   "jest": {
@@ -101,8 +101,5 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   },
-  "packageManager": "yarn@3.1.1",
-  "engines": {
-    "node": "16.0.0"
-  }
+  "packageManager": "yarn@3.1.1"
 }

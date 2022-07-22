@@ -18,18 +18,27 @@ export class EventController {
   @Get("")
   @ApiResponse({ status: 200, description: 'Returns list of store taxonomies', isArray: true, type: Event })
   get(@Req() req: Request) {
-    return this.taxonomyService.retrieveItems({ publisher_id: req.user.sub })
+    let publisher_id="";
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    publisher_id= req.user?.sub??"";
+
+    return this.taxonomyService.retrieveItems({ publisher_id:  publisher_id })
   }
 
   @Post("")
   @ApiResponse({ status: 200, description: 'Create record successfully', isArray: false, type: Event })
   async publish(@Body() body: PublishEventDto, @Req() req: Request) {
-    return await this.taxonomyService.create(req.user.sub, body)
+    let publisher_id="";
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    publisher_id= req.user?.sub??"";
+    return await this.taxonomyService.create(publisher_id, body)
   }
 
   @Delete(":item")
-  detete(@Param("item") item: string) {
-    return this.taxonomyService.deleteItem(item)
+  async deleteItem(@Param("item") item: string) {
+    return await this.taxonomyService.deleteItem(item)
   }
 
   @Get(":item")

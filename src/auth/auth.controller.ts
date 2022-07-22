@@ -36,7 +36,8 @@ export class AuthController {
   @Post("login")
   login(@Req() req: Request, @Body() loginDto: LoginDto) {
     // TODO: remove loginDto, swagger should find it somehow by exploring the AuthGuard
-    return this.authService.login(req.user);
+    if(req.user==undefined)return;
+  //  return this.authService.login(req?.user);
   }
 
   @Post("signup")
@@ -53,7 +54,7 @@ export class AuthController {
   @UseGuards(AuthGuard())
   @Get("relogin")
   relogin(@Req() req: Request) {
-    return this.authService.login(req.user);
+   // return this.authService.login(req.user??{});
   }
 
   @Post("forgotten-password")

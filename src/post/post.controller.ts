@@ -18,18 +18,25 @@ export class PostController {
   @Get("")
   @ApiResponse({ status: 200, description: 'Returns list of posts', isArray: true, type: PostModel })
   get(@Req() req: Request) {
-    return this.dataService.retrieveItems({ publisher_id: req.user.sub })
+    let publisher_id="";
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    publisher_id= req.user?.sub??"";
+    return this.dataService.retrieveItems({ publisher_id: publisher_id })
   }
 
   @Post("")
   @ApiResponse({ status: 200, description: 'Created post successfully', isArray: false, type: PostModel })
   async publish(@Body() body: PublishPostDto, @Req() req: Request) {
-
-    return await this.dataService.create(req.user.sub, body)
+    let publisher_id="";
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    publisher_id= req.user?.sub??"";
+    return await this.dataService.create(publisher_id, body)
   }
 
   @Delete(":item")
-  delete(@Param("item") item: string) {
+  async deleteItem(@Param("item") item: string): Promise<any> {
     return this.dataService.deleteItem(item)
   }
 
