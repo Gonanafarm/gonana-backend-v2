@@ -20,6 +20,7 @@ import {
 import { AuthService } from "./auth.service";
 import { getOriginHeader } from "../common/auth";
 import { ApiTags } from "@nestjs/swagger";
+import { JwtAuthGuard } from "./jwt-auth.guard";
 
 @ApiTags("auth")
 @Controller("api")
@@ -27,7 +28,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
   @Get("activate/:userId/:activationToken")
-  activate(@Param() params: ActivateParams, @Param("userId") userId: string) {
+  activate(@Param() params: ActivateParams) {
     return this.authService.activate(params);
   }
 

@@ -4,7 +4,6 @@ import { User } from "./user.interface";
 
 export const UserSchema = new mongoose.Schema<User>(
   {
-    primary_phone: { type: String, required: true, select: false },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true, select: false },
     passwordResetToken: String,

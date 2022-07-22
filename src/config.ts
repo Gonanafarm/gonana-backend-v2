@@ -2,18 +2,21 @@ export default {
   isDev,
   isProd,
   isTest,
+  port: 5000,
   mail: {
     from: {
       name: "Your Name",
-      address: "youremail@example.com",
+      address: "10xjoshua@gmail.com",
     },
   },
   cors: {
     // https://github.com/expressjs/cors#configuration-options
-    origin: process.env.CORS_ORIGIN,
+    origin: "*",
     methods: "POST,GET,PUT,OPTIONS,DELETE",
     allowedHeaders:
-      "Timezone-Offset,Origin,X-Requested-With,Content-Type,Accept,Authorization",
+      "Timezone-Offset,Origin,X-Requested-With,Content-Type,Accept,Authorization,authorization,*",
+    "preflightContinue": false,
+    "optionsSuccessStatus": 200,
   },
   auth: {
     jwtTokenExpireInSec: "1d", // 1 day

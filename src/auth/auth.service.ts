@@ -33,7 +33,7 @@ export class AuthService {
     const user = await this.userService.activate(userId, activationToken);
 
     return {
-      token: this.jwtService.sign({}, {subject: `${user.id}`}),
+      token: this.jwtService.sign({id: user.id}, {subject: `${user.id}`}),
       user: user.getPublicData(),
     };
   }

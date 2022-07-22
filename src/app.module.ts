@@ -1,23 +1,25 @@
 import * as path from "path";
-import {MiddlewareConsumer, Module, NestModule} from "@nestjs/common";
-import {MongooseModule} from "@nestjs/mongoose";
-import {MailerModule} from "@nest-modules/mailer";
-import {ServeStaticMiddleware} from "@nest-middlewares/serve-static";
-import {MorganModule} from "nest-morgan";
+import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
+import { MailerModule, HandlebarsAdapter } from "@nest-modules/mailer";
+import { ServeStaticMiddleware } from "@nest-middlewares/serve-static";
+import { MorganModule } from "nest-morgan";
 
-import {LoggerMiddleware} from "./common/middleware/logger.middleware";
-import {GlobalAccessLogger} from "./common/accessLogger";
-import {AuthModule} from "./auth/auth.module";
-import {UserModule} from "./user/user.module";
+import { LoggerMiddleware } from "./common/middleware/logger.middleware";
+import { GlobalAccessLogger } from "./common/accessLogger";
+import { AuthModule } from "./auth/auth.module";
+import { UserModule } from "./user/user.module";
 import config from "./config";
-import { JobModule } from "./job/job.module";
+import { CatalogModule } from "./catalog/catalog.module";
+import { JwtModule } from "@nestjs/jwt";
+import { PassportModule } from "@nestjs/passport";
 
 const DEV_TRANSPORTER = {
-  host: "smtp.ethereal.email",
+  host: "smtp-relay.sendinblue.com",
   port: 587,
   auth: {
-    user: "ethereal.user@ethereal.email",
-    pass: "verysecret",
+    user: "developercircus@gmail.com",
+    pass: "CR2bIMjv3XZkrTEL",
   },
 };
 
@@ -25,13 +27,33 @@ const DEV_TRANSPORTER = {
   imports: [
     AuthModule,
     MorganModule,
-    JobModule,
-    MongooseModule.forRoot("mongodb://127.0.0.1:27017/deliverychief"),
+    CatalogModule,
+    MongooseModule.forRoot("mongodb://127.0.0.1:27017/churchstack"),
+    JwtModule.register({
+      secret: "joshua",
+      signOptions: { expiresIn: config.auth.jwtTokenExpireInSec },
+    }),
+    PassportModule,
     MailerModule.forRootAsync({
       useFactory: () => ({
-        transport: process.env.MAILGUN_TRANSPORT || DEV_TRANSPORTER,
+        transport: DEV_TRANSPORTER,
         defaults: {
           from: config.mail.from,
+        },
+        template: {
+          dir: __dirname + '/../templates',
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
+        },
+        options: {
+          partials: {
+            dir: path.join(__dirname, 'templates/partials'),
+            options: {
+              strict: true,
+            },
+          },
         },
       }),
     }),

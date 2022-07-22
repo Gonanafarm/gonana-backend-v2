@@ -1,11 +1,11 @@
-import {Injectable} from "@nestjs/common";
-import {MailerService} from "@nest-modules/mailer";
+import { Injectable } from "@nestjs/common";
+import { MailerService } from "@nest-modules/mailer";
 
 import config from "../config";
 
 @Injectable()
 export class UserMailerService {
-  constructor(private readonly mailerService: MailerService) {}
+  constructor(private readonly mailerService: MailerService) { }
 
   sendActivationMail(
     email: string,
@@ -18,8 +18,10 @@ export class UserMailerService {
         .sendMail({
           to: email,
           subject: "Activate your account",
-          text: `Please click on the following link, or paste this into your browser to activate your account:\n
-${origin}/activate/${userId}/${activationToken}\n`,
+          template: 'activate-account', // The `.pug`, `.ejs` or `.hbs` extension is appended automatically.
+          context: {
+            link: `${origin}/activate/${userId}/${activationToken}\n`,
+          },
         })
         .catch();
     }

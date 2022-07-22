@@ -1,0 +1,75 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsDate, IsObject, Validate, IsDateString, IsNumber, IsEmpty, IsArray, ValidateIf, IsOptional } from 'class-validator';
+import { isNull } from 'lodash';
+
+export class PublishEventDto {
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    type: string;
+
+    @IsString()
+    @ApiProperty({})
+    title: string;
+
+    @IsString()
+    @ApiProperty({})
+    @IsOptional()
+    body: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    status: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({ required: false })
+    cover: string;
+
+    @IsString()
+    @ApiProperty()
+    start_date: Date;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    end_date: Date;
+
+}
+
+export class UpdateEventDto {
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    type: string;
+
+    @IsString()
+    @ApiProperty({})
+    @IsOptional()
+    title: string;
+
+    @IsString()
+    @ApiProperty({})
+    @IsOptional()
+    body: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    status: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({ required: false })
+    cover: string;
+
+    @IsString()
+    @ApiProperty()
+    start_date: Date;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    end_date: Date;
+}

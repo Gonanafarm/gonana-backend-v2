@@ -2920,6 +2920,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dot-case@npm:^3.0.4":
+  version: 3.0.4
+  resolution: "dot-case@npm:3.0.4"
+  dependencies:
+    no-case: ^3.0.4
+    tslib: ^2.0.3
+  checksum: a65e3519414856df0228b9f645332f974f2bf5433370f544a681122eab59e66038fc3349b4be1cdc47152779dac71a5864f1ccda2f745e767c46e9c6543b1169
+  languageName: node
+  linkType: hard
+
 "dotenv@npm:*, dotenv@npm:14.2.0":
   version: 14.2.0
   resolution: "dotenv@npm:14.2.0"
@@ -5746,6 +5756,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lower-case@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "lower-case@npm:2.0.2"
+  dependencies:
+    tslib: ^2.0.3
+  checksum: 83a0a5f159ad7614bee8bf976b96275f3954335a84fad2696927f609ddae902802c4f3312d86668722e668bef41400254807e1d3a7f2e8c3eede79691aa1f010
+  languageName: node
+  linkType: hard
+
 "lru-cache@npm:^5.1.1":
   version: 5.1.1
   resolution: "lru-cache@npm:5.1.1"
@@ -6476,6 +6495,7 @@ __metadata:
     nestjs: ^0.0.1
     nodemailer: 6.7.2
     npm-run-all: ^4.1.5
+    param-case: ^3.0.4
     passport: 0.5.2
     passport-jwt: 4.0.0
     passport-local: 1.0.0
@@ -6529,6 +6549,16 @@ __metadata:
   version: 1.0.5
   resolution: "nice-try@npm:1.0.5"
   checksum: 0b4af3b5bb5d86c289f7a026303d192a7eb4417231fe47245c460baeabae7277bcd8fd9c728fb6bd62c30b3e15cd6620373e2cf33353b095d8b403d3e8a15aff
+  languageName: node
+  linkType: hard
+
+"no-case@npm:^3.0.4":
+  version: 3.0.4
+  resolution: "no-case@npm:3.0.4"
+  dependencies:
+    lower-case: ^2.0.2
+    tslib: ^2.0.3
+  checksum: 0b2ebc113dfcf737d48dde49cfebf3ad2d82a8c3188e7100c6f375e30eafbef9e9124aadc3becef237b042fd5eb0aad2fd78669c20972d045bbe7fea8ba0be5c
   languageName: node
   linkType: hard
 
@@ -7030,6 +7060,16 @@ __metadata:
     ip: ^1.1.5
     netmask: ^2.0.1
   checksum: 84471dbdf45a4853e6d8977297456016b18fb2b2eda2b2af6bf786b1254dd1ddcc5283bb8f5c16e29dcbec6f1346932c7400197c4d68aa1549757b9224f373c6
+  languageName: node
+  linkType: hard
+
+"param-case@npm:^3.0.4":
+  version: 3.0.4
+  resolution: "param-case@npm:3.0.4"
+  dependencies:
+    dot-case: ^3.0.4
+    tslib: ^2.0.3
+  checksum: b34227fd0f794e078776eb3aa6247442056cb47761e9cd2c4c881c86d84c64205f6a56ef0d70b41ee7d77da02c3f4ed2f88e3896a8fefe08bdfb4deca037c687
   languageName: node
   linkType: hard
 
@@ -9165,6 +9205,13 @@ __metadata:
   version: 1.10.0
   resolution: "tslib@npm:1.10.0"
   checksum: 1d0450dc6f64b918b14acaf3b956ebe1c72d7401c632adce932a60e3cd8d2a70f6040ceef6a7c3561146c3f29bcf584c41c2e09a5d20a27d6c3057f0d5f2a836
+  languageName: node
+  linkType: hard
+
+"tslib@npm:^2.0.3":
+  version: 2.4.0
+  resolution: "tslib@npm:2.4.0"
+  checksum: 8c4aa6a3c5a754bf76aefc38026134180c053b7bd2f81338cb5e5ebf96fefa0f417bff221592bf801077f5bf990562f6264fecbc42cd3309b33872cb6fc3b113
   languageName: node
   linkType: hard
 

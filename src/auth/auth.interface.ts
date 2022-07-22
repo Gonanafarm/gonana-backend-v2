@@ -4,17 +4,19 @@ import {
   MaxLength,
   IsUUID,
   IsNotEmpty,
+  IsString,
 } from "class-validator";
 import {ApiProperty} from "@nestjs/swagger";
 
 // TODO add mixins like EmailField, PasswordField
 
 export class ActivateParams {
-  @ApiProperty({type: "ObjectID"})
+  @ApiProperty({type: String})
   @IsNotEmpty()
+  @IsString()
   readonly userId!: string;
 
-  @ApiProperty({type: "uuid"})
+  @ApiProperty({type: String})
   @IsUUID()
   readonly activationToken!: string;
 }
@@ -54,7 +56,7 @@ export class ResetPasswordDto {
   @MaxLength(255)
   readonly email!: string;
 
-  @ApiProperty({type: "uuid"})
+  @ApiProperty({type: String})
   @IsUUID()
   readonly passwordResetToken!: string;
 
