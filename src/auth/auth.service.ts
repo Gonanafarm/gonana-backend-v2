@@ -38,10 +38,10 @@ export class AuthService {
     };
   }
 
-  async login(user: User) {
+  async login(user?: User) {
     return {
-      token: this.jwtService.sign({}, {subject: `${user.id}`}),
-      user: user.getPublicData(),
+      token: this.jwtService.sign({...user?.getPublicData()}, {subject: `${user?.id}`}),
+      user: user?.getPublicData(),
     };
   }
 
@@ -53,7 +53,7 @@ export class AuthService {
     );
 
     return {
-      token: this.jwtService.sign({}, {subject: `${user.id}`}),
+      token: this.jwtService.sign({...user.getPublicData()}, {subject: `${user.id}`}),
       user: user.getPublicData(),
     };
   }

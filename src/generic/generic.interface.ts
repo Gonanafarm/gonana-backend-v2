@@ -1,4 +1,9 @@
 
+import { Request, Response, NextFunction } from 'express';
+import { User } from '../user/user.interface';
+
+// Declaring custom request interface
+// We export this interface so that we can use it in other places in our project
 
 
 
@@ -8,4 +13,10 @@ export interface ServiceInterface {
     deleteItem: (item_id: string) => Promise<any>;
     getItem: (item_id: string) => Promise<any>;
     retrieveItems: (filter: { [key: string]: any }) => Promise<any>;
+}
+
+
+
+export interface AppRequest extends Request {
+  user?: User;
 }

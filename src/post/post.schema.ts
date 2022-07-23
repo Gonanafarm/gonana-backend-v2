@@ -39,8 +39,7 @@ const attachmentDoc = SchemaFactory.createForClass(MediaAttachment);
   timestamps: {
     createdAt: "created_at", // Use `created_at` to store the created date
     updatedAt: "updated_at", // and `updated_at` to store the last updated date
-  },
-  id: true,
+  }
 })
 export class Post {
   @Prop({ type: mongoose.SchemaTypes.String })

@@ -16,15 +16,20 @@ import {
   ResetPasswordDto,
   SignUpDto,
   LoginDto,
+  AuthenticatedUser,
 } from "./auth.interface";
 import { AuthService } from "./auth.service";
 import { getOriginHeader } from "../common/auth";
-import { ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "./jwt-auth.guard";
+import { AppRequest } from "../generic/generic.interface";
+import { UserModel } from "src/user/user.model";
 
 @ApiTags("auth")
+@ApiBearerAuth()
 @Controller("api")
 export class AuthController {
+
   constructor(private readonly authService: AuthService) { }
 
   @Get("activate/:userId/:activationToken")
@@ -34,27 +39,28 @@ export class AuthController {
 
   @UseGuards(AuthGuard("local"))
   @Post("login")
-  login(@Req() req: Request, @Body() loginDto: LoginDto) {
-    // TODO: remove loginDto, swagger should find it somehow by exploring the AuthGuard
-    if(req.user==undefined)return;
-  //  return this.authService.login(req?.user);
+  @ApiResponse({ type: AuthenticatedUser })
+  login(@Req() req: AppRequest, @Body() loginDto: LoginDto) {
+    return this.authService.login(req?.user);
   }
 
   @Post("signup")
+  @ApiResponse({ type: AuthenticatedUser })
   async signup(@Body() signUpDto: SignUpDto, @Req() req: Request) {
     return this.authService.signUpUser(signUpDto, getOriginHeader(req));
   }
 
   @UseGuards(AuthGuard())
   @Get("me")
+  @ApiResponse({})
   getProfile(@Req() req: Request) {
     return req.user;
   }
 
   @UseGuards(AuthGuard())
   @Get("relogin")
-  relogin(@Req() req: Request) {
-   // return this.authService.login(req.user??{});
+  relogin(@Req() req: AppRequest) {
+    return this.authService.login(req.user);
   }
 
   @Post("forgotten-password")
