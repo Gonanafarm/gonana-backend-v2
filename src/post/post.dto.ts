@@ -2,6 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsDate, IsObject, Validate, IsDateString, IsNumber, IsEmpty, IsArray, ValidateIf, IsOptional, ValidateNested } from 'class-validator';
 import { isNull } from 'lodash';
 
+enum PostType {
+    SERMON = 'sermon',
+    ARTICLE = 'article',
+}
+
 class MediaAttachment {
     @ApiProperty()
     @IsString()
@@ -50,7 +55,7 @@ export class PublishPostDto {
     short_description: string;
 
 
-    @ApiProperty({ enum: ['article', 'vide', 'audio', 'sermon'], default: "article" })
+    @ApiProperty({ enum: PostType, default: "article" })
     @IsString()
     @IsOptional()
     type: string;
@@ -79,23 +84,23 @@ export class PublishPostDto {
 }
 
 export class UpdatePostDto {
-    @ApiProperty({ required: true })
+    @ApiProperty({  })
     @IsString()
     @IsOptional()
     title: string;
 
-    @ApiProperty({ required: true })
+    @ApiProperty({ })
     @IsString()
     @IsOptional()
     body: string;
 
-    @ApiProperty({ required: false })
+    @ApiProperty({  })
     @IsString()
     @IsOptional()
     short_description: string;
 
 
-    @ApiProperty({ enum: ['article', 'vide', 'audio', 'sermon'], default: "article" })
+    @ApiProperty({ enum: PostType, default: "article" })
     @IsString()
     @IsOptional()
     type: string;
