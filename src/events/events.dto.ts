@@ -1,10 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsDate, IsObject, Validate, IsDateString, IsNumber, IsEmpty, IsArray, ValidateIf, IsOptional } from 'class-validator';
-import { isNull } from 'lodash';
 
 export class PublishEventDto {
     @IsString()
-    @IsOptional()
     @ApiProperty({})
     type: string;
 
@@ -19,7 +17,7 @@ export class PublishEventDto {
 
     @IsString()
     @IsOptional()
-    @ApiProperty({})
+    @ApiProperty({default:"pending"})
     status: string;
 
     @IsString()
@@ -28,13 +26,24 @@ export class PublishEventDto {
     cover: string;
 
     @IsString()
+    @IsOptional()
     @ApiProperty()
     start_date: Date;
 
     @IsString()
+    @ApiProperty()
     @IsOptional()
-    @ApiProperty({})
+    start_time: Date;
+
+    @IsString()
+    @ApiProperty()
+    @IsOptional()
     end_date: Date;
+
+    @IsString()
+    @ApiProperty()
+    @IsOptional()
+    end_time: Date;
 
 }
 
@@ -64,12 +73,26 @@ export class UpdateEventDto {
     @ApiProperty({ required: false })
     cover: string;
 
-    @IsString()
-    @ApiProperty()
-    start_date: Date;
 
     @IsString()
     @IsOptional()
-    @ApiProperty({})
+    @ApiProperty()
+    start_date: Date;
+
+
+
+    @IsString()
+    @ApiProperty()
+    @IsOptional()
+    start_time: Date;
+
+    @IsString()
+    @ApiProperty()
+    @IsOptional()
     end_date: Date;
+
+    @IsString()
+    @ApiProperty()
+    @IsOptional()
+    end_time: Date;
 }

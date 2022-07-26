@@ -46,7 +46,7 @@ export class Post {
   publisher_id: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
+  @Prop({ type: mongoose.SchemaTypes.String})
   type: string; // article , video, audio
 
   @ApiProperty()

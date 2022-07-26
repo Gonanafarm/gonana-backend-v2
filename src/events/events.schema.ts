@@ -41,7 +41,15 @@ export class Event {
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.Date })
+  start_time: Date;
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.Date })
   end_date: Date;
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.Date })
+  end_time: Date;
 
 }
 
