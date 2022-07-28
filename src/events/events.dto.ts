@@ -16,6 +16,11 @@ export class PublishEventDto {
     body: string;
 
     @IsString()
+    @ApiProperty({})
+    @IsOptional()
+    short_description: string;
+
+    @IsString()
     @IsOptional()
     @ApiProperty({default:"pending"})
     status: string;
@@ -73,6 +78,11 @@ export class UpdateEventDto {
     @ApiProperty({ required: false })
     cover: string;
 
+    @IsString()
+    @ApiProperty({})
+    @IsOptional()
+    short_description: string;
+    
 
     @IsString()
     @IsOptional()

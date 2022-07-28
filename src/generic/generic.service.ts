@@ -9,6 +9,8 @@ export class GenericService implements ServiceInterface {
     constructor(private dataModel: Model<any & Document>) { }
 
     create = async (publisher_id: string, publishItemDto: any) => {
+        console.log(publishItemDto);
+        console.log("on create")
         return new this.dataModel({ ...publishItemDto, publisher_id }).save();
     };
 

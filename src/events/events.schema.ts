@@ -29,6 +29,10 @@ export class Event {
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
+  short_description: string;
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.String })
   status: string;
 
   @ApiProperty()

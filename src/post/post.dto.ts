@@ -78,23 +78,23 @@ export class PublishPostDto {
     @ApiProperty({ type: MediaAttachment, isArray: true })
     @IsArray({})
     @IsOptional()
-    @ValidateNested({ each: true })
+    // @ValidateNested({ each: true })
     attachments: MediaAttachment[];
 
 }
 
 export class UpdatePostDto {
-    @ApiProperty({  })
+    @ApiProperty({})
     @IsString()
     @IsOptional()
     title: string;
 
-    @ApiProperty({ })
+    @ApiProperty({})
     @IsString()
     @IsOptional()
     body: string;
 
-    @ApiProperty({  })
+    @ApiProperty({})
     @IsString()
     @IsOptional()
     short_description: string;
@@ -123,6 +123,6 @@ export class UpdatePostDto {
     @ApiProperty({ type: MediaAttachment, isArray: true })
     @IsArray({})
     @IsOptional()
-    @ValidateNested({ each: true })
+    // @ValidateNested({ each: true })
     attachments: MediaAttachment[];
 }

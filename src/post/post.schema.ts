@@ -29,6 +29,8 @@ class MediaAttachment {
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
   name: string;
+
+ 
 }
 
 
@@ -80,6 +82,14 @@ export class Post {
     type: [attachmentDoc]
   })
   attachments: MediaAttachment[];
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.String })
+  created_at: string;
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.String })
+  updated_at: string;
 }
 
 
