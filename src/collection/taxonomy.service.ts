@@ -11,7 +11,7 @@ import { GenericService } from "../generic/generic.service";
 
 
 @Injectable()
-export class TaxonomyService extends GenericService {
+export class TaxonomyService extends GenericService<TaxonomyDocument> {
   constructor(@InjectModel(Taxonomy.name) private taxonomyModel: Model<TaxonomyDocument>) {
     super(taxonomyModel);
   }

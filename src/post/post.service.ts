@@ -6,7 +6,7 @@ import { PostSchema, Post, PostDocument } from "./post.schema";
 import { GenericService } from "../generic/generic.service";
 
 @Injectable()
-export class PostService extends GenericService {
+export class PostService extends GenericService<PostDocument> {
   constructor(@InjectModel(Post.name) private productModel: Model<PostDocument>) {
     super(productModel);
   }

@@ -1,5 +1,5 @@
 import * as path from "path";
-import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { CacheModule, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { MailerModule, HandlebarsAdapter } from "@nest-modules/mailer";
 import { ServeStaticMiddleware } from "@nest-middlewares/serve-static";
@@ -13,6 +13,7 @@ import config from "./config";
 import { CatalogModule } from "./catalog/catalog.module";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
+import { SiteCatalogModule } from "./site-catalog/catalog.module";
 
 const DEV_TRANSPORTER = {
   host: "smtp-relay.sendinblue.com",
@@ -27,6 +28,7 @@ const DEV_TRANSPORTER = {
   imports: [
     AuthModule,
     MorganModule,
+    SiteCatalogModule,
     CatalogModule,
     MongooseModule.forRoot(config.db),
     JwtModule.register({

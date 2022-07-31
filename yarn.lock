@@ -935,6 +935,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/cache-manager@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@types/cache-manager@npm:4.0.1"
+  checksum: 1249232472b615916001ed3df4f97b25f0d6b82b37c5f64149c8589bc03ef123edfa44c7992ef58449b1f9754e6ca2ce5a008381fd7149988cbfe9dfcd881ad1
+  languageName: node
+  linkType: hard
+
 "@types/compression@npm:1.7.2":
   version: 1.7.2
   resolution: "@types/compression@npm:1.7.2"
@@ -1760,6 +1767,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"async@npm:3.2.3":
+  version: 3.2.3
+  resolution: "async@npm:3.2.3"
+  checksum: c4bee57ab2249af3dc83ca3ef9acfa8e822c0d5e5aa41bae3eaf7f673648343cd64ecd7d26091ffd357f3f044428b17b5f00098494b6cf8b6b3e9681f0636ca1
+  languageName: node
+  linkType: hard
+
 "asynckit@npm:^0.4.0":
   version: 0.4.0
   resolution: "asynckit@npm:0.4.0"
@@ -2223,6 +2237,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cache-manager@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "cache-manager@npm:4.1.0"
+  dependencies:
+    async: 3.2.3
+    lodash.clonedeep: ^4.5.0
+    lru-cache: ^7.10.1
+  checksum: 620636eba25378c0a67933d9d2452f3a63e7f4afe69442112b19cdd6bee5def7846df88d6e086e262695c017250f39da1a49f9fb4fab949ff3ce4920449fba17
+  languageName: node
+  linkType: hard
+
 "call-bind@npm:^1.0.0, call-bind@npm:^1.0.2":
   version: 1.0.2
   resolution: "call-bind@npm:1.0.2"
@@ -2445,6 +2470,7 @@ __metadata:
     "@nestjs/testing": 8.2.6
     "@types/bcryptjs": 2.4.2
     "@types/bunyan": 1.8.8
+    "@types/cache-manager": ^4.0.1
     "@types/compression": 1.7.2
     "@types/dotenv": 8.2.0
     "@types/express": 4.17.0
@@ -2463,6 +2489,7 @@ __metadata:
     "@typescript-eslint/parser": 5.10.0
     bcryptjs: 2.4.3
     bunyan: 1.8.15
+    cache-manager: ^4.1.0
     class-transformer: 0.5.1
     class-validator: 0.13.2
     compression: 1.7.4
@@ -5932,6 +5959,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash.clonedeep@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "lodash.clonedeep@npm:4.5.0"
+  checksum: 92c46f094b064e876a23c97f57f81fbffd5d760bf2d8a1c61d85db6d1e488c66b0384c943abee4f6af7debf5ad4e4282e74ff83177c9e63d8ff081a4837c3489
+  languageName: node
+  linkType: hard
+
 "lodash.defaults@npm:^4.0.1":
   version: 4.2.0
   resolution: "lodash.defaults@npm:4.2.0"
@@ -6110,7 +6144,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lru-cache@npm:^7.7.1":
+"lru-cache@npm:^7.10.1, lru-cache@npm:^7.7.1":
   version: 7.13.1
   resolution: "lru-cache@npm:7.13.1"
   checksum: f53c7dd098a7afd6342b23f7182629edff206c7665de79445a7f5455440e768a4d1c6ec52e1a16175580c71535c9437dfb6f6bc22ca1a0e4a7454a97cde87329

@@ -1,12 +1,12 @@
 /* eslint-disable no-useless-catch */
 import { Controller, Injectable, Module } from "@nestjs/common";
-import { Model } from "mongoose";
+import { Model, Document } from "mongoose";
 import { ResourceNotFoundException } from "../common/exceptions";
 import { ServiceInterface } from "./generic.interface";
 
-export class GenericService implements ServiceInterface {
+export class GenericService<T extends Document> implements ServiceInterface {
 
-    constructor(private dataModel: Model<any & Document>) { }
+    constructor(public dataModel: Model<T>) { }
 
     create = async (publisher_id: string, publishItemDto: any) => {
         console.log(publishItemDto);
@@ -43,6 +43,8 @@ export class GenericService implements ServiceInterface {
     };
 
     retrieveItems = async (filter: { [key: string]: any }) => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        //@ts-ignore
         return await this.dataModel.find(filter).exec();
     };
 

@@ -8,7 +8,7 @@ import { GenericService } from "../generic/generic.service";
 
 
 @Injectable()
-export class ProductService extends GenericService {
+export class ProductService extends GenericService<ProductDocument> {
   constructor(@InjectModel(Product.name) private productModel: Model<ProductDocument>) {
     super(productModel);
   }

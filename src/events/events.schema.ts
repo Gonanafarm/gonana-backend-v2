@@ -1,6 +1,7 @@
 import { Prop, Schema, raw, SchemaFactory } from "@nestjs/mongoose";
 import { ApiProperty } from "@nestjs/swagger";
 import * as mongoose from "mongoose";
+import { Document } from "mongoose"
 
 export type EventDocument = Event & Document;
 
