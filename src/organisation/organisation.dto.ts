@@ -28,13 +28,13 @@ export class UpdateOrganizationDto {
     @IsString()
     @IsOptional()
     @ApiProperty({})
-    bio: string;
+    about: string;
 
 
     @IsString()
     @IsOptional()
     @ApiProperty({})
-    vision: string;
+    vision_statement: string;
 
 
     // Social handles

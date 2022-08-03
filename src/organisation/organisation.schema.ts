@@ -30,12 +30,11 @@ export class Organization {
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
-  bio: string;
+  about: string;
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
   vision_statement: string;
-
 
   // Social handles
   @ApiProperty()
