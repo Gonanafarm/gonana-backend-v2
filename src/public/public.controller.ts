@@ -34,7 +34,6 @@ export class PublicController {
             this.userService.enableAccountSubscriptionStatus(parsedBody.data.customer.email, parsedBody.data.plan.plan_code, transactionObj);
             return
           }
-
           // continue for event registeration
         }
 

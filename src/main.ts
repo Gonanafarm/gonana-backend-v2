@@ -1,7 +1,16 @@
 import * as dotenv from "dotenv";
-dotenv.config();
+import * as admin from "firebase-admin";
+import { bootstrap } from "./bootstrap";
 
-import {bootstrap} from "./bootstrap";
+dotenv.config();
+function init_firebase() {
+    var serviceAccountFile = require("../firebase-service.json");
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccountFile),
+    });
+}
+
+init_firebase();
 bootstrap();
 
 

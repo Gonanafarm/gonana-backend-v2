@@ -15,6 +15,7 @@ import { UserMailerService } from "./user.mailer.service";
 import { paystackActions } from "../common/paystack/paystack.service";
 import { AttachAccountDto } from "../organisation/organisation.dto";
 import { UserDocument } from "./user.schema";
+import { appNotifications } from "../firebase";
 
 @Injectable()
 export class UserService {
@@ -48,6 +49,8 @@ export class UserService {
         user.activationToken,
         origin,
       );
+
+      appNotifications.notifyUser("Your account have been created; Please make time to update your profile and upgrade.", user.email, "account.created");
 
       return user;
     } catch {
@@ -186,6 +189,9 @@ export class UserService {
           subscription_status: "paid", subscription_transaction: transactionObj,
           subscription_plan: plan
         });
+
+      // sent notification
+      appNotifications.notifyUser("Your account's plan has been activated. Enjoy amazing features on more", account_email, "subscription.enabled");
     } catch (err) {
       throw err;
     }
@@ -198,6 +204,9 @@ export class UserService {
         .findOneAndUpdate({ email: account_email }, {
           subscription_status: "failed", subscription_transaction: transactionObj,
         });
+
+      // sent notification
+      appNotifications.notifyUser("Your account's subscription have been disabled due to lack of renewal.", account_email, "subscription.closed");
     } catch (err) {
       throw err;
     }

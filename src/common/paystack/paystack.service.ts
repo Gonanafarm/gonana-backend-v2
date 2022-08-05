@@ -76,7 +76,7 @@ export class PaystackActions {
                 'Content-Type': 'application/json'
             }
         });
-        console.log(response)
+    
         if (response.status == 201 || response.status == 200) {
             if (response.data.status == true && response.data.data.status == "success") {
                 return true;
