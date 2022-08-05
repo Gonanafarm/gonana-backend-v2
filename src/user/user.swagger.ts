@@ -7,7 +7,7 @@ export default setupSwaggerDocument(
   "account",
   new DocumentBuilder().addBearerAuth().addServer(config.host)
     .setTitle("Account Docs")
-    .setDescription("Basic user authorization features")
+    .setDescription("Basic account features")
     .setVersion("1.0")
     .setBasePath("")
     .addTag("account")

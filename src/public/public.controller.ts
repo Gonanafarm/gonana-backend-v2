@@ -55,8 +55,6 @@ export class PublicController {
       }
     }
 
-
-
     if (body.event == "subscription.disable") {
       const parsedBody: TSubscriptionDisabled = body;
       try {
@@ -65,13 +63,10 @@ export class PublicController {
         this.userService.disableAccountSubscriptionStatus(parsedBody.data.customer.email, transactionObj);
       } catch (e) {
         console.log(e);
-
       }
     }
 
     return "positive"
-
-
 
   }
 
