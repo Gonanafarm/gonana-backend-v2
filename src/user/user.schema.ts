@@ -9,6 +9,10 @@ export type UserPublicData = Readonly<{
   id: string;
   email: string;
   isActive: boolean;
+  paystack_int: any;
+  subscription_plan: any;
+  subscription_status: any;
+  subscription_transaction: any;
 }>;
 
 export type UserMethods = {
@@ -72,6 +76,6 @@ export const UserSchema = SchemaFactory.createForClass(User);
  * Methods.
  */
 UserSchema.methods.getPublicData = function () {
-  const { id, email, isActive, paystack_int } = this;
-  return { id, email, isActive, paystack_int };
+  const { id, email, isActive, paystack_int, subscription_plan, subscription_status, subscription_transaction } = this;
+  return { id, email, isActive, paystack_int, subscription_plan, subscription_status, subscription_transaction };
 };
