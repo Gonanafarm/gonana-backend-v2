@@ -6,12 +6,9 @@ import {
   Param,
   UseGuards,
   Body,
-  ConsoleLogger,
 } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport";
 import { Request } from "express";
 import { ApiBearerAuth, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { AppRequest } from "../generic/generic.interface";
 import { AttachAccountDto } from "../organisation/organisation.dto";
 import { UserService } from "./user.service";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";

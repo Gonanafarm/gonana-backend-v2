@@ -14,7 +14,7 @@ export class PublicController {
 
   }
 
-  @Get("paystack-hook")
+  @Post("paystack-hook")
   async paystackEventHandler(@Body() body: any) {
     if (body.event == "charge.success") {
 
