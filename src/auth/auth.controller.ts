@@ -22,13 +22,14 @@ import { AuthService } from "./auth.service";
 import { getOriginHeader } from "../common/auth";
 import { ApiBearerAuth, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AppRequest } from "../generic/generic.interface";
+import { UserService } from "../user/user.service";
 
 @ApiTags("auth")
 @ApiBearerAuth()
 @Controller("api/auth")
 export class AuthController {
 
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService, private readonly userService: UserService) { }
 
   @Get("activate/:userId/:activationToken")
   activate(@Param() params: ActivateParams) {
@@ -51,8 +52,10 @@ export class AuthController {
   @UseGuards(AuthGuard())
   @Get("me")
   @ApiResponse({})
-  getProfile(@Req() req: Request) {
-    return req.user;
+  async getProfile(@Req() req: Request) {
+    //@ts-ignore
+    let profileDoc = await this.userService.findById(req.user.id);
+    return profileDoc.getPublicData();
   }
 
   @UseGuards(AuthGuard())
