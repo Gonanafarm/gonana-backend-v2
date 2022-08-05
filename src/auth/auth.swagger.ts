@@ -9,7 +9,6 @@ export default setupSwaggerDocument(
     .setTitle("Authorization Docs")
     .setDescription("Basic user authorization features")
     .setVersion("1.0")
-    .setBasePath("api")
     .addTag("auth")
     .build(),
 );

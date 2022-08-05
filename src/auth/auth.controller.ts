@@ -21,13 +21,11 @@ import {
 import { AuthService } from "./auth.service";
 import { getOriginHeader } from "../common/auth";
 import { ApiBearerAuth, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { JwtAuthGuard } from "./jwt-auth.guard";
 import { AppRequest } from "../generic/generic.interface";
-import { UserModel } from "src/user/user.model";
 
 @ApiTags("auth")
 @ApiBearerAuth()
-@Controller("api")
+@Controller("api/auth")
 export class AuthController {
 
   constructor(private readonly authService: AuthService) { }

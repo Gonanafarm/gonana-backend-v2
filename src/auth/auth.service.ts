@@ -12,6 +12,7 @@ import {
   ResetPasswordDto,
   SignUpDto,
 } from "./auth.interface";
+import { UserDocument } from "../user/user.schema";
 
 @Injectable()
 export class AuthService {
@@ -20,7 +21,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<User> {
+  async validateUser(email: string, password: string): Promise<UserDocument> {
     const user = await this.userService.findByEmail(email);
 
     if (!comparePassword(password, user.password)) {

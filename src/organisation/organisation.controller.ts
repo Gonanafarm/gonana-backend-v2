@@ -10,7 +10,7 @@ import { Request } from "express";
 @ApiTags("org")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller("catalog/org")
+@Controller("api/catalog/org")
 export class OrgController {
 
   constructor(private readonly orgService: OrganizationService) { }
@@ -29,11 +29,6 @@ export class OrgController {
     } else {
       return list[0]
     }
-  }
-
-  @Delete()
-  async deleteItem(@Param("item") item: string): Promise<any> {
-    return this.orgService.deleteItem(item)
   }
 
 

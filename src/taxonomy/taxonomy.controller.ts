@@ -10,7 +10,7 @@ import { Request } from "express";
 @ApiTags("taxonomy")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller("catalog/taxonomy")
+@Controller("api/catalog/taxonomy")
 export class TaxonomyController {
 
   constructor(private readonly taxonomyService: TaxonomyService) { }

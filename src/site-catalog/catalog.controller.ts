@@ -1,7 +1,7 @@
 import { Body, CacheInterceptor, Controller, Delete, Get, Headers, Inject, Module, Param, Post, Put, Query, Req, UseGuards, UseInterceptors } from "@nestjs/common";
 import { ApiTags, ApiResponse, ApiBearerAuth, ApiHeader } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { TaxonomyService } from "../collection/taxonomy.service";
+import { TaxonomyService } from "../taxonomy/taxonomy.service";
 import { PostService } from "../post/post.service";
 import { ProductService } from "../product/product.service";
 import { OrganizationService } from "../organisation/organisation.service";

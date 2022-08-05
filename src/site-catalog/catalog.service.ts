@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { TaxonomyService } from "../collection/taxonomy.service";
+import { TaxonomyService } from "../taxonomy/taxonomy.service";
 import { EventService } from "../events/events.service";
 import { OrganizationService } from "../organisation/organisation.service";
 import { PostService } from "../post/post.service";

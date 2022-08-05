@@ -1,8 +1,8 @@
 import { CacheModule, Module } from "@nestjs/common";
 import setupSwagger from "./catalog.swagger";
 import { ProductModule } from "../product/product.module";
-import { TaxonomyModule } from "../collection/taxonomy.module";
-import { TaxonomyController } from "../collection/taxonomy.controller";
+import { TaxonomyModule } from "../taxonomy/taxonomy.module";
+import { TaxonomyController } from "../taxonomy/taxonomy.controller";
 import { PostModule } from "../post/post.module";
 import { JwtModule } from "@nestjs/jwt";
 import config from "../config";

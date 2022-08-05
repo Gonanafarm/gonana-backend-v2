@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsDate, IsObject, ValidateIf, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsDate, IsObject, ValidateIf, IsOptional, IsNumber } from 'class-validator';
 
 export class UpdateOrganizationDto {
 
@@ -105,4 +105,29 @@ export class UpdateOrganizationDto {
     address: string;
 
 
+}
+
+
+export class AttachAccountDto {
+    @IsString()
+    @ApiProperty({})
+    business_name: string;
+    @IsString()
+    @ApiProperty({})
+    settlement_bank: string;
+    @IsString()
+    @ApiProperty({})
+    account_number: string;
+    @IsNumber()
+    @ApiProperty({ default: 0 })
+    percentage_charge: number;
+    @IsString()
+    @ApiProperty({})
+    primary_contact_email: string;
+    @IsString()
+    @ApiProperty({})
+    primary_contact_name: string;
+    @IsString()
+    @ApiProperty({})
+    primary_contact_phone: string;
 }

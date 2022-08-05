@@ -10,7 +10,7 @@ import { Request } from "express";
 @ApiTags("events")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller("catalog/events")
+@Controller("api/catalog/events")
 export class EventController {
 
   constructor(private readonly taxonomyService: EventService) { }

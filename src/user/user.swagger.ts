@@ -4,14 +4,12 @@ import config from "../config";
 import { setupSwaggerDocument } from "../common/swagger";
 
 export default setupSwaggerDocument(
-  "catalog",
+  "account",
   new DocumentBuilder().addBearerAuth().addServer(config.host)
-    .setTitle("Catalog Docs")
-    .setDescription("Basic store catalog management features")
+    .setTitle("Account Docs")
+    .setDescription("Basic user authorization features")
     .setVersion("1.0")
-    .addTag("product")
-    .addTag("taxonomy")
-    .addTag("events")
-    .addTag("posts")
+    .setBasePath("")
+    .addTag("account")
     .build(),
 );

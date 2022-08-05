@@ -16,7 +16,7 @@ export class GenericService<T extends Document> implements ServiceInterface {
 
     updateItem = async (item_id: string, updateDoc: any) => {
         try {
-            const updated = await this.dataModel.findByIdAndUpdate(item_id, { ...updateDoc }, { new: true });
+            const updated = await this.dataModel.findByIdAndUpdate(item_id, { ...updateDoc, }, { new: true });
             if (updated == null || updated == undefined) {
                 throw ResourceNotFoundException();
             }

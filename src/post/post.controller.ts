@@ -11,7 +11,7 @@ import { Request } from "express";
 @ApiTags("posts")
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-@Controller("catalog/posts")
+@Controller("api/catalog/posts")
 export class PostController {
 
   constructor(private readonly dataService: PostService) { }

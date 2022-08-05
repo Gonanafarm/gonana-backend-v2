@@ -1,5 +1,5 @@
 /* eslint-disable no-useless-catch */
-import { Controller, Injectable, Module } from "@nestjs/common";
+import { Controller, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { PostSchema, Post, PostDocument } from "./post.schema";
