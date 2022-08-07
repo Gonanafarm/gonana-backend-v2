@@ -3,7 +3,6 @@ import {JwtService} from "@nestjs/jwt";
 
 import {comparePassword} from "../common/auth";
 import {UserService} from "../user/user.service";
-import {User} from "../user/user.interface";
 import {LoginCredentialsException} from "../common/exceptions";
 
 import {
@@ -12,7 +11,7 @@ import {
   ResetPasswordDto,
   SignUpDto,
 } from "./auth.interface";
-import { UserDocument } from "../user/user.schema";
+import { User, UserDocument } from "../user/user.schema";
 
 @Injectable()
 export class AuthService {
@@ -39,7 +38,8 @@ export class AuthService {
     };
   }
 
-  async login(user?: User) {
+  // user jwt decode obj
+  async login(user?: any) {
     return {
       token: this.jwtService.sign({...user?.getPublicData()}, {subject: `${user?.id}`}),
       user: user?.getPublicData(),

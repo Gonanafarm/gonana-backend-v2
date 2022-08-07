@@ -7,7 +7,7 @@ import {
   IsString,
 } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
-import { User } from "../user/user.interface";
+import { UserPublicData } from "../user/user.dto";
 
 // TODO add mixins like EmailField, PasswordField
 
@@ -47,7 +47,7 @@ export class LoginDto {
 export class AuthenticatedUser {
   @ApiProperty({})
   token: string;
-  user: User
+  user: UserPublicData
 }
 
 export class ForgottenPasswordDto {

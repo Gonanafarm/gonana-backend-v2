@@ -12,6 +12,7 @@ import { ApiBearerAuth, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AttachAccountDto } from "../organisation/organisation.dto";
 import { UserService } from "./user.service";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { UserPublicData } from "./user.dto";
 
 @ApiTags("account")
 @ApiBearerAuth()
@@ -30,7 +31,7 @@ export class UserController {
 
 
   @Get("me/profile")
-  @ApiResponse({})
+  @ApiResponse({type: UserPublicData})
   async getProfile(@Req() req: Request) {
     //@ts-ignore
     let profileDoc = await this.userService.findById(req.user.id);

@@ -23,6 +23,7 @@ import { getOriginHeader } from "../common/auth";
 import { ApiBearerAuth, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AppRequest } from "../generic/generic.interface";
 import { UserService } from "../user/user.service";
+import { UserPublicData } from "../user/user.dto";
 
 @ApiTags("auth")
 @ApiBearerAuth()
@@ -51,7 +52,7 @@ export class AuthController {
 
   @UseGuards(AuthGuard())
   @Get("me")
-  @ApiResponse({})
+  @ApiResponse({type:UserPublicData})
   async getProfile(@Req() req: Request) {
     //@ts-ignore
     let profileDoc = await this.userService.findById(req.user.id);

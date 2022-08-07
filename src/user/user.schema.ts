@@ -2,18 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { ApiProperty } from "@nestjs/swagger";
 import * as mongoose from "mongoose";
 import { Document } from "mongoose"
-
-import { PaystackBankIntegrationSchema } from "./user.interface";
-
-export type UserPublicData = Readonly<{
-  id: string;
-  email: string;
-  isActive: boolean;
-  paystack_int: any;
-  subscription_plan: any;
-  subscription_status: any;
-  subscription_transaction: any;
-}>;
+import { UserPublicData } from "./user.dto";
 
 export type UserMethods = {
   getPublicData: () => UserPublicData;
@@ -22,7 +11,41 @@ export type UserMethods = {
 export type UserDocument = User & Document & UserMethods;
 
 
-const paystackIntSchema = SchemaFactory.createForClass(PaystackBankIntegrationSchema);
+@Schema({})
+export class PaystackBankIntegrationSchema {
+
+  business_name: string;
+
+  account_number: string;
+
+  percentage_charge: Number;
+
+  settlement_bank: string;
+
+  currency: string;
+
+  bank: Number;
+
+  integration: Number;
+
+  domain: string;
+
+  subaccount_code: string;
+
+  is_verified: boolean;
+
+  settlement_schedule: string;
+
+  active: boolean;
+
+  migrate: boolean;
+
+  id: Number;
+}
+
+
+
+
 
 
 @Schema({
