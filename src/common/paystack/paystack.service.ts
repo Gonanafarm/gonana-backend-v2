@@ -1,5 +1,5 @@
-import axios, { AxiosResponse } from "axios";
-import { AttachAccountDto } from "src/organisation/organisation.dto";
+import axios from "axios";
+import { AttachAccountDto } from "../../organisation/organisation.dto";
 const SEC_KEY = "Bearer sk_test_38b346b48237c58df454d070f9dda48f61d83114"
 
 export class PaystackActions {
@@ -50,7 +50,7 @@ export class PaystackActions {
             method: "post",
             url: "https://api.paystack.co/transaction/initialize",
             headers: {
-                'Authorization': SEC_KEY,
+                'Authorization': process.env.sk_live_paystack ?? SEC_KEY,
                 'Content-Type': 'application/json'
             },
             data: JSON.stringify(data)
@@ -72,11 +72,11 @@ export class PaystackActions {
             method: "get",
             url: `https://api.paystack.co/transaction/verify/${REFERENCE}`,
             headers: {
-                'Authorization': SEC_KEY,
+                'Authorization': process.env.sk_live_paystack ?? SEC_KEY,
                 'Content-Type': 'application/json'
             }
         });
-    
+
         if (response.status == 201 || response.status == 200) {
             if (response.data.status == true && response.data.data.status == "success") {
                 return true;
