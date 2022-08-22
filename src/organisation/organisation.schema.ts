@@ -17,16 +17,26 @@ export class Organization {
   @Prop({ type: mongoose.SchemaTypes.ObjectId, required: false, unique: true })
   publisher_id: string;
 
+  @Prop({ type: mongoose.SchemaTypes.String, default: "initial" })
+  status: string;
+
   // Meta
   @Prop({ type: mongoose.SchemaTypes.String })
   @ApiProperty()
   display_name: string;
   @Prop({ type: mongoose.SchemaTypes.String })
   @ApiProperty()
+  caption: string;
+  @Prop({ type: mongoose.SchemaTypes.String })
+  @ApiProperty()
   handle: string;
   @Prop({ type: mongoose.SchemaTypes.String, unique: true })
   @ApiProperty()
   preferred_domain: string;
+
+  @Prop({ type: mongoose.SchemaTypes.String, unique: true })
+  @ApiProperty()
+  custom_domain: string;
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
@@ -57,11 +67,18 @@ export class Organization {
   website_handle: string;
 
 
-
   // Media
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
   image: string;
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.String })
+  logo: string;
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.String })
+  domain: string;
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
@@ -80,6 +97,27 @@ export class Organization {
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
   address: string;
+
+  // Integrations
+  @Prop({ type: mongoose.SchemaTypes.String})
+  @ApiProperty()
+  google_analytics_code: string;
+
+  @Prop({ type: mongoose.SchemaTypes.String })
+  @ApiProperty()
+  fb_pixels_code: string;
+
+  @Prop({ type: mongoose.SchemaTypes.String })
+  @ApiProperty()
+  adsense_code: string;
+
+  //going live
+  @Prop({ type: mongoose.SchemaTypes.String })
+  @ApiProperty()
+  fb_live_url: string;
+  @Prop({ type: mongoose.SchemaTypes.String })
+  @ApiProperty()
+  youtube_live_url: string;
 }
 
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);

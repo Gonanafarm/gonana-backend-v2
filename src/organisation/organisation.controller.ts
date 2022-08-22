@@ -1,8 +1,7 @@
 import { Body, Controller, Delete, Get, Headers, Inject, Module, Param, Post, Put, Query, Req, UseGuards } from "@nestjs/common";
-import { Schema } from "@nestjs/mongoose";
 import { ApiTags, ApiResponse, ApiBearerAuth, ApiHeader } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { UpdateOrganizationDto } from "./organisation.dto";
+import { UpdateOrganisationCustomDomain, UpdateOrganisationIntegrations, UpdateOrganisationPreferredDomain, UpdateOrganizationDto } from "./organisation.dto";
 import { Organization } from "./organisation.schema";
 import { OrganizationService } from "./organisation.service";
 import { Request } from "express";
@@ -34,7 +33,7 @@ export class OrgController {
 
   @Put()
   @ApiResponse({ status: 200, description: 'Updates item record', isArray: false, type: Organization })
-  async update( @Body() body: UpdateOrganizationDto, @Req() req: Request) {
+  async update(@Body() body: UpdateOrganizationDto, @Req() req: Request) {
     console.log(body)
     let publisher_id = "";
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -43,4 +42,37 @@ export class OrgController {
     return await this.orgService.updateItem(publisher_id, body);
   }
 
+
+  @Put("/preferred-domain")
+  @ApiResponse({ status: 200, description: 'Updates preferred domain name', isArray: false, type: Organization })
+  async updatePreferredDomain(@Body() body: UpdateOrganisationPreferredDomain, @Req() req: Request) {
+    console.log(body)
+    let publisher_id = "";
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    publisher_id = req.user?.sub ?? "";
+    return await this.orgService.updateItem(publisher_id, body);
+  }
+
+  @Put("/custom-domain")
+  @ApiResponse({ status: 200, description: 'Updates custom domain for org', isArray: false, type: Organization })
+  async updateCustomDomain(@Body() body: UpdateOrganisationCustomDomain, @Req() req: Request) {
+    console.log(body)
+    let publisher_id = "";
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    publisher_id = req.user?.sub ?? "";
+    return await this.orgService.updateItem(publisher_id, body);
+  }
+
+  @Put("/integrations")
+  @ApiResponse({ status: 200, description: 'Updates organisation integrations', isArray: false, type: Organization })
+  async updateIntegrations(@Body() body: UpdateOrganisationIntegrations, @Req() req: Request) {
+    console.log(body)
+    let publisher_id = "";
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    publisher_id = req.user?.sub ?? "";
+    return await this.orgService.updateItem(publisher_id, body);
+  }
 }

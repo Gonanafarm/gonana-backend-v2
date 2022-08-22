@@ -5,6 +5,12 @@ import { isNull } from 'lodash';
 enum PostType {
     SERMON = 'sermon',
     ARTICLE = 'article',
+    LIBRARYFILE = 'library-file'
+}
+
+enum PostStatus {
+    PUBLISHED = 'published',
+    DRAFT = 'draft',
 }
 
 class MediaAttachment {
@@ -12,6 +18,11 @@ class MediaAttachment {
     @IsString()
     @IsOptional()
     status: string;
+
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
+    size: number;
 
     @ApiProperty()
     @IsString()
@@ -60,7 +71,7 @@ export class PublishPostDto {
     @IsOptional()
     type: string;
 
-    @ApiProperty({})
+    @ApiProperty({ enum: PostStatus, default: "draft" })
     @IsString()
     @IsOptional()
     status: string;

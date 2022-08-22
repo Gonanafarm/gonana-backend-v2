@@ -16,4 +16,12 @@ export class OrganizationService extends GenericService<OrganizationDocument> {
   updateItem = (publisher_id: string, updateDoc: any): Promise<any> => {
     return this.orgModel.updateOne({ publisher_id: publisher_id }, { ...updateDoc }, { upsert: true, new: true, setDefaultsOnInsert: true }).exec()
   }
+
+  activateOrganization = (publisher_id: string): Promise<any> => {
+    return this.orgModel.updateOne({ publisher_id: publisher_id }, { status: "activated" }, { upsert: true, new: true, setDefaultsOnInsert: true }).exec()
+  }
+
+  disableOrganization = (publisher_id: string): Promise<any> => {
+    return this.orgModel.updateOne({ publisher_id: publisher_id }, { status: "deactivated" }, { upsert: true, new: true, setDefaultsOnInsert: true }).exec()
+  }
 }

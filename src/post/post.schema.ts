@@ -12,6 +12,10 @@ class MediaAttachment {
   status: string;
 
   @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.Number })
+  size: number;
+
+  @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
   file_type: string;
 

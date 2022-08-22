@@ -22,12 +22,6 @@ export class UpdateOrganizationDto {
     @IsString()
     @IsOptional()
     @ApiProperty({})
-    preferred_domain: string;
-
-
-    @IsString()
-    @IsOptional()
-    @ApiProperty({})
     about: string;
 
 
@@ -78,6 +72,10 @@ export class UpdateOrganizationDto {
     @ApiProperty({})
     image: string;
 
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    logo: string;
 
     @IsString()
     @IsOptional()
@@ -104,6 +102,9 @@ export class UpdateOrganizationDto {
     @ApiProperty({})
     address: string;
 
+    // going live
+    fb_live_url: string;
+    youtube_live_url: string;
 
 }
 
@@ -130,4 +131,37 @@ export class AttachAccountDto {
     @IsString()
     @ApiProperty({})
     primary_contact_phone: string;
+}
+
+
+export class UpdateOrganisationPreferredDomain {
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    preferred_domain: string;
+}
+
+export class UpdateOrganisationCustomDomain {
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    custom_domain: string;
+}
+
+export class UpdateOrganisationIntegrations {
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    google_analytics_code: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    fb_pixels_code: string;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    adsense_code: string;
 }

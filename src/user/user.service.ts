@@ -16,17 +16,15 @@ import { paystackActions } from "../common/paystack/paystack.service";
 import { AttachAccountDto } from "../organisation/organisation.dto";
 import { UserDocument } from "./user.schema";
 import { appNotifications } from "../firebase";
+import { OrganizationService } from "../organisation/organisation.service";
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel("User") private readonly userModel: Model<UserDocument>,
     private readonly userMailer: UserMailerService,
+    private readonly orgService: OrganizationService,
   ) { }
-
-
-
-
 
 
 
@@ -184,11 +182,14 @@ export class UserService {
   async enableAccountSubscriptionStatus(account_email: string, plan: string, transactionObj: any) {
     // notify usuer on event success
     try {
-      await this.userModel
+      const doc = await this.userModel
         .findOneAndUpdate({ email: account_email }, {
           subscription_status: "paid", subscription_transaction: transactionObj,
           subscription_plan: plan
         });
+
+      // actives org for public use
+      await this.orgService.activateOrganization(doc?._id ?? doc?.id ?? "");
 
       // sent notification
       appNotifications.notifyUser("Your account's plan has been activated. Enjoy amazing features on more", account_email, "subscription.enabled");
@@ -200,10 +201,13 @@ export class UserService {
   async disableAccountSubscriptionStatus(account_email: string, transactionObj: any) {
     // notify usuer on event success
     try {
-      await this.userModel
+      const doc = await this.userModel
         .findOneAndUpdate({ email: account_email }, {
           subscription_status: "failed", subscription_transaction: transactionObj,
         });
+
+      // actives org for public use
+      await this.orgService.disableOrganization(doc?._id ?? doc?.id ?? "");
 
       // sent notification
       appNotifications.notifyUser("Your account's subscription have been disabled due to lack of renewal.", account_email, "subscription.closed");
