@@ -17,6 +17,7 @@ export class Organization {
   @Prop({ type: mongoose.SchemaTypes.ObjectId, required: false, unique: true })
   publisher_id: string;
 
+  @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String, default: "initial" })
   status: string;
 
