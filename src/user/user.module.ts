@@ -7,13 +7,12 @@ import setupSwagger from "./user.swagger"
 import { UserController } from "./user.controller";
 import { JwtModule } from "@nestjs/jwt";
 import config from "../config";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { OrganizationModule } from "../organisation/organisation.module";
+
 @Module({
-  imports: [UserModel, OrganizationModule, JwtModule.register({
+  imports: [UserModel, JwtModule.register({
     secret: config.auth.secret,
     signOptions: { expiresIn: config.auth.jwtTokenExpireInSec },
-  }), JwtAuthGuard,],
+  }), ],
   controllers: [UserController],
   providers: [UserMailerService, UserService],
   exports: [UserService],

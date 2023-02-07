@@ -2,8 +2,7 @@ import { Prop, Schema, raw, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import * as mongoose from 'mongoose';
 import { Document } from 'mongoose';
-
-export type TaxonomyDocument = Taxonomy & Document;
+export type MemberDocument = Request & Document;
 
 @Schema({
   timestamps: {
@@ -11,47 +10,45 @@ export type TaxonomyDocument = Taxonomy & Document;
     updatedAt: 'updated_at', // and `updated_at` to store the last updated date
   },
 })
-export class Taxonomy {
-  @Prop({ type: mongoose.SchemaTypes.ObjectId, required: false })
+export class Member {
+  @Prop({ type:  mongoose.SchemaTypes.ObjectId })
   publisher_id: string;
-  @Prop({ type: mongoose.SchemaTypes.ObjectId, required: true })
-  branch_id: string;
-  @Prop({ type: mongoose.SchemaTypes.ObjectId, required: true })
+
+  @Prop({ type: mongoose.SchemaTypes.ObjectId, index: true })
   org_id: string;
-  @Prop({
-    type: mongoose.SchemaTypes.String,
-    default: 'manual',
-  })
-  @ApiProperty()
-  type: string;
 
-  @Prop({
-    type: mongoose.SchemaTypes.String,
-    default: 'global',
-  })
-  @ApiProperty()
-  Taxonomy_context: string;
+  @Prop({ type: mongoose.SchemaTypes.ObjectId, index: true })
+  user_id: string;
 
-  // biodata
-  @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
-  @ApiProperty()
-  name: string;
+  user_level: string;
+
   @Prop({ type: mongoose.SchemaTypes.String })
-  @ApiProperty()
-  handle: string;
+  user_role: string;
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
-  description: string;
+  fullname: string;
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
-  parent_id: string;
+  phone: string;
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
-  image: string;
+  email: string;
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.String })
+  status: string;
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.String })
+  created_at: string;
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.String })
+  updated_at: string;
 }
 
-export const TaxonomySchema = SchemaFactory.createForClass(Taxonomy);
+export const MemberSchema = SchemaFactory.createForClass(Member);

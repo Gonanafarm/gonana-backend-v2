@@ -2,8 +2,6 @@ import { Module } from "@nestjs/common";
 import { ProductController } from "../product/product.controller";
 import setupSwagger from "./catalog.swagger";
 import { ProductModule } from "../product/product.module";
-import { TaxonomyModule } from "../taxonomy/taxonomy.module";
-import { TaxonomyController } from "../taxonomy/taxonomy.controller";
 import { PostModule } from "../post/post.module";
 import { PostController } from "../post/post.controller";
 import { JwtModule } from "@nestjs/jwt";
@@ -14,9 +12,10 @@ import { EventModule } from "../events/events.module";
 import { OrganizationModule } from "../organisation/organisation.module";
 import { OrgController } from "../organisation/organisation.controller";
 
+
 @Module({
-  controllers: [ProductController, TaxonomyController, PostController, EventController, OrgController],
-  imports: [ProductModule, TaxonomyModule, PostModule, JwtModule.register({
+  controllers: [ProductController, PostController, EventController, OrgController],
+  imports: [ProductModule,  PostModule, JwtModule.register({
     secret: config.auth.secret,
     signOptions: { expiresIn: config.auth.jwtTokenExpireInSec },
   }), JwtAuthGuard, EventModule, OrganizationModule]

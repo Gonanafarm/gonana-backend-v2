@@ -32,7 +32,7 @@ const DEV_TRANSPORTER = {
     PublicModule,
     SiteCatalogModule,
     CatalogModule,
-    MongooseModule.forRoot(config.db),
+    MongooseModule.forRoot(config.db??""),
     JwtModule.register({
       secret: "joshua",
       signOptions: { expiresIn: config.auth.jwtTokenExpireInSec },
@@ -42,7 +42,7 @@ const DEV_TRANSPORTER = {
       useFactory: () => ({
         transport: DEV_TRANSPORTER,
         defaults: {
-          from: config.mail.from,
+          from:{address:"", name:`${config.mail.from??""}`},
         },
         template: {
           dir: __dirname + '/../templates',

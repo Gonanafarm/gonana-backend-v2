@@ -5,7 +5,7 @@ import { setupSwaggerDocument } from "../common/swagger";
 
 export default setupSwaggerDocument(
   "catalog",
-  new DocumentBuilder().addBearerAuth().addServer(config.host)
+  new DocumentBuilder().addBearerAuth().addServer(config.host??"")
     .setTitle("Catalog Docs")
     .setDescription("Basic store catalog management features")
     .setVersion("1.0")

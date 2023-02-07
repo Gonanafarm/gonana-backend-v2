@@ -1,41 +1,49 @@
-import { Model } from "mongoose";
-import { v4 as uuid } from "uuid";
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import config from "../config";
-import { hashPassword } from "../common/auth";
+import { Model } from 'mongoose';
+import { v4 as uuid } from 'uuid';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import config from '../config';
+import { hashPassword } from '../common/auth';
 import {
   UserNotFoundException,
   EmailAlreadyUsedException,
   PasswordResetTokenInvalidException,
   ActivationTokenInvalidException,
-} from "../common/exceptions";
-
-import { UserMailerService } from "./user.mailer.service";
-import { paystackActions } from "../common/paystack/paystack.service";
-import { AttachAccountDto } from "../organisation/organisation.dto";
-import { UserDocument } from "./user.schema";
-import { appNotifications } from "../firebase";
-import { OrganizationService } from "../organisation/organisation.service";
+} from '../common/exceptions';
+import { UserMailerService } from './user.mailer.service';
+import { UserDocument } from './user.schema';
+import { GenericService } from 'src/generic/generic.service';
+import { UserModule } from './user.module';
 
 @Injectable()
-export class UserService {
+export class UserService extends GenericService<UserDocument> {
   constructor(
-    @InjectModel("User") private readonly userModel: Model<UserDocument>,
+    @InjectModel('User') private readonly userModel: Model<UserDocument>,
     private readonly userMailer: UserMailerService,
-    private readonly orgService: OrganizationService,
-  ) { }
-
-
+  ) {
+    super(userModel);
+  }
 
   /**
    * Creates user and sends activation email.
    * @throws duplicate key error when
    */
-  async create(email: string, password: string, origin: string): Promise<UserDocument> {
+  async createAccount(
+    first_name: string,
+    last_name: string,
+    phone: string,
+    email: string,
+    password: string,
+    origin: string,
+    account_type:string
+  ): Promise<UserDocument> {
     try {
       const user = await this.userModel.create({
         email: email.toLowerCase(),
+        first_name,
+        last_name,
+        phone,
+        account_type,
         password: await hashPassword(password),
         activationToken: uuid(),
         activationExpires: Date.now() + config.auth.activationExpireInMs,
@@ -48,10 +56,9 @@ export class UserService {
         origin,
       );
 
-      appNotifications.notifyUser("Your account have been created; Please make time to update your profile and upgrade.", user.email, "account.created");
-
       return user;
-    } catch {
+    } catch (e) {
+      console.log(e);
       throw EmailAlreadyUsedException();
     }
   }
@@ -69,7 +76,7 @@ export class UserService {
   async findByEmail(email: string): Promise<UserDocument> {
     const user = await this.userModel.findOne(
       { email: email.toLowerCase() },
-      "+password",
+      '+password',
     );
 
     if (!user) {
@@ -97,7 +104,7 @@ export class UserService {
           runValidators: true,
         },
       )
-      .where("activationExpires")
+      .where('activationExpires')
       .gt(Date.now())
       .exec();
 
@@ -114,6 +121,7 @@ export class UserService {
         email: email.toLowerCase(),
       },
       {
+        // set reset token
         passwordResetToken: uuid(),
         passwordResetExpires: Date.now() + config.auth.passwordResetExpireInMs,
       },
@@ -155,7 +163,7 @@ export class UserService {
           runValidators: true,
         },
       )
-      .where("passwordResetExpires")
+      .where('passwordResetExpires')
       .gt(Date.now())
       .exec();
 
@@ -167,67 +175,4 @@ export class UserService {
 
     return user;
   }
-
-  async attachBankAccount(dto: AttachAccountDto, user_id: string): Promise<any> {
-    try {
-      let paystackAddSubaccountResponse = await paystackActions.addSubaccount(dto);
-      await this.userModel
-        .findOneAndUpdate({ _id: user_id }, { paystack_int: paystackAddSubaccountResponse.data });
-      return "Attached bank account to profile";
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  async enableAccountSubscriptionStatus(account_email: string, plan: string, transactionObj: any) {
-    // notify usuer on event success
-    try {
-      const doc = await this.userModel
-        .findOneAndUpdate({ email: account_email }, {
-          subscription_status: "paid", subscription_transaction: transactionObj,
-          subscription_plan: plan
-        });
-
-      // actives org for public use
-      await this.orgService.activateOrganization(doc?._id ?? doc?.id ?? "");
-
-      // sent notification
-      appNotifications.notifyUser("Your account's plan has been activated. Enjoy amazing features on more", account_email, "subscription.enabled");
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  async disableAccountSubscriptionStatus(account_email: string, transactionObj: any) {
-    // notify usuer on event success
-    try {
-      const doc = await this.userModel
-        .findOneAndUpdate({ email: account_email }, {
-          subscription_status: "failed", subscription_transaction: transactionObj,
-        });
-
-      // actives org for public use
-      await this.orgService.disableOrganization(doc?._id ?? doc?.id ?? "");
-
-      // sent notification
-      appNotifications.notifyUser("Your account's subscription have been disabled due to lack of renewal.", account_email, "subscription.closed");
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  async setupSubscriptiion(email: string, plan_code: string) {
-    try {
-      let paystackCreateTransactionResponse = await paystackActions.initSubscriptionTransaction({
-        email: email,
-        amount: 5000,
-        plan: plan_code
-      });
-      return paystackCreateTransactionResponse
-    } catch (err) {
-      console.log(err, " Error ")
-      throw err;
-    }
-  }
-
 }

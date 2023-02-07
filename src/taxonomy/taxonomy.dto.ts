@@ -1,78 +1,80 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsDate, IsObject, Validate, IsDateString, IsNumber, IsEmpty, IsArray, ValidateIf, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsDate,
+  IsObject,
+  Validate,
+  IsDateString,
+  IsNumber,
+  IsEmpty,
+  IsArray,
+  ValidateIf,
+  IsOptional,
+  IsMongoId,
+  IsEnum,
+} from 'class-validator';
 import { isNull } from 'lodash';
 
+enum TaxonomyType {
+  MANUAL = 'manual',
+  AUTOMATIC = 'automatic',
+}
+
+enum TaxonomyContext {
+  POS = 'pos',
+  ONLINE = 'online',
+  GLOBAL="global"
+}
+
 export class PublishTaxonomyDto {
-    @IsString()
-    @IsOptional()
-    @ApiProperty({ default: "category" })
-    type: string;
+  @ApiProperty({})
+  @IsMongoId()
+  branch_id: string;
 
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({})
-    name: string;
+  @ApiProperty({})
+  @IsMongoId()
+  org_id: string;
 
-    @IsString()
-    @ApiProperty({})
-    @IsOptional()
-    description: string;
+  @IsEnum(TaxonomyType)
+  @ApiProperty({ default: 'manual', enum: TaxonomyType })
+  type: string;
 
-    @IsString()
-    @IsOptional()
-    @ApiProperty({ required: false })
-    parent_id: string;
+  @IsEnum(TaxonomyContext)
+  @ApiProperty({ default: 'pos', enum: TaxonomyContext })
+  Taxonomy_context: string;
 
-    @IsString()
-    @IsOptional()
-    @ApiProperty({ required: false })
-    image: string;
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({})
+  name: string;
 
-    @IsString()
-    @ApiProperty({ required: false })
-    @IsOptional()
-    as: string;
+  @IsString()
+  @ApiProperty({})
+  @IsOptional()
+  description: string;
 
-    @IsString()
-    @ApiProperty({ required: false, default: "general" })
-    @IsOptional()
-    for: string;
+  @IsString()
+  @IsOptional()
+  @ApiProperty({ required: false })
+  parent_id: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({ required: false })
+  image: string;
 }
 
 export class UpdateTaxonomyDto {
+ 
+  @IsString()
+  @IsOptional()
+  @ApiProperty({})
+  name: string;
 
-    @IsString()
-    @IsOptional()
-    @ApiProperty({ default: "category" })
-    type: string;
+  @IsString()
+  @ApiProperty({})
+  @IsOptional()
+  description: string;
 
-    @IsString()
-    @IsOptional()
-    @ApiProperty({})
-    name: string;
-
-    @IsString()
-    @ApiProperty({})
-    @IsOptional()
-    description: string;
-
-    @IsString()
-    @IsOptional()
-    @ApiProperty({ required: false })
-    parent_id: string;
-
-    @IsString()
-    @IsOptional()
-    @ApiProperty({ required: false })
-    image: string;
-
-    @IsString()
-    @ApiProperty({ required: false })
-    @IsOptional()
-    as: string;
-
-    @IsString()
-    @ApiProperty({ required: false, default: "general" })
-    @IsOptional()
-    for: string;
 }

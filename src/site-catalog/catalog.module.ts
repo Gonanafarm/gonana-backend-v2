@@ -1,8 +1,6 @@
 import { CacheModule, Module } from "@nestjs/common";
 import setupSwagger from "./catalog.swagger";
 import { ProductModule } from "../product/product.module";
-import { TaxonomyModule } from "../taxonomy/taxonomy.module";
-import { TaxonomyController } from "../taxonomy/taxonomy.controller";
 import { PostModule } from "../post/post.module";
 import { JwtModule } from "@nestjs/jwt";
 import config from "../config";
@@ -11,6 +9,7 @@ import { EventModule } from "../events/events.module";
 import { OrganizationModule } from "../organisation/organisation.module";
 import { OrgController } from "../organisation/organisation.controller";
 import { SiteController } from "./catalog.controller";
+import { TaxonomyModule } from "src/taxonomy/taxonomy.module";
 
 @Module({
   controllers: [SiteController],

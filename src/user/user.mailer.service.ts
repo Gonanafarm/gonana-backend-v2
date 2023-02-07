@@ -1,11 +1,11 @@
-import { Injectable } from "@nestjs/common";
-import { MailerService } from "@nest-modules/mailer";
+import { Injectable } from '@nestjs/common';
+import { MailerService } from '@nest-modules/mailer';
 
-import config from "../config";
+import config from '../config';
 
 @Injectable()
 export class UserMailerService {
-  constructor(private readonly mailerService: MailerService) { }
+  constructor(private readonly mailerService: MailerService) {}
 
   sendActivationMail(
     email: string,
@@ -17,7 +17,7 @@ export class UserMailerService {
       this.mailerService
         .sendMail({
           to: email,
-          subject: "Activate your account",
+          subject: 'Activate your account',
           template: 'activate-account', // The `.pug`, `.ejs` or `.hbs` extension is appended automatically.
           context: {
             link: `${origin}/activate/${userId}/${activationToken}\n`,
@@ -32,18 +32,16 @@ export class UserMailerService {
     passwordResetToken: string,
     origin: string,
   ) {
-    if (!config.isTest()) {
-      this.mailerService
-        .sendMail({
-          to,
-          subject: "Reset your password",
-          text: `You are receiving this email because you (or someone else) have requested the reset of the password for your account.\n
-Please click on the following link, or paste this into your browser to complete the process:\n
-${origin}/auth/reset-password/${passwordResetToken}\n
-If you did not request this, please ignore this email and your password will remain unchanged.\n`,
-        })
-        .catch();
-    }
+    this.mailerService
+      .sendMail({
+        to,
+        subject: 'Reset your password',
+        template: 'reset-password',
+        context: {
+          resetLink: `${origin}/reset-password/${passwordResetToken}`,
+        },
+      })
+      .catch(console.log);
   }
 
   sendResetPasswordMail(email: string) {
@@ -51,8 +49,11 @@ If you did not request this, please ignore this email and your password will rem
       this.mailerService
         .sendMail({
           to: email,
-          subject: "Your password has been changed",
-          text: `Hello,\n\nThis is a confirmation that the password for your account ${email} has just been changed.\n`,
+          template: 'on-password-reset',
+          subject: 'Your password has been changed',
+          context: {
+            message: `This is a confirmation that the password for your account ${email} has just been changed.\n`,
+          },
         })
         .catch();
     }
