@@ -3,9 +3,8 @@ import { IsString, IsNotEmpty, IsDate, IsObject, Validate, IsDateString, IsNumbe
 import { isNull } from 'lodash';
 
 enum PostType {
-    SERMON = 'sermon',
-    ARTICLE = 'article',
-    LIBRARYFILE = 'library-file'
+    PRODUCT = 'product',
+    POST = 'post',
 }
 
 enum PostStatus {
@@ -60,13 +59,7 @@ export class PublishPostDto {
     @IsNotEmpty()
     body: string;
 
-    @ApiProperty({ required: true })
-    @IsString()
-    @IsNotEmpty()
-    short_description: string;
-
-
-    @ApiProperty({ enum: PostType, default: "article" })
+    @ApiProperty({ enum: PostType, default: "post" })
     @IsString()
     @IsOptional()
     type: string;
@@ -104,11 +97,6 @@ export class UpdatePostDto {
     @IsString()
     @IsOptional()
     body: string;
-
-    @ApiProperty({})
-    @IsString()
-    @IsOptional()
-    short_description: string;
 
 
     @ApiProperty({ enum: PostType, default: "article" })

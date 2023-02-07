@@ -3,8 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Header,
-  Headers,
   Param,
   Post,
   Put,
@@ -20,10 +18,10 @@ import { Taxonomy } from './taxonomy.schema';
 import { TaxonomyService } from './taxonomy.service';
 import { Request } from 'express';
 
-@ApiTags('Taxonomy-controller')
+@ApiTags('taxonomy-controller')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('api/catalog/Taxonomy')
+@Controller('api/catalog/taxonomy')
 export class TaxonomyController {
   constructor(private readonly TaxonomyService: TaxonomyService) {}
 

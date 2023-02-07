@@ -1,42 +1,8 @@
 import { Prop, Schema, raw, SchemaFactory, } from "@nestjs/mongoose";
 import { ApiProperty } from "@nestjs/swagger";
 import * as mongoose from "mongoose";
-import { IAddress, IPerson } from "../common/interface";
 import {Document} from "mongoose"
-export type PostDocument = Post & Document;
-
-@Schema({})
-class MediaAttachment {
-  @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
-  status: string;
-
-  @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.Number })
-  size: number;
-
-  @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
-  file_type: string;
-
-  @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
-  source: string;
-
-  @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
-  source_id: string;
-
-  @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
-  content_url: string;
-  @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
-  name: string;
-}
-
-
-const attachmentDoc = SchemaFactory.createForClass(MediaAttachment);
+export type WalletTransactionDocument = WalletTransaction & Document;
 
 
 @Schema({
@@ -45,7 +11,7 @@ const attachmentDoc = SchemaFactory.createForClass(MediaAttachment);
     updatedAt: "updated_at", // and `updated_at` to store the last updated date
   }
 })
-export class Post {
+export class WalletTransaction {
   @Prop({ type: mongoose.SchemaTypes.String })
   publisher_id: string;
 
@@ -79,12 +45,6 @@ export class Post {
   })
   categories: string[];
 
-  @ApiProperty({ type: MediaAttachment, isArray: true })
-  @Prop({
-    type: [attachmentDoc]
-  })
-  attachments: MediaAttachment[];
-
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
   created_at: string;
@@ -97,5 +57,5 @@ export class Post {
 
 
 
-export const PostSchema = SchemaFactory.createForClass(Post);
+export const WalletTransactionSchema = SchemaFactory.createForClass(WalletTransaction);
 

@@ -53,7 +53,7 @@ const orderItemsAttachmentDoc = SchemaFactory.createForClass(OrderItem);
 export class Order {
 
   @Prop({ type: mongoose.SchemaTypes.String })
-  org_id: string;
+  farmer_id: string;
 
   @Prop({ type: mongoose.SchemaTypes.String, default: 'anonymous' })
   customer_id: string;

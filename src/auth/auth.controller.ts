@@ -27,7 +27,6 @@ import { getOriginHeader } from '../common/auth';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AppRequest } from '../generic/generic.interface';
 import { UserService } from '../user/user.service';
-import { MemberService } from '../member/member.service';
 
 @ApiTags('auth')
 @ApiBearerAuth()
@@ -36,7 +35,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
-    private readonly memberService: MemberService,
+
   ) {}
 
   @Get('activate/:userId/:activationToken')
@@ -65,13 +64,9 @@ export class AuthController {
     let profileDoc = await this.userService.findById(req.user.id);
     //@ts-ignore
     let publisher_id = req?.user?.id;
-    let memberlist = await this.memberService.getAuthUserMemberList(
-      publisher_id,
-    );
+
     return {
       user: profileDoc.getPublicData(),
-      //@ts-ignore
-      memberlist: memberlist,
     };
   }
 

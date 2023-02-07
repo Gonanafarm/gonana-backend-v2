@@ -9,9 +9,5 @@ export default setupSwaggerDocument(
     .setTitle("Catalog Docs")
     .setDescription("Basic store catalog management features")
     .setVersion("1.0")
-    .addTag("product")
-    .addTag("taxonomy")
-    .addTag("events")
-    .addTag("posts")
     .build(),
 );

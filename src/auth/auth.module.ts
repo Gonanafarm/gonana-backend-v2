@@ -9,11 +9,9 @@ import { JwtStrategy } from './jwt.strategy';
 import { AuthController } from './auth.controller';
 import setupSwagger from './auth.swagger';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { MemberModule } from '../member/member.module';
 
 @Module({
   imports: [
-    MemberModule,
     UserModule,
     JwtModule.register({
       secret: config.auth.secret,

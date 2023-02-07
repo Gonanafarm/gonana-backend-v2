@@ -13,7 +13,6 @@ import config from "./config";
 import { CatalogModule } from "./catalog/catalog.module";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
-import { SiteCatalogModule } from "./site-catalog/catalog.module";
 import { PublicModule } from "./public/public.module";
 
 const DEV_TRANSPORTER = {
@@ -30,7 +29,6 @@ const DEV_TRANSPORTER = {
     AuthModule,
     MorganModule,
     PublicModule,
-    SiteCatalogModule,
     CatalogModule,
     MongooseModule.forRoot(config.db??""),
     JwtModule.register({

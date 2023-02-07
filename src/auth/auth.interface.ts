@@ -10,7 +10,6 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserPublicData } from '../user/user.dto';
-import { Member } from '../member/member.schema';
 
 // TODO add mixins like EmailField, PasswordField
 
@@ -100,6 +99,4 @@ export class ResetPasswordDto {
 export class UserProfileResponse {
   @ApiProperty({ type: UserPublicData })
   user: UserPublicData;
-  @ApiProperty({ type: Member, isArray: true })
-  memberlist: Member[];
 }

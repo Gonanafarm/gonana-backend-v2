@@ -5,6 +5,9 @@ export default {
   host: process.env.API_HOST,
   paystack_secret:
     process.env.PAYSTACK_SECRET,
+
+  monify_secret:"XWGTCPLSR3U7G3AAAV1TC0TP2PZ04ZEP",
+  monify_key:"MK_TEST_MJGUL3L7CR",
   port: process.env.PORT,
   db: process.env.MONGO_URL,
   mail: {

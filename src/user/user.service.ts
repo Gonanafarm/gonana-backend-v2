@@ -1,25 +1,27 @@
-import { Model } from 'mongoose';
-import { v4 as uuid } from 'uuid';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import config from '../config';
-import { hashPassword } from '../common/auth';
+import {Model} from "mongoose";
+import {v4 as uuid} from "uuid";
+import {forwardRef, Inject, Injectable} from "@nestjs/common";
+import {InjectModel} from "@nestjs/mongoose";
+import config from "../config";
+import {hashPassword} from "../common/auth";
 import {
   UserNotFoundException,
   EmailAlreadyUsedException,
   PasswordResetTokenInvalidException,
   ActivationTokenInvalidException,
-} from '../common/exceptions';
-import { UserMailerService } from './user.mailer.service';
-import { UserDocument } from './user.schema';
-import { GenericService } from '../generic/generic.service';
-import { UserModule } from './user.module';
+} from "../common/exceptions";
+import {UserMailerService} from "./user.mailer.service";
+import {UserDocument} from "./user.schema";
+import {GenericService} from "../generic/generic.service";
+import {UserModule} from "./user.module";
+import {MonifyService} from "../monify/service";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
-    @InjectModel('User') private readonly userModel: Model<UserDocument>,
+    @InjectModel("User") private readonly userModel: Model<UserDocument>,
     private readonly userMailer: UserMailerService,
+    private readonly monifyService: MonifyService,
   ) {
     super(userModel);
   }
@@ -35,7 +37,7 @@ export class UserService extends GenericService<UserDocument> {
     email: string,
     password: string,
     origin: string,
-    account_type:string
+    account_type: string,
   ): Promise<UserDocument> {
     try {
       const user = await this.userModel.create({
@@ -49,12 +51,15 @@ export class UserService extends GenericService<UserDocument> {
         activationExpires: Date.now() + config.auth.activationExpireInMs,
       });
 
-      this.userMailer.sendActivationMail(
-        user.email,
-        user.id,
-        user.activationToken,
-        origin,
-      );
+      // research user account
+      this.monifyService.onCreateNewUser(user)
+
+      // this.userMailer.sendActivationMail(
+      //   user.email,
+      //   user.id,
+      //   user.activationToken,
+      //   origin,
+      // );
 
       return user;
     } catch (e) {
@@ -75,8 +80,8 @@ export class UserService extends GenericService<UserDocument> {
 
   async findByEmail(email: string): Promise<UserDocument> {
     const user = await this.userModel.findOne(
-      { email: email.toLowerCase() },
-      '+password',
+      {email: email.toLowerCase()},
+      "+password",
     );
 
     if (!user) {
@@ -104,7 +109,7 @@ export class UserService extends GenericService<UserDocument> {
           runValidators: true,
         },
       )
-      .where('activationExpires')
+      .where("activationExpires")
       .gt(Date.now())
       .exec();
 
@@ -163,7 +168,7 @@ export class UserService extends GenericService<UserDocument> {
           runValidators: true,
         },
       )
-      .where('passwordResetExpires')
+      .where("passwordResetExpires")
       .gt(Date.now())
       .exec();
 

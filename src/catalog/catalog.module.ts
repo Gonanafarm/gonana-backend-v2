@@ -1,24 +1,23 @@
 import { Module } from "@nestjs/common";
-import { ProductController } from "../product/product.controller";
 import setupSwagger from "./catalog.swagger";
-import { ProductModule } from "../product/product.module";
 import { PostModule } from "../post/post.module";
 import { PostController } from "../post/post.controller";
 import { JwtModule } from "@nestjs/jwt";
 import config from "../config";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { EventController } from "../events/events.controller";
-import { EventModule } from "../events/events.module";
-import { OrganizationModule } from "../organisation/organisation.module";
-import { OrgController } from "../organisation/organisation.controller";
-
+import { ReservedAccountModule } from "../reserved-account/module";
+import { OrderModule } from "../order/order.module";
+import { OrderController } from "../order/order.controller";
+import { ReservedAccountController } from "../reserved-account/controller";
+import { TaxonomyController } from "../taxonomy/taxonomy.controller";
+import { TaxonomyModule } from "../taxonomy/taxonomy.module";
 
 @Module({
-  controllers: [ProductController, PostController, EventController, OrgController],
-  imports: [ProductModule,  PostModule, JwtModule.register({
+  controllers: [ PostController, OrderController, ReservedAccountController, TaxonomyController],
+  imports: [ TaxonomyModule, ReservedAccountModule, OrderModule,  PostModule, JwtModule.register({
     secret: config.auth.secret,
     signOptions: { expiresIn: config.auth.jwtTokenExpireInSec },
-  }), JwtAuthGuard, EventModule, OrganizationModule]
+  }), JwtAuthGuard]
 })
 export class CatalogModule { }
 
