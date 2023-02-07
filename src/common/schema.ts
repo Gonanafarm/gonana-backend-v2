@@ -1,4 +1,4 @@
-import { Prop } from "@nestjs/mongoose";
+import { Prop, Schema } from "@nestjs/mongoose";
 import { ApiProperty } from "@nestjs/swagger";
 import * as mongoose from "mongoose";
 
@@ -35,4 +35,35 @@ export class GeoJson {
     @ApiProperty()
     @Prop({ type: mongoose.SchemaTypes.Number })
     longitude: number;
+}
+
+@Schema({})
+export class PaystackBankIntegrationSchema {
+  business_name: string;
+
+  account_number: string;
+
+  percentage_charge: Number;
+
+  settlement_bank: string;
+
+  currency: string;
+
+  bank: Number;
+
+  integration: Number;
+
+  domain: string;
+
+  subaccount_code: string;
+
+  is_verified: boolean;
+
+  settlement_schedule: string;
+
+  active: boolean;
+
+  migrate: boolean;
+
+  id: Number;
 }

@@ -27,7 +27,7 @@ import { getOriginHeader } from '../common/auth';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AppRequest } from '../generic/generic.interface';
 import { UserService } from '../user/user.service';
-import { MemberService } from 'src/member/member.service';
+import { MemberService } from '../member/member.service';
 
 @ApiTags('auth')
 @ApiBearerAuth()

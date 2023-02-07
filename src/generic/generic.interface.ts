@@ -1,6 +1,5 @@
 
 import { Request, Response, NextFunction } from 'express';
-import { User } from 'src/user/user.schema';
 
 // Declaring custom request interface
 // We export this interface so that we can use it in other places in our project

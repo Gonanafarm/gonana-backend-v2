@@ -1,93 +1,158 @@
-import axios from "axios";
-import { AttachAccountDto } from "../../organisation/organisation.dto";
-const SEC_KEY = "Bearer sk_test_38b346b48237c58df454d070f9dda48f61d83114"
+import axios from 'axios';
+import config from '../../config';
+import { AttachAccountDto } from '../dto';
 
 export class PaystackActions {
-
-    addSubaccount = async (info: AttachAccountDto): Promise<any> => {
-        info.percentage_charge = 30;
-        if (process.env.NODE_ENV !== "production") {
-            info.business_name = "10x store",
-                info.settlement_bank = "033",
-                info.account_number = "2204577180",
-                info.percentage_charge = 20
-        }
-
-        let response = await axios({
-            method: "post",
-            url: "https://api.paystack.co/subaccount",
-            headers: {
-                'Authorization': process.env.sk_live_paystack ?? SEC_KEY,
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify(info)
-        });
-
-        if (response.status == 201 || response.status == 200) {
-            if (response.data.status == true) {
-                let addAccountData = response.data;
-                return addAccountData;
-            }
-        } else {
-            throw response.data;
-        }
-
+  addSubaccount = async (info: AttachAccountDto): Promise<any> => {
+    info.percentage_charge = 2;
+    if (process.env.NODE_ENV !== 'production') {
+      (info.business_name = '10x store'),
+        (info.settlement_bank = '033'),
+        (info.account_number = '2204577180'),
+        (info.percentage_charge = 2);
     }
 
-    initSubscriptionTransaction = async (data:
-        {
-            email: string,
-            amount: any,
-            plan: string
-        }
-    ): Promise<{
-        authorization_url: string;
-        access_code: string;
-        reference: string;
-    }> => {
+    let response = await axios({
+      method: 'post',
+      url: 'https://api.paystack.co/subaccount',
+      headers: {
+        Authorization: `Bearer ${config.paystack_secret}`,
+        'Content-Type': 'application/json',
+      },
+      data: JSON.stringify(info),
+    });
 
-        let response = await axios({
-            method: "post",
-            url: "https://api.paystack.co/transaction/initialize",
-            headers: {
-                'Authorization': process.env.sk_live_paystack ?? SEC_KEY,
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify(data)
-        });
+    if (response.status == 201 || response.status == 200) {
+      if (response.data.status == true) {
+        let addAccountData = response.data;
+        return addAccountData;
+      }
+    } else {
+      throw response.data;
+    }
+  };
 
-        console.log(response);
+  initSubscriptionTransaction = async (data: {
+    email: string;
+    amount: any;
+    plan: string;
+  }): Promise<{
+    authorization_url: string;
+    access_code: string;
+    reference: string;
+  }> => {
+    let payload = {
+      ...data,
+      channel: [
+        'card',
+        'bank',
+        'ussd',
+        'qr',
+        'mobile_money',
+        'bank_transfer',
+        'eft',
+      ],
+      transaction_charge: 50,
+    };
+    let response = await axios({
+      method: 'post',
+      url: 'https://api.paystack.co/transaction/initialize',
+      headers: {
+        Authorization: `Bearer ${config.paystack_secret}`,
+        'Content-Type': 'application/json',
+      },
+      data: JSON.stringify(payload),
+    });
 
-        let initData: {
-            authorization_url: string;
-            access_code: string;
-            reference: string;
-        } = response.data
+    if (response.data.status == false) {
+      throw 'Failed to generate payment link';
+    }
+    return response.data.data;
+  };
 
-        return initData;
+  disableSubscriptionTransaction = async (data: {
+    code: string;
+    email_token: string;
+  }): Promise<boolean> => {
+    let payload = {
+      ...data,
+    };
+    let response = await axios({
+      method: 'post',
+      url: 'https://api.paystack.co/subscription/disable',
+      headers: {
+        Authorization: `Bearer ${config.paystack_secret}`,
+        'Content-Type': 'application/json',
+      },
+      data: JSON.stringify(payload),
+    });
+    console.log(response.data.data);
+
+    return true;
+  };
+
+  initPaymentTransaction = async (data: {
+    email: string;
+    amount: any;
+    subaccount: string;
+    meta: Object;
+  }): Promise<{
+    authorization_url: string;
+    access_code: string;
+    reference: string;
+  }> => {
+    let payload = {
+      ...data,
+      channel: [
+        'card',
+        'bank',
+        'ussd',
+        'qr',
+        'mobile_money',
+        'bank_transfer',
+        'eft',
+      ],
+      transaction_charge: 50,
+    };
+    let response = await axios({
+      method: 'post',
+      url: 'https://api.paystack.co/transaction/initialize',
+      headers: {
+        Authorization: `Bearer ${config.paystack_secret}`,
+        'Content-Type': 'application/json',
+      },
+      data: JSON.stringify(payload),
+    });
+
+    if (response.data.status == false) {
+      throw 'Failed to generate payment link';
+    }
+    return response.data.data;
+  };
+
+  verifyTransaction = async (REFERENCE: string): Promise<boolean> => {
+    let response = await axios({
+      method: 'get',
+      url: `https://api.paystack.co/transaction/verify/${REFERENCE}`,
+      headers: {
+        Authorization: `Bearer ${config.paystack_secret}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status == 201 || response.status == 200) {
+      if (
+        response.data.status == true &&
+        response.data.data.status == 'success'
+      ) {
+        return true;
+      }
+    } else {
+      return false;
     }
 
-    verifyTransaction = async (REFERENCE: string): Promise<boolean> => {
-        let response = await axios({
-            method: "get",
-            url: `https://api.paystack.co/transaction/verify/${REFERENCE}`,
-            headers: {
-                'Authorization': process.env.sk_live_paystack ?? SEC_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.status == 201 || response.status == 200) {
-            if (response.data.status == true && response.data.data.status == "success") {
-                return true;
-            }
-        } else {
-            return false;
-        }
-
-        return false;
-    }
+    return false;
+  };
 }
 
-
-export const paystackActions = new PaystackActions()
+export const paystackActions = new PaystackActions();

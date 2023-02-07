@@ -4,7 +4,7 @@ import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 import {MemberSchema, Member, MemberDocument} from "./member.schema";
 import {GenericService} from "../generic/generic.service";
-import {GenericOrgService} from "src/generic/generic.org.service";
+import {GenericOrgService} from "../generic/generic.org.service";
 import {PublishMemberDto} from "./member.dto";
 
 @Injectable()

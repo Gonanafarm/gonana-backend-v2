@@ -1,6 +1,46 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsDate, IsObject, ValidateIf, IsOptional, IsNumber } from 'class-validator';
 
+
+export class PublishOrgDto {
+    // Meta
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    display_name: string;
+  
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    business_category: string;
+  
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    business_email: string;
+ 
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    preferred_domain: string;
+  
+     
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    country: string;
+  
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    state: string;
+  
+    @IsString()
+    @IsOptional()
+    @ApiProperty({})
+    address: string;
+  }
+
 export class UpdateOrganizationDto {
 
     @IsString()

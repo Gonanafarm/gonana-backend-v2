@@ -10,12 +10,12 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserPublicData } from '../user/user.dto';
-import { Member } from 'src/member/member.schema';
+import { Member } from '../member/member.schema';
 
 // TODO add mixins like EmailField, PasswordField
 
 enum AccountType {
-  BUSINESS="business-account",
+  BUSINESS="organization-account",
   INDIVIDUAL="individual-account"
 }
 

@@ -12,7 +12,7 @@ import {
 } from '../common/exceptions';
 import { UserMailerService } from './user.mailer.service';
 import { UserDocument } from './user.schema';
-import { GenericService } from 'src/generic/generic.service';
+import { GenericService } from '../generic/generic.service';
 import { UserModule } from './user.module';
 
 @Injectable()

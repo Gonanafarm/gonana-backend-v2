@@ -37,17 +37,6 @@ export class MemberController {
     return this.dataService.retrieveItems({org_id});
   }
 
-  // @Post('')
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Created post successfully',
-  //   isArray: false,
-  //   type: Member,
-  // })
-  // async publishMember(@Body() body: PublishMemberDto, @Req() req: any) {
-
-  // }
-
   @Post("")
   async createMember(
     @Body() body: PublishMemberDto,

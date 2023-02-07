@@ -9,7 +9,7 @@ import { EventModule } from "../events/events.module";
 import { OrganizationModule } from "../organisation/organisation.module";
 import { OrgController } from "../organisation/organisation.controller";
 import { SiteController } from "./catalog.controller";
-import { TaxonomyModule } from "src/taxonomy/taxonomy.module";
+import { TaxonomyModule } from "../taxonomy/taxonomy.module";
 
 @Module({
   controllers: [SiteController],

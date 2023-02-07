@@ -5,7 +5,7 @@ import { Model } from "mongoose";
 import { TaxonomyDocument, Taxonomy } from "./taxonomy.schema";
 import { paramCase } from "param-case";
 import { GenericService } from "../generic/generic.service";
-import { GenericOrgService } from "src/generic/generic.org.service";
+import { GenericOrgService } from "../generic/generic.org.service";
 
 
 @Injectable()
