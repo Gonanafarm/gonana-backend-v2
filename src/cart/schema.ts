@@ -1,8 +1,9 @@
 import {Prop, Schema, raw, SchemaFactory} from "@nestjs/mongoose";
 import {ApiProperty} from "@nestjs/swagger";
+import {IsArray, IsMongoId, IsNumber, IsString} from "class-validator";
 import * as mongoose from "mongoose";
 import {Document} from "mongoose";
-export type WalletTransactionDocument = WalletTransaction & Document;
+export type CartItemDocument = Request & Document;
 
 @Schema({
   timestamps: {
@@ -10,42 +11,42 @@ export type WalletTransactionDocument = WalletTransaction & Document;
     updatedAt: "updated_at", // and `updated_at` to store the last updated date
   },
 })
-export class WalletTransaction {
+export class CartItem {
   @Prop({type: mongoose.SchemaTypes.String})
-  account_number: string;
+  publisher_id: string;
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  @ApiProperty()
+  @IsString()
+  image: string;
+  @ApiProperty()
+  @IsString()
+  @Prop({type: mongoose.SchemaTypes.String})
+  product_name: string;
 
   @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  type: string; // article , video, audio
+  @IsMongoId()
+  @Prop({type: mongoose.SchemaTypes.ObjectId})
+  farmer_id: string;
 
   @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  status: string;
+  @IsMongoId()
+  @Prop({type: mongoose.SchemaTypes.ObjectId})
+  product_id: string;
 
   @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  source: string;
+  @IsNumber()
+  @Prop({type: mongoose.SchemaTypes.Number})
+  quantity: number;
 
   @ApiProperty()
+  @IsNumber()
   @Prop({type: mongoose.SchemaTypes.Number})
   amount: number;
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.Mixed})
-  from:object;
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.Mixed})
-  to:object;
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  created_at: string;
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.String})
   updated_at: string;
 }
 
-export const WalletTransactionSchema =
-  SchemaFactory.createForClass(WalletTransaction);
+export const CartItemSchema = SchemaFactory.createForClass(CartItem);

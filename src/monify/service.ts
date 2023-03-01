@@ -1,9 +1,7 @@
 /* eslint-disable no-useless-catch */
 import {Controller, Injectable} from "@nestjs/common";
-import {InjectModel} from "@nestjs/mongoose";
 import axios from "axios";
 import {User} from "../user/user.schema";
-import config from "../config";
 import {ReserveAccountPayload} from "./interface";
 import {ReservedAccountService} from "../reserved-account/service";
 import {WalletService} from "../wallet/wallet.service";
@@ -27,10 +25,10 @@ export class MonifyService {
       incomeSplitConfig: [],
     });
 
-    console.log(newAccount);
-
+    console.log(newAccount, " new account goes here")
+    
     // upsert bank account for newly created account
-    this.walletService.dataModel
+    this.reserveBankService.dataModel
       .updateOne(
         {
           //@ts-ignore
@@ -74,6 +72,7 @@ export class MonifyService {
       });
 
       if (response.data.responseMessage == "success") {
+        console.log(response.data.responseBody);
         return response.data.responseBody;
       } else {
         return {};

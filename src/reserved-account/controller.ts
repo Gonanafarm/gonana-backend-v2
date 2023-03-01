@@ -18,10 +18,10 @@ import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {Request} from "express";
 
-@ApiTags("ReservedAccounts")
+@ApiTags("reserved-account")
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-@Controller("api/catalog/ReservedAccounts")
+@Controller("api/catalog/reserved-account")
 export class ReservedAccountController {
   constructor(private readonly dataService: ReservedAccountService) {}
 

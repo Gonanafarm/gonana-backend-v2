@@ -14,7 +14,6 @@ import {OrderService} from "./order.service";
 import {Order as OrderModel} from "./order.schema";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
-import {PublishOrderDto} from "./order.dto";
 
 @ApiTags("order-controller")
 @UseGuards(JwtAuthGuard)
@@ -36,26 +35,6 @@ export class OrderController {
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
     return this.dataService.retrieveItems({publisher_id});
-  }
-
-  @Post("")
-  @ApiResponse({
-    status: 200,
-    description: "Created post successfully",
-    isArray: false,
-    type: OrderModel,
-  })
-  async publish(@Body() body: PublishOrderDto, @Req() req: any) {
-    let publisher_id = "";
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
-    publisher_id = req.user?.sub ?? "";
-    try {
-      let order = await this.dataService.createOrder(publisher_id, body);
-      return order;
-    } catch (err) {
-      throw err;
-    }
   }
 
   @Get(":item")

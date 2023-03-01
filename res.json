@@ -1,0 +1,39 @@
+{
+    "eventData": {
+        "product": {
+            "reference": "joshuanwafor",
+            "type": "RESERVED_ACCOUNT"
+        },
+        "transactionReference": "MNFY|38|20230217195507|000477",
+        "paymentReference": "MNFY|38|20230217195507|000477",
+        "paidOn": "2023-02-17 19:55:07.791",
+        "paymentDescription": "Jos",
+        "metaData": {},
+        "paymentSourceInformation": [
+            {
+                "bankCode": "",
+                "amountPaid": 1000,
+                "accountName": "Monnify Limited",
+                "sessionId": "8mSfThqADlF74sA8ht50uRaXNfzFTz6y",
+                "accountNumber": "0065432190"
+            }
+        ],
+        "destinationAccountInformation": {
+            "bankCode": "035",
+            "bankName": "Wema bank",
+            "accountNumber": "5000551293"
+        },
+        "amountPaid": 1000,
+        "totalPayable": 1000,
+        "cardDetails": {},
+        "paymentMethod": "ACCOUNT_TRANSFER",
+        "currency": "NGN",
+        "settlementAmount": "990.00",
+        "paymentStatus": "PAID",
+        "customer": {
+            "name": "Joshua Nwafor",
+            "email": "joshuanwafor01@gmail.com"
+        }
+    },
+    "eventType": "SUCCESSFUL_TRANSACTION"
+}

@@ -35,11 +35,6 @@ export class OrderItem {
   @IsString()
   @Prop({ type: mongoose.SchemaTypes.String })
   amount: number;
-
-  @ApiProperty()
-  @IsString()
-  @Prop({ type: mongoose.SchemaTypes.String })
-  total: number;
 }
 
 const orderItemsAttachmentDoc = SchemaFactory.createForClass(OrderItem);

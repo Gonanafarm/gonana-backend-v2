@@ -2,9 +2,8 @@
 import {Controller, Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
-import {WalletSchema, Wallet, WalletDocument} from "./wallet.schema";
+import {Wallet, WalletDocument} from "./wallet.schema";
 import {GenericService} from "../generic/generic.service";
-import {WalletSendFundDto} from "./wallet.dto";
 
 @Injectable()
 export class WalletService extends GenericService<WalletDocument> {
@@ -14,9 +13,12 @@ export class WalletService extends GenericService<WalletDocument> {
     super(productModel);
   }
 
-  async sendFundTransaction(publisher_id: string, payload: WalletSendFundDto) {
-    let wallet = await this.dataModel.findOne({user_id: publisher_id});
-
-
+  async updateBalance(account_number: string, amount: number) {
+    console.log("updating balance")
+    let wallet = await this.dataModel.findOne({account_number});
+    if(wallet==undefined)return
+    let balance = wallet.balance + amount;
+    console.log(balance)
+    await this.dataModel.findByIdAndUpdate(wallet?._id, {balance}).exec();
   }
 }

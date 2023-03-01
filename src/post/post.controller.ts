@@ -10,7 +10,7 @@ import { Request } from "express";
 
 
 
-@ApiTags("posts")
+@ApiTags("posts-controller")
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 @Controller("api/catalog/posts")

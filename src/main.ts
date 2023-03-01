@@ -5,6 +5,7 @@ import * as admin from "firebase-admin";
 import { bootstrap } from "./bootstrap";
 
 dotenv.config();
+
 function init_firebase() {
     var serviceAccountFile = require("../firebase-service.json");
     admin.initializeApp({

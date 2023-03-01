@@ -4,7 +4,6 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { MailerModule, HandlebarsAdapter } from "@nest-modules/mailer";
 import { ServeStaticMiddleware } from "@nest-middlewares/serve-static";
 import { MorganModule } from "nest-morgan";
-
 import { LoggerMiddleware } from "./common/middleware/logger.middleware";
 import { GlobalAccessLogger } from "./common/accessLogger";
 import { AuthModule } from "./auth/auth.module";
@@ -14,6 +13,7 @@ import { CatalogModule } from "./catalog/catalog.module";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { PublicModule } from "./public/public.module";
+import { UserCatalogModule } from "./user-catalog/module";
 
 const DEV_TRANSPORTER = {
   host: "smtp-relay.sendinblue.com",
@@ -30,6 +30,7 @@ const DEV_TRANSPORTER = {
     MorganModule,
     PublicModule,
     CatalogModule,
+    UserCatalogModule,
     MongooseModule.forRoot(config.db??""),
     JwtModule.register({
       secret: "joshua",
