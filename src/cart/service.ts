@@ -9,6 +9,7 @@ import {OrderService} from "../order/order.service";
 @Injectable()
 export class CartItemService extends GenericService<CartItemDocument> {
   constructor(
+    //@ts-ignore
     @InjectModel(CartItem.name) private model: Model<CartItemDocument>,
     private readonly orderService: OrderService,
   ) {

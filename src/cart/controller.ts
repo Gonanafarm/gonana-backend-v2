@@ -18,10 +18,10 @@ import {UpdateCartItemDto} from "./dto";
 import {OrderService} from "../order/order.service";
 import {Order} from "../order/order.schema";
 
-@ApiTags("cartItem-controller")
+@ApiTags("cart-controller")
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-@Controller("api/catalog/CartItem")
+@Controller("api/catalog/cart")
 // @ApiHeader({ name: 'Bypass-Tunnel-Reminder', required: true })
 export class CartItemController {
   constructor(
@@ -31,7 +31,7 @@ export class CartItemController {
   @Get("")
   @ApiResponse({
     status: 200,
-    description: "Returns list of CartItems associated with account",
+    description: "Returns list of cart-items associated with account",
     isArray: true,
     type: CartItemModel,
   })

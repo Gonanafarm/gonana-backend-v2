@@ -100,9 +100,9 @@ export class Post {
   })
   attachments: MediaAttachment[];
 
-  @ApiProperty({type: GeoLocation, isArray: true})
-  @Prop({type: [locationDoc]})
-  location: GeoLocation[];
+  @ApiProperty({type: GeoLocation})
+  @Prop({type: GeoLocation})
+  location: GeoLocation;
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.String})

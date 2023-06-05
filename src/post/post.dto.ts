@@ -63,7 +63,6 @@ export class UpdatePostDto {
     @IsOptional()
     body: string;
 
-
     @ApiProperty({})
     @IsString()
     @IsOptional()

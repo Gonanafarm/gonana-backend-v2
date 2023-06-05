@@ -34,10 +34,8 @@ export class TaxonomyController {
   })
   get(
     @Req() req: Request,
-    @Query('org_id') org_id: string,
-    @Query('branch_id') branch_id: string,
   ) {
-    return this.TaxonomyService.retrieveItems({ org_id });
+    return this.TaxonomyService.retrieveItems({});
   }
 
   @Post('')

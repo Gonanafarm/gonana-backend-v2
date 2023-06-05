@@ -25,7 +25,7 @@ export class OrderController {
   @Get("")
   @ApiResponse({
     status: 200,
-    description: "Returns list of orders associated with org",
+    description: "Returns list of orders associated with account",
     isArray: true,
     type: OrderModel,
   })

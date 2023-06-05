@@ -21,7 +21,7 @@ export class PostController {
   @ApiResponse({ status: 200, description: 'Returns list of posts', isArray: true, type: PostModel })
   get(@Req() req: Request) {
     let publisher_id="";
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+   
     //@ts-ignore
     publisher_id= req.user?.sub??"";
     return this.dataService.retrieveItems({ publisher_id: publisher_id })

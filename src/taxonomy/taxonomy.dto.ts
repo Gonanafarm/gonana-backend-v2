@@ -16,33 +16,16 @@ import {
 } from 'class-validator';
 import { isNull } from 'lodash';
 
-enum TaxonomyType {
-  MANUAL = 'manual',
-  AUTOMATIC = 'automatic',
-}
-
 enum TaxonomyContext {
-  POS = 'pos',
-  ONLINE = 'online',
-  GLOBAL="global"
+  marketplace = 'marketplace',
 }
 
 export class PublishTaxonomyDto {
-  @ApiProperty({})
-  @IsMongoId()
-  branch_id: string;
 
-  @ApiProperty({})
-  @IsMongoId()
-  org_id: string;
-
-  @IsEnum(TaxonomyType)
-  @ApiProperty({ default: 'manual', enum: TaxonomyType })
-  type: string;
 
   @IsEnum(TaxonomyContext)
-  @ApiProperty({ default: 'pos', enum: TaxonomyContext })
-  Taxonomy_context: string;
+  @ApiProperty({ default: 'marketplace', enum: TaxonomyContext })
+  taxonomy_context: string;
 
   @IsString()
   @IsNotEmpty()

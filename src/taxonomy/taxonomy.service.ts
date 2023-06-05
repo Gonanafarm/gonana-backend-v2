@@ -10,6 +10,7 @@ import { GenericOrgService } from "../generic/generic.org.service";
 
 @Injectable()
 export class TaxonomyService extends GenericOrgService<TaxonomyDocument> {
+  //@ts-ignore
   constructor(@InjectModel(Taxonomy.name) private model: Model<TaxonomyDocument>) {
     super(model);
   }

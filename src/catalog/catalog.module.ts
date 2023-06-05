@@ -9,9 +9,6 @@ import {OrderModule} from "../order/order.module";
 import {OrderController} from "../order/order.controller";
 import {TaxonomyController} from "../taxonomy/taxonomy.controller";
 import {TaxonomyModule} from "../taxonomy/taxonomy.module";
-import {KYCApplicationModule} from "../kyc/module";
-import {KYCApplicationController} from "../kyc/controller";
-
 import {CartItemModule} from "../cart/module";
 import {CartItemController} from "../cart/controller";
 import {EventEmitterModule} from "@nestjs/event-emitter";
@@ -21,14 +18,12 @@ import {EventEmitterModule} from "@nestjs/event-emitter";
     PostController,
     OrderController,
     TaxonomyController,
-    KYCApplicationController,
     CartItemController,
   ],
   imports: [
     EventEmitterModule.forRoot(),
     TaxonomyModule,
     OrderModule,
-    KYCApplicationModule,
     PostModule,
     CartItemModule,
     JwtModule.register({
