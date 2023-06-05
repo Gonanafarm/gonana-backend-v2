@@ -19,7 +19,6 @@ import { UpdateTransferReceipient, UpdateUserDto } from "./user.dto";
 
 @ApiTags("profile-controller")
 @ApiBearerAuth()
-@ApiHeader({ name: "X-API-KEY" })
 @Controller("api/profile")
 @UseGuards(JwtAuthGuard)
 export class ProfileController {

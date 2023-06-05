@@ -40,7 +40,6 @@ import {UpdateUserDto} from "../user/user.dto";
 
 @ApiTags("auth")
 @ApiBearerAuth()
-@ApiHeader({name: "X-API-KEY"})
 @Controller("api/auth")
 export class AuthController {
   constructor(

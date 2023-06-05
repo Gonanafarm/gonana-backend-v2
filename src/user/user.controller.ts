@@ -14,7 +14,6 @@ import { AuthGuard } from "@nestjs/passport";
 
 @ApiTags("user-controller")
 @ApiBearerAuth()
-@ApiHeader({ name: "X-API-KEY" })
 @Controller("api/user")
 export class UserController {
   constructor(private readonly userService: UserService) {}
