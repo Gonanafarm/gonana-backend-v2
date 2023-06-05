@@ -1,5 +1,5 @@
 {
-  "name": "cloudelevate-api",
+  "name": "gonana-api",
   "version": "1.0.0",
   "description": "",
   "author": "Joshua Nwafor",
@@ -106,5 +106,7 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   },
-  "packageManager": "yarn@3.1.1"
+  "engines": {
+    "node": "16.14.0"
+  }
 }
