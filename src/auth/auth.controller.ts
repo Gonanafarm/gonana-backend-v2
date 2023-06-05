@@ -9,9 +9,11 @@ import {
   Res,
   Response,
   HttpStatus,
-} from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
+  Put,
+  Header,
+} from "@nestjs/common";
+import {AuthGuard} from "@nestjs/passport";
+import {Request} from "express";
 
 import {
   ActivateParams,
@@ -21,63 +23,92 @@ import {
   LoginDto,
   AuthenticatedUser,
   UserProfileResponse,
-} from './auth.interface';
-import { AuthService } from './auth.service';
-import { getOriginHeader } from '../common/auth';
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AppRequest } from '../generic/generic.interface';
-import { UserService } from '../user/user.service';
+} from "./auth.interface";
+import {AuthService} from "./auth.service";
+import {getOriginHeader} from "../common/auth";
+import {
+  ApiBearerAuth,
+  ApiHeader,
+  ApiHeaders,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
+import {AppRequest} from "../generic/generic.interface";
+import {UserService} from "../user/user.service";
+import {User} from "../user/user.schema";
+import {UpdateUserDto} from "../user/user.dto";
 
-@ApiTags('auth')
+@ApiTags("auth")
 @ApiBearerAuth()
-@Controller('api/auth')
+@ApiHeader({name: "X-API-KEY"})
+@Controller("api/auth")
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
-
   ) {}
 
-  @Get('activate/:userId/:activationToken')
+  @Get("activate/:userId/:activationToken")
   activate(@Param() params: ActivateParams) {
     return this.authService.activate(params);
   }
 
-  @UseGuards(AuthGuard('local'))
-  @Post('login')
-  @ApiResponse({ type: AuthenticatedUser })
+  @UseGuards(AuthGuard("local"))
+  @Post("login")
+  @ApiResponse({type: AuthenticatedUser})
   login(@Req() req: AppRequest, @Body() loginDto: LoginDto) {
     return this.authService.login(req?.user);
   }
 
-  @Post('signup')
-  @ApiResponse({ type: AuthenticatedUser })
+  @UseGuards(AuthGuard("local"))
+  @Post("login-admin")
+  @ApiResponse({type: AuthenticatedUser})
+  loginAdmin(@Req() req: AppRequest, @Body() loginDto: LoginDto) {
+    return this.authService.loginAdmin(req?.user);
+  }
+
+  @Post("signup")
+  @ApiResponse({type: AuthenticatedUser})
   async signup(@Body() signUpDto: SignUpDto, @Req() req: Request) {
     return this.authService.signUpUser(signUpDto, getOriginHeader(req));
   }
 
   @UseGuards(AuthGuard())
-  @Get('me')
-  @ApiResponse({ type: UserProfileResponse })
+  @Get("me")
+  @ApiResponse({type: UserProfileResponse})
   async getProfile(@Req() req: Request): Promise<UserProfileResponse> {
     //@ts-ignore
-    let profileDoc = await this.userService.findById(req.user.id);
-    //@ts-ignore
-    let publisher_id = req?.user?.id;
-
+    let profileDoc = await this.userService.findById(req.user?.id);
     return {
       user: profileDoc.getPublicData(),
     };
   }
 
-  @Post('forgotten-password')
+  @Put("update-profile")
+  @ApiResponse({type: User})
+  updateUser(@Req() req: Request, @Body() body: UpdateUserDto) {
+    //@ts-ignore
+    let publisher_id = req?.user?.id;
+
+    return this.userService.updateItem(publisher_id, body);
+  }
+
+  @Post("forgotten-password")
   forgottenPassword(@Body() body: ForgottenPasswordDto, @Req() req: Request) {
-    console.log(body)
     return this.authService.forgottenPassword(body, getOriginHeader(req));
   }
 
-  @Post('reset-password')
+  @Post("reset-password")
   resetPassword(@Body() body: ResetPasswordDto) {
     return this.authService.resetPassword(body);
+  }
+
+  @UseGuards(AuthGuard())
+  @Post("resend-activation-credentials")
+  resendActivationToken(@Req() req: Request) {
+    //@ts-ignore
+    let user_id = req.user?.id ?? "";
+    console.log(user_id, "user id");
+    this.userService.resendActivation(user_id, getOriginHeader(req));
   }
 }

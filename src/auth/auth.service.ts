@@ -1,25 +1,24 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-
-import { comparePassword } from '../common/auth';
-import { UserService } from '../user/user.service';
-import { LoginCredentialsException } from '../common/exceptions';
-
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { comparePassword } from "../common/auth";
+import { UserService } from "../user/user.service";
+import { LoginCredentialsException } from "../common/exceptions";
 import {
   ActivateParams,
   ForgottenPasswordDto,
   ResetPasswordDto,
   SignUpDto,
-} from './auth.interface';
-import { User, UserDocument } from '../user/user.schema';
+} from "./auth.interface";
+import { User, UserDocument } from "../user/user.schema";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-  ) {}
-
+    private eventEmitter: EventEmitter2
+  ) { }
   async validateUser(email: string, password: string): Promise<UserDocument> {
     const user = await this.userService.findByEmail(email);
 
@@ -40,10 +39,29 @@ export class AuthService {
 
   // user jwt decode obj
   async login(user?: any) {
+    this.eventEmitter.emit("account.login", user);
+
+    console.log(user?.getPublicData(), " On Login user ")
     return {
       token: this.jwtService.sign(
         { ...user?.getPublicData() },
-        { subject: `${user?.id}` },
+        { subject: `${user?.id}` }
+      ),
+      user: user?.getPublicData(),
+    };
+  }
+
+  async loginAdmin(user?: any) {
+    this.eventEmitter.emit("account.login", user);
+
+    if (user.account_type !== "ADMIN") {
+      throw new UnauthorizedException();
+    }
+    console.log(user?.getPublicData(), " On Login user ")
+    return {
+      token: this.jwtService.sign(
+        { ...user?.getPublicData() },
+        { subject: `${user?.id}` }
       ),
       user: user?.getPublicData(),
     };
@@ -63,7 +81,7 @@ export class AuthService {
     return {
       token: this.jwtService.sign(
         { ...user.getPublicData() },
-        { subject: `${user.id}` },
+        { subject: `${user.id}` }
       ),
       user: user.getPublicData(),
     };
@@ -81,7 +99,7 @@ export class AuthService {
     const user = await this.userService.resetPassword(
       email,
       passwordResetToken,
-      password,
+      password
     );
 
     return {

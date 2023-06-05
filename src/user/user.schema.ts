@@ -1,8 +1,9 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { ApiProperty } from '@nestjs/swagger';
-import * as mongoose from 'mongoose';
-import { Document } from 'mongoose';
-import { UserPublicData } from './user.dto';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { ApiProperty } from "@nestjs/swagger";
+import * as mongoose from "mongoose";
+import { Document } from "mongoose";
+import { UserPublicData } from "./user.dto";
+import { AccountStatus, AccountType } from "../common/enums";
 
 export type UserMethods = {
   getPublicData: () => UserPublicData;
@@ -12,14 +13,21 @@ export type UserDocument = User & Document & UserMethods;
 
 @Schema({
   timestamps: {
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   },
 })
 export class User {
   @ApiProperty()
+  id: string;
+
+  @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String, required: true, unique: true })
   email: string;
+
+  @ApiProperty()
+  @Prop({ type: mongoose.SchemaTypes.Boolean, default: false })
+  email_activated: boolean;
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String, required: true, unique: true })
@@ -31,15 +39,22 @@ export class User {
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String })
-  googleId: string;
-
-  @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
   last_name: string;
 
+  @Prop({ type: mongoose.SchemaTypes.Mixed })
+  location: string;
+
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, default: 'individual-account' })
+  @Prop({ type: mongoose.SchemaTypes.String, enum: AccountType })
   account_type: string;
+
+  @ApiProperty()
+  @Prop({
+    type: mongoose.SchemaTypes.String,
+    default: AccountStatus.ACTIVE,
+    enum: AccountStatus,
+  })
+  account_status: string;
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String, required: true })
@@ -58,31 +73,19 @@ export class User {
   activationExpires: Date;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, default: 'active' })
-  account_status: string;
-
-  @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, default: '' })
+  @Prop({ type: mongoose.SchemaTypes.String, default: "" })
   profile_photo: string;
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, default: '' })
+  @Prop({ type: mongoose.SchemaTypes.String, default: "" })
   cover_photo: string;
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, default: '' })
+  @Prop({ type: mongoose.SchemaTypes.String, default: "" })
   bio: string;
 
-  @Prop({ type: mongoose.SchemaTypes.String, default: 'n/a' })
+  @Prop({ type: mongoose.SchemaTypes.String, default: "n/a" })
   technical_skill: string;
 
-  // @ApiProperty()
-  // @Prop({ type: mongoose.SchemaTypes.String })
-  // subscription_plan: string;
-  // @ApiProperty()
-  // @Prop({ type: mongoose.SchemaTypes.String })
-  // subscription_status: String;
-  // @ApiProperty()
-  // @Prop({ type: mongoose.SchemaTypes.Map })
-  // subscription_transaction: any;
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -91,7 +94,19 @@ export const UserSchema = SchemaFactory.createForClass(User);
  * Methods.
  */
 UserSchema.methods.getPublicData = function () {
-  const { id, email, first_name, last_name, profile_photo, cover_photo,account_type, bio, phone } = this;
+  const {
+    id,
+    email,
+    first_name,
+    last_name,
+    profile_photo,
+    cover_photo,
+    account_type,
+    account_status,
+    bio,
+    phone,
+    email_activated,
+  } = this;
   return {
     id,
     email,
@@ -100,6 +115,21 @@ UserSchema.methods.getPublicData = function () {
     account_type,
     profile_photo,
     cover_photo,
-    bio, phone
+    account_status,
+    bio,
+    phone,
+  
+    email_activated,
+
   };
 };
+
+UserSchema.virtual("id").get(function () {
+  //@ts-ignore
+  return this._id.toHexString();
+});
+
+// Ensure virtual fields are serialised.
+UserSchema.set("toJSON", {
+  virtuals: true,
+});

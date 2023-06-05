@@ -7,16 +7,11 @@ import {
   IsString,
   IsPhoneNumber,
   IsEnum,
-} from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { UserPublicData } from '../user/user.dto';
-
-// TODO add mixins like EmailField, PasswordField
-
-enum AccountType {
-  BUSINESS="organization-account",
-  INDIVIDUAL="individual-account"
-}
+  IsMobilePhone,
+} from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
+import { UserPublicData } from "../user/user.dto";
+import { AccountType, SignupAccountType } from "../common/enums";
 
 export class ActivateParams {
   @ApiProperty({ type: String })
@@ -40,33 +35,38 @@ export class SignUpDto {
   @ApiProperty({})
   readonly last_name!: string;
 
-  @IsString()
+  @IsMobilePhone()
+  @MaxLength(255)
   @ApiProperty({})
   readonly phone!: string;
 
-  @IsEnum(AccountType)
-  @ApiProperty({enum: AccountType})
+  @IsEnum(SignupAccountType)
+  @ApiProperty({ enum: SignupAccountType })
   readonly account_type!: string;
 
-  @ApiProperty({ example: 'email@email.com', maxLength: 255 })
+  @ApiProperty({ example: "email@email.com", maxLength: 255 })
   @IsEmail()
   @MaxLength(255)
   readonly email!: string;
 
-  @ApiProperty({ example: 'password', minLength: 8 })
+  @ApiProperty({ example: "password", minLength: 8 })
   @MinLength(8)
   readonly password!: string;
 }
 
 export class LoginDto {
-  @ApiProperty({ example: 'email@email.com', maxLength: 255 })
+  @ApiProperty({ example: "email@email.com", maxLength: 255 })
   @IsEmail()
   @MaxLength(255)
   readonly email!: string;
 
-  @ApiProperty({ example: 'password', minLength: 8 })
+  @ApiProperty({ example: "password", minLength: 8 })
   @MinLength(8)
   readonly password!: string;
+
+  @IsEnum(AccountType)
+  @ApiProperty({ enum: AccountType })
+  readonly account_type!: string;
 }
 
 export class AuthenticatedUser {
@@ -76,14 +76,14 @@ export class AuthenticatedUser {
 }
 
 export class ForgottenPasswordDto {
-  @ApiProperty({ example: 'email@email.com', maxLength: 255 })
+  @ApiProperty({ example: "email@email.com", maxLength: 255 })
   @IsEmail()
   @MaxLength(255)
   readonly email!: string;
 }
 
 export class ResetPasswordDto {
-  @ApiProperty({ example: 'email@email.com', maxLength: 255 })
+  @ApiProperty({ example: "email@email.com", maxLength: 255 })
   @IsEmail()
   @MaxLength(255)
   readonly email!: string;
@@ -92,7 +92,7 @@ export class ResetPasswordDto {
   @IsUUID()
   readonly passwordResetToken!: string;
 
-  @ApiProperty({ example: 'password', minLength: 8 })
+  @ApiProperty({ example: "password", minLength: 8 })
   @MinLength(8)
   readonly password!: string;
 }

@@ -1,11 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger";
+import { IsEnum, IsOptional, IsString } from "class-validator";
+import { AccountStatus } from "../common/enums";
 
 export class UserPublicData {
   @ApiProperty({})
   id: string;
   @ApiProperty({})
   email: string;
+  @ApiProperty({type: Boolean})
+  email_activated: boolean;
   @ApiProperty({})
   first_name: string;
   @ApiProperty({})
@@ -13,16 +16,19 @@ export class UserPublicData {
   @ApiProperty({})
   account_type: string;
   @ApiProperty({})
-  profile_photo:string;
+  account_status: string;
   @ApiProperty({})
-  cover_photo:string;
+  profile_photo: string;
   @ApiProperty({})
-  phone:string;
+  cover_photo: string;
+  @ApiProperty({})
+  bio: string;
+  @ApiProperty({})
+  phone: string;
+
 }
 
-
 export class UpdateUserDto {
-
   @IsString()
   @IsOptional()
   @ApiProperty({})
@@ -32,11 +38,16 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   last_name: string;
- 
+
   @IsString()
   @IsOptional()
   @ApiProperty({})
   bio: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({})
+  phone: string;
 
   @IsString()
   @IsOptional()
@@ -46,6 +57,29 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   @ApiProperty({})
-  cover_photo:string;
+  cover_photo: string;
 }
 
+export class UpdateTransferReceipient {
+  @ApiProperty({})
+  @IsString()
+  name: string;
+  @ApiProperty({})
+  @IsString()
+  bank_code: string;
+  @ApiProperty({})
+  @IsString()
+  account_number: string;
+}
+
+export class UpdateAccountStatus {
+  @ApiProperty({ enum: AccountStatus })
+  @IsEnum(AccountStatus)
+  account_status: string;
+}
+
+export class UpdateDriverAccountStatus {
+  @ApiProperty({ enum: AccountStatus })
+  @IsEnum(AccountStatus)
+  driver_account_status: string;
+}

@@ -1,50 +1,33 @@
+import { Controller, Get, Req, Param, UseGuards } from "@nestjs/common";
+import { Request } from "express";
 import {
-  Controller,
-  Get,
-  Post,
-  Req,
-  Param,
-  UseGuards,
-  Body,
-  Put,
-} from "@nestjs/common";
-import {Request} from "express";
-import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
-import {UserService} from "./user.service";
-import {JwtAuthGuard} from "../auth/jwt-auth.guard";
-import {User} from "./user.schema";
-import {UpdateUserDto} from "./user.dto";
+  ApiBearerAuth,
+  ApiHeader,
+  ApiResponse,
+  ApiTags,
+} from "@nestjs/swagger";
+import { UserService } from "./user.service";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { User } from "./user.schema";
+import { UpdateUserDto } from "./user.dto";
+import { AuthGuard } from "@nestjs/passport";
 
 @ApiTags("user-controller")
 @ApiBearerAuth()
+@ApiHeader({ name: "X-API-KEY" })
 @Controller("api/user")
-@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
-
-  @Put("/")
-  @ApiResponse({type: User,description:"Updates user profile"})
-
-  updateUser(
-    @Req() req: Request,
-    @Body() body: UpdateUserDto,
-  ) {
-    let publisher_id = "";
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
-    publisher_id = req.user?.sub ?? "";
-    return this.userService.updateItem(publisher_id, body);
-  }
-
-  @Post("/find-by-email/:email")
-  @ApiResponse({type: User})
+  @Get("/find-by-email/:email")
+  @ApiResponse({ type: User })
   findAccountByEmail(@Req() req: Request, @Param("email") email: string) {
     return this.userService.findByEmail(email);
   }
 
-  @Post("/find-by-id/:id")
-  @ApiResponse({type: User})
+  @Get("/find-by-id/:id")
+  @ApiResponse({ type: User })
   findAccountById(@Req() req: Request, @Param("id") id: string) {
-    return this.userService.findById(id);
+    console.log(id, "find by id");
+    return this.userService.getItem(id);
   }
 }

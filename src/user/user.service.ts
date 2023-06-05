@@ -1,35 +1,32 @@
-import {Model} from "mongoose";
-import {v4 as uuid} from "uuid";
-import {forwardRef, Inject, Injectable} from "@nestjs/common";
-import {InjectModel} from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { v4 as uuid } from "uuid";
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
 import config from "../config";
-import {hashPassword} from "../common/auth";
+import { hashPassword } from "../common/auth";
 import {
   UserNotFoundException,
   EmailAlreadyUsedException,
   PasswordResetTokenInvalidException,
   ActivationTokenInvalidException,
 } from "../common/exceptions";
-import {UserMailerService} from "./user.mailer.service";
-import {UserDocument} from "./user.schema";
-import {GenericService} from "../generic/generic.service";
-import {UserModule} from "./user.module";
-import {MonifyService} from "../monify/service";
+import { UserMailerService } from "./user.mailer.service";
+import { UserDocument } from "./user.schema";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { GenericService } from "../generic/generic.service";
+
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
+    //@ts-ignore
     @InjectModel("User") private readonly userModel: Model<UserDocument>,
     private readonly userMailer: UserMailerService,
-    private readonly monifyService: MonifyService,
+    private eventEmitter: EventEmitter2
   ) {
     super(userModel);
   }
 
-  /**
-   * Creates user and sends activation email.
-   * @throws duplicate key error when
-   */
   async createAccount(
     first_name: string,
     last_name: string,
@@ -37,7 +34,7 @@ export class UserService extends GenericService<UserDocument> {
     email: string,
     password: string,
     origin: string,
-    account_type: string,
+    account_type: string
   ): Promise<UserDocument> {
     try {
       const user = await this.userModel.create({
@@ -51,15 +48,11 @@ export class UserService extends GenericService<UserDocument> {
         activationExpires: Date.now() + config.auth.activationExpireInMs,
       });
 
-      // research user account
-      this.monifyService.onCreateNewUser(user)
-
-      // this.userMailer.sendActivationMail(
-      //   user.email,
-      //   user.id,
-      //   user.activationToken,
-      //   origin,
-      // );
+      // on account created
+      this.eventEmitter.emit("account.created", {
+        user,
+        origin,
+      });
 
       return user;
     } catch (e) {
@@ -70,7 +63,6 @@ export class UserService extends GenericService<UserDocument> {
 
   async findById(id: string): Promise<UserDocument> {
     const user = await this.userModel.findById(id);
-
     if (!user) {
       throw UserNotFoundException();
     }
@@ -78,10 +70,32 @@ export class UserService extends GenericService<UserDocument> {
     return user;
   }
 
+  async resendActivation(id: string, origin: any): Promise<any> {
+    const user = await this.userModel
+      .findByIdAndUpdate(
+        id,
+        {
+          activationToken: uuid(),
+          activationExpires: Date.now() + config.auth.activationExpireInMs,
+        },
+        { new: true }
+      )
+      .exec();
+
+    if (!user) {
+      throw UserNotFoundException();
+    }
+
+    this.eventEmitter.emit("account.activation.updated", {
+      user,
+      origin,
+    });
+  }
+
   async findByEmail(email: string): Promise<UserDocument> {
     const user = await this.userModel.findOne(
-      {email: email.toLowerCase()},
-      "+password",
+      { email: email.toLowerCase() },
+      "+password"
     );
 
     if (!user) {
@@ -97,17 +111,18 @@ export class UserService extends GenericService<UserDocument> {
         {
           _id: userId,
           activationToken,
-          isActive: false,
+          // email_activated: false,
         },
         {
           isActive: true,
+          email_activated: true,
           activationToken: undefined,
           activationExpires: undefined,
         },
         {
           new: true,
           runValidators: true,
-        },
+        }
       )
       .where("activationExpires")
       .gt(Date.now())
@@ -117,8 +132,12 @@ export class UserService extends GenericService<UserDocument> {
       throw ActivationTokenInvalidException();
     }
 
+    // trigger account activated
+    this.eventEmitter.emit("account.activated", user.email);
+
     return user;
   }
+
 
   async forgottenPassword(email: string, origin: string) {
     const user = await this.userModel.findOneAndUpdate(
@@ -133,24 +152,24 @@ export class UserService extends GenericService<UserDocument> {
       {
         new: true,
         runValidators: true,
-      },
+      }
     );
 
     if (!user) {
       throw UserNotFoundException();
     }
 
-    this.userMailer.sendForgottenPasswordMail(
-      user.email,
-      user.passwordResetToken,
+    // trigger passwor update
+    this.eventEmitter.emit("account.password.update.trigger", {
+      user,
       origin,
-    );
+    });
   }
 
   async resetPassword(
     email: string,
     passwordResetToken: string,
-    password: string,
+    password: string
   ) {
     const user = await this.userModel
       .findOneAndUpdate(
@@ -166,7 +185,7 @@ export class UserService extends GenericService<UserDocument> {
         {
           new: true,
           runValidators: true,
-        },
+        }
       )
       .where("passwordResetExpires")
       .gt(Date.now())
@@ -176,8 +195,11 @@ export class UserService extends GenericService<UserDocument> {
       throw PasswordResetTokenInvalidException();
     }
 
-    this.userMailer.sendResetPasswordMail(user.email);
+    // emit password update emit event
+    this.eventEmitter.emit("account.password.updated", user.email);
 
     return user;
   }
+
+ 
 }

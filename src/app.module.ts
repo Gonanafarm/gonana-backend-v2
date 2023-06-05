@@ -13,7 +13,6 @@ import { CatalogModule } from "./catalog/catalog.module";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { PublicModule } from "./public/public.module";
-import { UserCatalogModule } from "./user-catalog/module";
 
 const DEV_TRANSPORTER = {
   host: "smtp-relay.sendinblue.com",
@@ -30,7 +29,6 @@ const DEV_TRANSPORTER = {
     MorganModule,
     PublicModule,
     CatalogModule,
-    UserCatalogModule,
     MongooseModule.forRoot(config.db??""),
     JwtModule.register({
       secret: "joshua",
