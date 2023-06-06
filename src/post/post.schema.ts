@@ -4,6 +4,7 @@ import * as mongoose from "mongoose";
 import {IAddress, IPerson} from "../common/interface";
 import {Document} from "mongoose";
 import { ArrayMaxSize, IsArray, IsEnum, IsNumber, IsOptional, IsString, MaxLength } from "class-validator";
+import { PostStatus, PostType } from "./post.dto";
 export type PostDocument = Post & Document;
 
 @Schema({})
@@ -65,7 +66,7 @@ export class Post {
   publisher_id: string;
 
   @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
+  @Prop({type: mongoose.SchemaTypes.String, enum: PostType})
   type: string; // article , video, audio
 
   @ApiProperty()
@@ -81,7 +82,7 @@ export class Post {
   body: string;
 
   @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
+  @Prop({type: mongoose.SchemaTypes.String, enum: PostStatus.published})
   status: string;
 
   @ApiProperty()

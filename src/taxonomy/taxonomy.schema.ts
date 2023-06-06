@@ -12,25 +12,12 @@ export type TaxonomyDocument = Taxonomy & Document;
   },
 })
 export class Taxonomy {
-  @Prop({ type: mongoose.SchemaTypes.ObjectId, required: false })
-  publisher_id: string;
-  @Prop({ type: mongoose.SchemaTypes.ObjectId, required: true })
-  branch_id: string;
-  @Prop({ type: mongoose.SchemaTypes.ObjectId, required: true })
-  org_id: string;
-  @Prop({
-    type: mongoose.SchemaTypes.String,
-    default: 'manual',
-  })
-  @ApiProperty()
-  type: string;
 
   @Prop({
     type: mongoose.SchemaTypes.String,
-    default: 'global',
   })
   @ApiProperty()
-  Taxonomy_context: string;
+  taxonomy_context: string;
 
   // biodata
   @ApiProperty()

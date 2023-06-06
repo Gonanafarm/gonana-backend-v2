@@ -3,14 +3,14 @@ import { IsString, IsNotEmpty, IsDate, IsObject, Validate, IsDateString, IsNumbe
 import { isNull } from 'lodash';
 import { MediaAttachment } from './post.schema';
 
-enum PostType {
-    PRODUCT = 'product',
-    POST = 'post',
+export enum PostType {
+    product = 'product',
+    post = 'post',
 }
 
-enum PostStatus {
-    PUBLISHED = 'published',
-    DRAFT = 'draft',
+export enum PostStatus {
+    published= 'published',
+    draft = 'draft',
 }
 
 export class PublishPostDto {
@@ -24,12 +24,12 @@ export class PublishPostDto {
     @IsNotEmpty()
     body: string;
 
-    @ApiProperty({ enum: PostType, default: "post" })
+    @ApiProperty({ enum: PostType, default: PostType.post })
     @IsEnum(PostType)
     @IsOptional()
     type: string;
 
-    @ApiProperty({ enum: PostStatus, default: "draft" })
+    @ApiProperty({ enum: PostStatus, default: PostStatus.published })
     @IsEnum(PostStatus)
     @IsOptional()
     status: string;

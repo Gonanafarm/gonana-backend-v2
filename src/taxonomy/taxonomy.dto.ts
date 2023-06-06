@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import {ApiProperty} from "@nestjs/swagger";
 import {
   IsString,
   IsNotEmpty,
@@ -13,18 +13,16 @@ import {
   IsOptional,
   IsMongoId,
   IsEnum,
-} from 'class-validator';
-import { isNull } from 'lodash';
+} from "class-validator";
+import {isNull} from "lodash";
 
 enum TaxonomyContext {
-  marketplace = 'marketplace',
+  marketplace = "marketplace",
 }
 
 export class PublishTaxonomyDto {
-
-
   @IsEnum(TaxonomyContext)
-  @ApiProperty({ default: 'marketplace', enum: TaxonomyContext })
+  @ApiProperty({default: TaxonomyContext.marketplace, enum: TaxonomyContext})
   taxonomy_context: string;
 
   @IsString()
@@ -39,17 +37,16 @@ export class PublishTaxonomyDto {
 
   @IsString()
   @IsOptional()
-  @ApiProperty({ required: false })
+  @ApiProperty({required: false})
   parent_id: string;
 
   @IsString()
   @IsOptional()
-  @ApiProperty({ required: false })
+  @ApiProperty({required: false})
   image: string;
 }
 
 export class UpdateTaxonomyDto {
- 
   @IsString()
   @IsOptional()
   @ApiProperty({})
@@ -59,5 +56,4 @@ export class UpdateTaxonomyDto {
   @ApiProperty({})
   @IsOptional()
   description: string;
-
 }

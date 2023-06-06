@@ -42,7 +42,8 @@ export class User {
   last_name: string;
 
   @Prop({ type: mongoose.SchemaTypes.Mixed })
-  location: string;
+  @ApiProperty({type: Object})
+  location:  object;
 
   @ApiProperty()
   @Prop({ type: mongoose.SchemaTypes.String, enum: AccountType })

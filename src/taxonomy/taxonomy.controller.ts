@@ -47,7 +47,6 @@ export class TaxonomyController {
   })
   async publish(@Body() body: PublishTaxonomyDto, @Req() req: Request) {
     let publisher_id = '';
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? '';
     return await this.TaxonomyService.create(publisher_id, body);
