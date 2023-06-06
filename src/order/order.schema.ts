@@ -92,3 +92,15 @@ export class Order {
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
+
+
+
+OrderSchema.virtual("id").get(function () {
+  //@ts-ignore
+  return this._id.toHexString();
+});
+
+// Ensure virtual fields are serialised.
+OrderSchema.set("toJSON", {
+  virtuals: true,
+});

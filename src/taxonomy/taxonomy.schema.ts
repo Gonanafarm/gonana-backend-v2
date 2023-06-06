@@ -55,3 +55,13 @@ export class Taxonomy {
 }
 
 export const TaxonomySchema = SchemaFactory.createForClass(Taxonomy);
+
+TaxonomySchema.virtual("id").get(function () {
+  //@ts-ignore
+  return this._id.toHexString();
+});
+
+// Ensure virtual fields are serialised.
+TaxonomySchema.set("toJSON", {
+  virtuals: true,
+});

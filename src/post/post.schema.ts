@@ -114,3 +114,15 @@ export class Post {
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
+
+
+
+PostSchema.virtual("id").get(function () {
+  //@ts-ignore
+  return this._id.toHexString();
+});
+
+// Ensure virtual fields are serialised.
+PostSchema.set("toJSON", {
+  virtuals: true,
+});

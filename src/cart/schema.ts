@@ -50,3 +50,15 @@ export class CartItem {
 }
 
 export const CartItemSchema = SchemaFactory.createForClass(CartItem);
+
+
+
+CartItemSchema.virtual("id").get(function () {
+  //@ts-ignore
+  return this._id.toHexString();
+});
+
+// Ensure virtual fields are serialised.
+CartItemSchema.set("toJSON", {
+  virtuals: true,
+});
