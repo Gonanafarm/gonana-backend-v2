@@ -4,7 +4,7 @@ import { setupSwaggerDocument } from "../common/swagger";
 
 export default setupSwaggerDocument(
   "auth",
-  new DocumentBuilder().addBearerAuth().addServer("")
+  new DocumentBuilder().addBearerAuth().addServer(process.env.API_HOST??"")
     .setTitle("Authorization Docs")
     .setDescription("Basic user authorization features")
     .setVersion("1.0")
