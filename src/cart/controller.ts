@@ -15,7 +15,6 @@ import {CartItem, CartItem as CartItemModel} from "./schema";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {UpdateCartItemDto} from "./dto";
-import {OrderService} from "../order/order.service";
 import {Order} from "../order/order.schema";
 
 @ApiTags("cart-controller")
@@ -24,10 +23,7 @@ import {Order} from "../order/order.schema";
 @Controller("api/catalog/cart")
 // @ApiHeader({ name: 'Bypass-Tunnel-Reminder', required: true })
 export class CartItemController {
-  constructor(
-    private readonly dataService: CartItemService,
-    private readonly orderService: OrderService,
-  ) {}
+  constructor(private readonly dataService: CartItemService) {}
   @Get("")
   @ApiResponse({
     status: 200,

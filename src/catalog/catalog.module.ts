@@ -12,6 +12,8 @@ import {TaxonomyModule} from "../taxonomy/taxonomy.module";
 import {CartItemModule} from "../cart/module";
 import {CartItemController} from "../cart/controller";
 import {EventEmitterModule} from "@nestjs/event-emitter";
+import { UserController } from "../user/user.controller";
+import { UserModule } from "../user/user.module";
 
 @Module({
   controllers: [
@@ -19,11 +21,13 @@ import {EventEmitterModule} from "@nestjs/event-emitter";
     OrderController,
     TaxonomyController,
     CartItemController,
+    UserController
   ],
   imports: [
     EventEmitterModule.forRoot(),
     TaxonomyModule,
     OrderModule,
+    UserModule,
     PostModule,
     CartItemModule,
     JwtModule.register({
