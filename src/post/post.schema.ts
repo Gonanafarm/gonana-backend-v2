@@ -82,12 +82,20 @@ export class Post {
   body: string;
 
   @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.Array})
+  tags: string[];
+
+  @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.String, enum: PostStatus.published})
   status: string;
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Number})
   amount: number;
+
+  @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.Number})
+  quantity: number;
 
   @ApiProperty()
   @Prop({
