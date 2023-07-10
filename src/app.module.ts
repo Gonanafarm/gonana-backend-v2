@@ -23,8 +23,8 @@ const DEV_TRANSPORTER = {
   host: "smtp-relay.sendinblue.com",
   port: 587,
   auth: {
-    user: "developercircus@gmail.com",
-    pass: "CR2bIMjv3XZkrTEL",
+    user: process.env.BREVO_LOGIN,
+    pass: process.env.BREVO_SECRET,
   },
 };
 
