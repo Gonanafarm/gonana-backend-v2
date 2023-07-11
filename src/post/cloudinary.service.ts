@@ -12,9 +12,8 @@ export class CloudinaryService {
     file: Express.Multer.File,
   ): Promise<UploadApiResponse | UploadApiErrorResponse> {
     return new Promise((resolve, reject) => {
-      //, upload_preset: "image_preset"
       const upload = v2.uploader.upload_stream(
-        {format: "jpg"},
+        {upload_preset: "image_preset"},
         (error, result) => {
           if (error) return reject(error);
           //@ts-ignore
