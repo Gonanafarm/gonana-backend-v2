@@ -9,20 +9,20 @@ import {
   Query,
   Req,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
 import {ApiResponse, ApiTags, ApiHeader} from "@nestjs/swagger";
-import {IsString, IsNotEmpty} from "class-validator";
 import {PublishPostDto, UpdatePostDto} from "./post.dto";
 import {PostService} from "./post.service";
 import {Post as PostModel} from "./post.schema";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {Request} from "express";
-import {FileInterceptor} from "@nestjs/platform-express";
-import * as cloudinary from "cloudinary";
+
 import {CloudinaryService} from "./cloudinary.service";
+import {FileInterceptor, FilesInterceptor} from "@nestjs/platform-express";
 
 @ApiTags("posts-controller")
 @UseGuards(JwtAuthGuard)
@@ -49,17 +49,36 @@ export class PostController {
   }
 
   @Post("")
+  @UseInterceptors(FilesInterceptor("files"))
   @ApiResponse({
     status: 200,
     description: "Created post successfully",
     isArray: false,
     type: PostModel,
   })
-  async publish(@Body() body: PublishPostDto, @Req() req: Request) {
+  async publish(
+    @Body() body: PublishPostDto,
+    @Req() req: Request,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+  ) {
+    let images = await Promise.all(
+      files.map(async file => {
+        let res = await this.cloudinary.uploadImage(file);
+        return res.eager[0].url;
+      }),
+    );
     let publisher_id = "";
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-    return await this.dataService.create(publisher_id, body);
+    let payload = {
+      ...body,
+      images,
+      location: {
+        type: "Point",
+        coordinates: [body.geo_long ?? 0, body.geo_lat ?? 0],
+      },
+    };
+    return await this.dataService.create(publisher_id, payload);
   }
 
   @Delete(":item")
@@ -91,7 +110,10 @@ export class PostController {
 
   @Post("upload-image")
   @UseInterceptors(FileInterceptor("file"))
-  async uploadFile(@UploadedFile() file: Express.Multer.File, @Body() body: any) {
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: any,
+  ) {
     let res = await this.cloudinary.uploadImage(file);
     return res.eager[0].url;
   }

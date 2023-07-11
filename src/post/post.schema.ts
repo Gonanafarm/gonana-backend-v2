@@ -3,15 +3,23 @@ import {ApiProperty} from "@nestjs/swagger";
 import * as mongoose from "mongoose";
 import {IAddress, IPerson} from "../common/interface";
 import {Document} from "mongoose";
-import { ArrayMaxSize, IsArray, IsEnum, IsNumber, IsOptional, IsString, MaxLength } from "class-validator";
-import { PostStatus, PostType } from "./post.dto";
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from "class-validator";
+import {PostStatus, PostType} from "./post.dto";
 export type PostDocument = Post & Document;
 
 @Schema({})
 class GeoLocation {
   @ApiProperty()
-  @IsEnum([{point:"Point"}])
-  @Prop({type: mongoose.SchemaTypes.String, default:"Point"})
+  @IsEnum([{point: "Point"}])
+  @Prop({type: mongoose.SchemaTypes.String, default: "Point"})
   type: string;
   @Prop({type: mongoose.SchemaTypes.Number})
   @ApiProperty()
@@ -20,41 +28,6 @@ class GeoLocation {
   coordinates: number[];
 }
 
-@Schema({})
-export class MediaAttachment {
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  @IsString()
-  @IsOptional()
-  status: string;
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.Number})
-  @IsNumber()
-  @IsOptional()
-  size: number;
-
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  @Prop({type: mongoose.SchemaTypes.String})
-  file_type: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  @Prop({type: mongoose.SchemaTypes.String})
-  source: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  @Prop({type: mongoose.SchemaTypes.String})
-  content_url: string;
-}
-
-const attachmentDoc = SchemaFactory.createForClass(MediaAttachment);
-const locationDoc = SchemaFactory.createForClass(GeoLocation);
 @Schema({
   timestamps: {
     createdAt: "created_at", // Use `created_at` to store the created date
@@ -74,8 +47,8 @@ export class Post {
   name: string;
 
   @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  image: string;
+  @Prop({type: mongoose.SchemaTypes.Array})
+  images: string[];
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.String})
@@ -103,14 +76,8 @@ export class Post {
   })
   categories: string[];
 
-  @ApiProperty({type: MediaAttachment, isArray: true})
-  @Prop({
-    type: [attachmentDoc],
-  })
-  attachments: MediaAttachment[];
-
   @ApiProperty({type: GeoLocation})
-  @Prop({type: GeoLocation})
+  @Prop({type: mongoose.SchemaTypes.Mixed})
   location: GeoLocation;
 
   @ApiProperty()
@@ -123,8 +90,6 @@ export class Post {
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
-
-
 
 PostSchema.virtual("id").get(function () {
   //@ts-ignore

@@ -16,7 +16,6 @@ import {
   ArrayMaxSize,
 } from "class-validator";
 import {isNull} from "lodash";
-import {MediaAttachment} from "./post.schema";
 
 export enum PostType {
   product = "product",
@@ -64,11 +63,6 @@ export class PublishPostDto {
   status: string;
 
   @ApiProperty({})
-  @IsString()
-  @IsOptional()
-  image: string;
-
-  @ApiProperty({})
   @IsNumber()
   @IsOptional()
   amount: number;
@@ -78,9 +72,15 @@ export class PublishPostDto {
   @IsOptional()
   quantity: number;
 
-  @ApiProperty({type: GeoLocation})
-  @IsObject()
-  location: GeoLocation;
+  @ApiProperty({type: Number})
+  @IsNumber()
+  @IsOptional()
+  geo_long: number
+
+  @ApiProperty({type: Number})
+  @IsNumber()
+  @IsOptional()
+  geo_lat: number
 
   @ApiProperty({})
   @IsArray({})
@@ -91,12 +91,6 @@ export class PublishPostDto {
   @IsArray({})
   @IsOptional()
   tags: string[];
-
-  @ApiProperty({type: MediaAttachment, isArray: true})
-  @IsArray({})
-  @IsOptional()
-  // @ValidateNested({ each: true })
-  attachments: MediaAttachment[];
 }
 
 export class UpdatePostDto {
