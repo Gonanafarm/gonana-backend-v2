@@ -91,8 +91,8 @@ export class PostController {
 
   @Post("upload-image")
   @UseInterceptors(FileInterceptor("file"))
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(@UploadedFile() file: Express.Multer.File, @Body() body: any) {
     let res = await this.cloudinary.uploadImage(file);
-    return res.url;
+    return res.eager[0].url;
   }
 }
