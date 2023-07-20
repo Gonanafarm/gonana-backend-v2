@@ -63,29 +63,29 @@ export class PublishPostDto {
   status: string;
 
   @ApiProperty({})
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  amount: number;
+  amount: string;
 
   @ApiProperty({})
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  quantity: number;
-
-  @ApiProperty({type: Number})
-  @IsNumber()
-  @IsOptional()
-  geo_long: number
-
-  @ApiProperty({type: Number})
-  @IsNumber()
-  @IsOptional()
-  geo_lat: number
+  quantity: string;
 
   @ApiProperty({})
-  @IsArray({})
+  @IsString()
   @IsOptional()
-  categories: string[];
+  geo_long:string
+
+  @ApiProperty({})
+  @IsString()
+  @IsOptional()
+  geo_lat: string
+
+  @ApiProperty({})
+  @IsString({})
+  @IsOptional()
+  category: string;
 
   @ApiProperty({})
   @IsArray({})

@@ -72,6 +72,12 @@ export class Post {
 
   @ApiProperty()
   @Prop({
+    type:mongoose.SchemaTypes.String ,
+  })
+  category: string;
+
+  @ApiProperty()
+  @Prop({
     type: [String],
   })
   categories: string[];

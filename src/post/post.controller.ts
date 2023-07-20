@@ -23,6 +23,7 @@ import {Request} from "express";
 
 import {CloudinaryService} from "./cloudinary.service";
 import {FileInterceptor, FilesInterceptor} from "@nestjs/platform-express";
+import { String } from "lodash";
 
 @ApiTags("posts-controller")
 @UseGuards(JwtAuthGuard)
@@ -40,12 +41,11 @@ export class PostController {
     isArray: true,
     type: PostModel,
   })
-  get(@Req() req: Request) {
+  get(@Req() req: Request, @Query("type")  type: string) {
     let publisher_id = "";
-
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-    return this.dataService.retrieveItems({publisher_id: publisher_id});
+    return this.dataService.retrieveItems({publisher_id: publisher_id, type});
   }
 
   @Post("")
@@ -61,6 +61,16 @@ export class PostController {
     @Req() req: Request,
     @UploadedFiles() files: Array<Express.Multer.File>,
   ) {
+    let amount = parseInt(body.amount);
+    let quantity = parseInt(body.quantity);
+    let geo_lat = parseInt(body.geo_lat);
+    let geo_long = parseInt(body.geo_long);
+
+    amount = isNaN(amount) == true ? 0 : amount;
+    quantity = isNaN(quantity) == true ? 0 : quantity;
+    geo_lat = isNaN(geo_lat) == true ? 0 : geo_lat;
+    geo_long = isNaN(geo_long) == true ? 0 : geo_long;
+
     let images = await Promise.all(
       files.map(async file => {
         let res = await this.cloudinary.uploadImage(file);
@@ -77,6 +87,10 @@ export class PostController {
         type: "Point",
         coordinates: [body.geo_long ?? 0, body.geo_lat ?? 0],
       },
+      geo_long,
+      geo_lat,
+      quantity,
+      amount,
     };
     return await this.dataService.create(publisher_id, payload);
   }
