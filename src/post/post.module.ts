@@ -5,8 +5,8 @@ import { PostService } from "./post.service";
 import { CloudinaryService } from "./cloudinary.service";
 
 @Module({
-  providers: [PostService,  CloudinaryService],
+  providers: [PostService, CloudinaryService],
   imports: [PostModel],
-  exports: [PostModel, PostService,  CloudinaryService],
+  exports: [PostModel, PostService, CloudinaryService],
 })
 export class PostModule { }

@@ -1,20 +1,20 @@
-import { Model } from "mongoose";
-import { v4 as uuid } from "uuid";
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import {Model} from "mongoose";
+import {v4 as uuid} from "uuid";
+import {Injectable} from "@nestjs/common";
+import {InjectModel} from "@nestjs/mongoose";
 import config from "../config";
-import { hashPassword } from "../common/auth";
+import {hashPassword} from "../common/auth";
 import {
   UserNotFoundException,
   EmailAlreadyUsedException,
   PasswordResetTokenInvalidException,
   ActivationTokenInvalidException,
+  DeletionException,
 } from "../common/exceptions";
-import { UserMailerService } from "./user.mailer.service";
-import { UserDocument } from "./user.schema";
-import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
-import { GenericService } from "../generic/generic.service";
-
+import {UserMailerService} from "./user.mailer.service";
+import {UserDocument} from "./user.schema";
+import {EventEmitter2, OnEvent} from "@nestjs/event-emitter";
+import {GenericService} from "../generic/generic.service";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -22,7 +22,7 @@ export class UserService extends GenericService<UserDocument> {
     //@ts-ignore
     @InjectModel("User") private readonly userModel: Model<UserDocument>,
     private readonly userMailer: UserMailerService,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
   ) {
     super(userModel);
   }
@@ -34,9 +34,11 @@ export class UserService extends GenericService<UserDocument> {
     email: string,
     password: string,
     origin: string,
-    account_type: string
+    account_type: string,
+    //imageFile: Express.Multer.File,
   ): Promise<UserDocument> {
     try {
+      // const image = await this.cloudinaryService.uploadImage(imageFile);
       const user = await this.userModel.create({
         email: email.toLowerCase(),
         first_name,
@@ -46,6 +48,7 @@ export class UserService extends GenericService<UserDocument> {
         password: await hashPassword(password),
         activationToken: uuid(),
         activationExpires: Date.now() + config.auth.activationExpireInMs,
+        //   image,
       });
 
       // on account created
@@ -69,6 +72,18 @@ export class UserService extends GenericService<UserDocument> {
 
     return user;
   }
+  async deleteUser(
+    email: string,
+  ): Promise<{success: boolean; message: string}> {
+    const deletedUser = await this.userModel.deleteOne({email: email});
+    if (!deletedUser) {
+      throw DeletionException();
+    }
+    return {
+      success: true,
+      message: "User deleted successfully",
+    };
+  }
 
   async resendActivation(id: string, origin: any): Promise<any> {
     const user = await this.userModel
@@ -78,7 +93,7 @@ export class UserService extends GenericService<UserDocument> {
           activationToken: uuid(),
           activationExpires: Date.now() + config.auth.activationExpireInMs,
         },
-        { new: true }
+        {new: true},
       )
       .exec();
 
@@ -94,8 +109,8 @@ export class UserService extends GenericService<UserDocument> {
 
   async findByEmail(email: string): Promise<UserDocument> {
     const user = await this.userModel.findOne(
-      { email: email.toLowerCase() },
-      "+password"
+      {email: email.toLowerCase()},
+      "+password",
     );
 
     if (!user) {
@@ -122,7 +137,7 @@ export class UserService extends GenericService<UserDocument> {
         {
           new: true,
           runValidators: true,
-        }
+        },
       )
       .where("activationExpires")
       .gt(Date.now())
@@ -138,7 +153,6 @@ export class UserService extends GenericService<UserDocument> {
     return user;
   }
 
-
   async forgottenPassword(email: string, origin: string) {
     const user = await this.userModel.findOneAndUpdate(
       {
@@ -152,7 +166,7 @@ export class UserService extends GenericService<UserDocument> {
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     if (!user) {
@@ -169,7 +183,7 @@ export class UserService extends GenericService<UserDocument> {
   async resetPassword(
     email: string,
     passwordResetToken: string,
-    password: string
+    password: string,
   ) {
     const user = await this.userModel
       .findOneAndUpdate(
@@ -185,7 +199,7 @@ export class UserService extends GenericService<UserDocument> {
         {
           new: true,
           runValidators: true,
-        }
+        },
       )
       .where("passwordResetExpires")
       .gt(Date.now())
@@ -200,6 +214,4 @@ export class UserService extends GenericService<UserDocument> {
 
     return user;
   }
-
- 
 }

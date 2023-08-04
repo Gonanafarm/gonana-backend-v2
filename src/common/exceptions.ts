@@ -8,6 +8,9 @@ import {
 export const EmailAlreadyUsedException = () =>
   new ConflictException("Email already in use.");
 
+export const DeletionException = () =>
+  new Error("Error Occured while deleting");
+
 export const UserNotFoundException = () =>
   new NotFoundException("Requested user does not exist.");
 

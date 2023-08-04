@@ -11,6 +11,7 @@ import {
   HttpStatus,
   Put,
   Header,
+  Delete
 } from "@nestjs/common";
 import {AuthGuard} from "@nestjs/passport";
 import {Request} from "express";
@@ -109,5 +110,10 @@ export class AuthController {
     let user_id = req.user?.id ?? "";
     console.log(user_id, "user id");
     this.userService.resendActivation(user_id, getOriginHeader(req));
+  }
+
+  @Delete('delete')
+  async deleteUser(@Body() body: ForgottenPasswordDto) {
+    return await this.userService.deleteUser(body.email)
   }
 }
