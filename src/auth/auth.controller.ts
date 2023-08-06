@@ -11,7 +11,7 @@ import {
   HttpStatus,
   Put,
   Header,
-  Delete
+  Delete,
 } from "@nestjs/common";
 import {AuthGuard} from "@nestjs/passport";
 import {Request} from "express";
@@ -24,6 +24,7 @@ import {
   LoginDto,
   AuthenticatedUser,
   UserProfileResponse,
+  OtpDto,
 } from "./auth.interface";
 import {AuthService} from "./auth.service";
 import {getOriginHeader} from "../common/auth";
@@ -73,6 +74,11 @@ export class AuthController {
     return this.authService.signUpUser(signUpDto, getOriginHeader(req));
   }
 
+  @Post("verify-otp")
+  async verifyOtp(@Body() otp: OtpDto) {
+    return this.userService.verifyOTP(otp.otp);
+  }
+
   @UseGuards(AuthGuard())
   @Get("me")
   @ApiResponse({type: UserProfileResponse})
@@ -112,8 +118,8 @@ export class AuthController {
     this.userService.resendActivation(user_id, getOriginHeader(req));
   }
 
-  @Delete('delete')
+  @Delete("delete")
   async deleteUser(@Body() body: ForgottenPasswordDto) {
-    return await this.userService.deleteUser(body.email)
+    return await this.userService.deleteUser(body.email);
   }
 }

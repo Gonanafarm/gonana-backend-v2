@@ -20,14 +20,12 @@ import {PassportModule} from "@nestjs/passport";
 import {PublicModule} from "./public/public.module";
 
 const DEV_TRANSPORTER = {
-  host: "smtp-relay.sendinblue.com",
-  port: 587,
+  service: 'Gmail',
   auth: {
-    user: process.env.BREVO_LOGIN,
-    pass: process.env.BREVO_SECRET,
+    user: process.env.GMAIL_USER, // Your Gmail email address
+    pass: process.env.GMAIL_PASSWORD, // Your Gmail password or app-specific password
   },
 };
-
 @Module({
   imports: [
     AuthModule,
@@ -44,7 +42,7 @@ const DEV_TRANSPORTER = {
       useFactory: () => ({
         transport: DEV_TRANSPORTER,
         defaults: {
-          from: {address: "", name: `${config.mail.from ?? ""}`},
+          from: '"Gonana" <10xjoshua@gmail.com>',
         },
         template: {
           dir: __dirname + "/../templates",

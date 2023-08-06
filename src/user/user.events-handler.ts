@@ -1,25 +1,25 @@
-import { Injectable } from "@nestjs/common";
-import { OnEvent } from "@nestjs/event-emitter";
-
-import { UserMailerService } from "./user.mailer.service";
-import { UserService } from "./user.service";
+import {Injectable} from "@nestjs/common";
+import {OnEvent} from "@nestjs/event-emitter";
+import {UserMailerService} from "./user.mailer.service";
+import {UserService} from "./user.service";
 
 @Injectable()
 export class UserEventHanders {
   constructor(
     private readonly userMailer: UserMailerService,
-    private userService: UserService
+    private userService: UserService,
   ) {}
   @OnEvent("account.created")
-  handleAccountCreatedEvent(payload: any) {
-    console.log("on account create");
-    this.userMailer.sendActivationMail(
-      payload.user.email,
-      payload.user.id,
-      payload.user.activationToken,
-      payload.origin
-    );
+  async handleAccountCreatedEvent(payload: any) {
+    console.log("account created");
+    const otp = this.userService.generateOtp();
+    this.userMailer.sendOTP(payload.user.email, otp);
+    await this.userService.createOtpModel(payload.user.email, otp);
+    console.log('mail sent')
   }
+
+  @OnEvent("otp.generated")
+  handleOtpEvent(payload: any) {}
 
   @OnEvent("account.activation.updated")
   handleAccountActivationUpdated(payload: any) {
@@ -27,7 +27,7 @@ export class UserEventHanders {
       payload.user.email,
       payload.user.id,
       payload.user.activationToken,
-      payload.origin
+      payload.origin,
     );
   }
 
@@ -66,7 +66,7 @@ export class UserEventHanders {
     this.userMailer.sendForgottenPasswordMail(
       payload.user.email,
       payload.user.passwordResetToken,
-      payload.origin
+      payload.origin,
     );
   }
 
@@ -77,7 +77,7 @@ export class UserEventHanders {
     this.userMailer.sendNotification(
       user.email,
       "Verification update",
-      "This is to notify you that documents you submitted did not pass the verification stage, kindly update proceed to the verification page and request a new verification."
+      "This is to notify you that documents you submitted did not pass the verification stage, kindly update proceed to the verification page and request a new verification.",
     );
   }
 }

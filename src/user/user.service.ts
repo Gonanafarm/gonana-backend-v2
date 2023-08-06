@@ -13,14 +13,17 @@ import {
 } from "../common/exceptions";
 import {UserMailerService} from "./user.mailer.service";
 import {UserDocument} from "./user.schema";
-import {EventEmitter2, OnEvent} from "@nestjs/event-emitter";
+import {EventEmitter2} from "@nestjs/event-emitter";
 import {GenericService} from "../generic/generic.service";
+import {OtpDocument} from "./otp.schema";
+import {promises} from "fs";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
     //@ts-ignore
     @InjectModel("User") private readonly userModel: Model<UserDocument>,
+    @InjectModel("Otp") private readonly otpModel: Model<OtpDocument>,
     private readonly userMailer: UserMailerService,
     private eventEmitter: EventEmitter2,
   ) {
@@ -214,4 +217,45 @@ export class UserService extends GenericService<UserDocument> {
 
     return user;
   }
-}
+  generateOtp(): string {
+    const min = 0;
+    const max = 9999;
+
+    const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+    const otp = randomNumber.toString().padStart(4, "0");
+    this.eventEmitter.emit("otp.generated", otp);
+    return otp;
+  }
+
+  async createOtpModel(email: string, otp: string): Promise<OtpDocument> {
+    try{
+    const newOtp = await this.otpModel.create({email, otp});
+    return newOtp;
+    }
+    catch(e: unknown) {
+      console.error(e)
+      throw new Error('error creating model');
+    }
+  }
+
+  async verifyOTP(reqOTP: string): Promise<boolean> {
+    try {
+      const otpModel = await this.otpModel.findOne({ otp: reqOTP });
+  
+      if (otpModel) {
+        await this.userModel.updateOne(
+          { email: otpModel.email },
+          { $set: { email_activated: true } }
+        );
+        console.log("success");
+        return true;
+      } else {
+        console.log("fail");
+        return false;
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
+      throw new Error("Error while verifying OTP"); 
+    }
+  }
+  }

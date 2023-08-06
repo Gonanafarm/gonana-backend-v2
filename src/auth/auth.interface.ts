@@ -8,6 +8,8 @@ import {
   IsPhoneNumber,
   IsEnum,
   IsMobilePhone,
+  Max,
+  Length,
 } from "class-validator";
 import {ApiProperty} from "@nestjs/swagger";
 import {UserPublicData} from "../user/user.dto";
@@ -81,6 +83,11 @@ export class ForgottenPasswordDto {
   @IsEmail()
   @MaxLength(255)
   readonly email!: string;
+}
+
+export class OtpDto {
+  @Length(4, 4)
+  readonly otp!: string;
 }
 
 export class ResetPasswordDto {

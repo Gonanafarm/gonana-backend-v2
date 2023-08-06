@@ -4,12 +4,13 @@ import * as mongoose from "mongoose";
 import { Document } from "mongoose";
 import { UserPublicData } from "./user.dto";
 import { AccountStatus, AccountType } from "../common/enums";
+import { OtpDocument } from "./otp.schema";
 
 export type UserMethods = {
   getPublicData: () => UserPublicData;
 };
 
-export type UserDocument = User & Document & UserMethods;
+export type UserDocument = User & Document & UserMethods & OtpDocument;
 
 @Schema({
   timestamps: {
