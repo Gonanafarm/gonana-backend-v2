@@ -8,6 +8,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Body,
+  Patch
 } from "@nestjs/common";
 import {Request} from "express";
 import {ApiBearerAuth, ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
@@ -36,7 +37,7 @@ export class UserController {
     return this.userService.getItem(id);
   }
 
-  @Post("update-image")
+  @Patch("update-image")
   @UseInterceptors(FileInterceptor("file"))
   uploadImage(
     @UploadedFile() file: Express.Multer.File,
