@@ -16,7 +16,7 @@ import {UserDocument} from "./user.schema";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {GenericService} from "../generic/generic.service";
 import {OtpDocument} from "./otp.schema";
-import {promises} from "fs";
+import { CloudinaryService } from "../post/cloudinary.service";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -24,6 +24,7 @@ export class UserService extends GenericService<UserDocument> {
     //@ts-ignore
     @InjectModel("User") private readonly userModel: Model<UserDocument>,
     @InjectModel("Otp") private readonly otpModel: Model<OtpDocument>,
+    private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
     private eventEmitter: EventEmitter2,
   ) {
@@ -256,6 +257,25 @@ export class UserService extends GenericService<UserDocument> {
     } catch (error) {
       console.error("An error occurred:", error);
       throw new Error("Error while verifying OTP"); 
+    }
+  }
+
+  async updateImage( email: string, file: Express.Multer.File) {
+    try{
+    const image = await this.cloudinaryService.uploadImage(file);
+    const user = await this.userModel.findOne({email: email});
+    if (user) {
+      await this.userModel.updateOne(
+        { email: user.email },
+        { $set: { profile_photo: image.secure_url } }
+      );
+      console.log("success");
+      return true;
+    }
+    }
+    catch(e){
+      console.error(e)
+      throw new Error("Error while updating image");
     }
   }
   }

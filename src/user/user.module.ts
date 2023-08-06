@@ -10,6 +10,7 @@ import {JwtModule} from "@nestjs/jwt";
 import config from "../config";
 import {UserEventHanders} from "./user.events-handler";
 import {ProfileController} from "./profile.controller";
+import { CloudinaryService } from "../post/cloudinary.service";
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import {ProfileController} from "./profile.controller";
     }),
   ],
   controllers: [UserController, ProfileController],
-  providers: [UserMailerService, UserService, UserEventHanders],
+  providers: [UserMailerService, UserService, UserEventHanders, CloudinaryService],
   exports: [UserService],
 })
 export class UserModule {}

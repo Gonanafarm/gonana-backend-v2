@@ -29,6 +29,7 @@ const DEV_TRANSPORTER = {
 @Module({
   imports: [
     AuthModule,
+    UserModule,
     MorganModule,
     PublicModule,
     CatalogModule,
@@ -61,7 +62,7 @@ const DEV_TRANSPORTER = {
         },
       }),
     }),
-    UserModule,
+  
   ],
   providers: config.isTest() ? undefined : [GlobalAccessLogger],
 })
