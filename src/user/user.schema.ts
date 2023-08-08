@@ -93,6 +93,9 @@ export class User {
   @Prop({ type: mongoose.SchemaTypes.String, default: "n/a" })
   technical_skill: string;
 
+  @Prop({ type: mongoose.SchemaTypes.String, default:""})
+  passcode: string;
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -1,9 +1,10 @@
 import {Model} from "mongoose";
+import * as mongoose from "mongoose";
 import {v4 as uuid} from "uuid";
 import {Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import config from "../config";
-import {hashPassword} from "../common/auth";
+import {comparePassword, hashPassword} from "../common/auth";
 import {
   UserNotFoundException,
   EmailAlreadyUsedException,
@@ -16,7 +17,7 @@ import {UserDocument} from "./user.schema";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {GenericService} from "../generic/generic.service";
 import {OtpDocument} from "./otp.schema";
-import { CloudinaryService } from "../post/cloudinary.service";
+import {CloudinaryService} from "../post/cloudinary.service";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -229,24 +230,23 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async createOtpModel(email: string, otp: string): Promise<OtpDocument> {
-    try{
-    const newOtp = await this.otpModel.create({email, otp});
-    return newOtp;
-    }
-    catch(e: unknown) {
-      console.error(e)
-      throw new Error('error creating model');
+    try {
+      const newOtp = await this.otpModel.create({email, otp});
+      return newOtp;
+    } catch (e: unknown) {
+      console.error(e);
+      throw new Error("error creating model");
     }
   }
 
   async verifyOTP(reqOTP: string): Promise<boolean> {
     try {
-      const otpModel = await this.otpModel.findOne({ otp: reqOTP });
-  
+      const otpModel = await this.otpModel.findOne({otp: reqOTP});
+
       if (otpModel) {
         await this.userModel.updateOne(
-          { email: otpModel.email },
-          { $set: { email_activated: true } }
+          {email: otpModel.email},
+          {$set: {email_activated: true}},
         );
         console.log("success");
         return true;
@@ -256,26 +256,50 @@ export class UserService extends GenericService<UserDocument> {
       }
     } catch (error) {
       console.error("An error occurred:", error);
-      throw new Error("Error while verifying OTP"); 
+      throw new Error("Error while verifying OTP");
     }
   }
 
-  async updateImage( email: string, file: Express.Multer.File) {
-    try{
-    const image = await this.cloudinaryService.uploadImage(file);
-    const user = await this.userModel.findOne({email: email});
-    if (user) {
-      await this.userModel.updateOne(
-        { email: user.email },
-        { $set: { profile_photo: image.secure_url } }
-      );
-      console.log("success");
-      return true;
-    }
-    }
-    catch(e){
-      console.error(e)
+  async updateImage(email: string, file: Express.Multer.File) {
+    try {
+      const image = await this.cloudinaryService.uploadImage(file);
+      const user = await this.userModel.findOne({email: email});
+      if (user) {
+        await this.userModel.updateOne(
+          {email: user.email},
+          {$set: {profile_photo: image.secure_url}},
+        );
+        console.log("success");
+        return true;
+      }
+    } catch (e) {
+      console.error(e);
       throw new Error("Error while updating image");
     }
   }
+
+  async updateUserDetails(id: string, details: any) {
+    const updatedUser = await this.updateItem(id, details);
+    return updatedUser;
   }
+  async updatePasscode(id: string, passcode: string) {
+    const details = await hashPassword(passcode);
+    const user = await this.userModel.findById(id);
+    if (user) {
+      await this.userModel.updateOne(
+        {email: user.email},
+        {$set: {passcode: details}},
+      );
+      console.log("success");
+      return true;
+    } else return false;
+  }
+
+  async verifyPasscode(id: string, passcode: string) {
+    const user = await this.userModel.findById(id);
+    //@ts-ignore
+    const verify = comparePassword(passcode, user.passcode);
+    if (verify) return true;
+    else return false;
+  }
+}

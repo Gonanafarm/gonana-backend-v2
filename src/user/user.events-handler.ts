@@ -18,9 +18,6 @@ export class UserEventHanders {
     console.log('mail sent')
   }
 
-  @OnEvent("otp.generated")
-  handleOtpEvent(payload: any) {}
-
   @OnEvent("account.activation.updated")
   handleAccountActivationUpdated(payload: any) {
     this.userMailer.sendActivationMail(
@@ -41,7 +38,6 @@ export class UserEventHanders {
   handleAccountLogindEvent(payload: any) {
     // handle and process "OrderCreatedEvent" event
     console.log("on account login event");
-    console.log(payload);
     this.userMailer.sendLoginSecurityMail(payload.email);
   }
 

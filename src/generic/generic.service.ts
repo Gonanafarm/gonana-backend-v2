@@ -3,7 +3,7 @@ import { Controller, Injectable, Module } from "@nestjs/common";
 import { Model, Document } from "mongoose";
 import { ResourceNotFoundException } from "../common/exceptions";
 import { ServiceInterface } from "./generic.interface";
-import { OtpDocument } from "src/user/otp.schema";
+
 
 export class GenericService<T extends Document> implements ServiceInterface {
 
