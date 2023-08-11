@@ -12,6 +12,7 @@ import {
   Put,
   Header,
   Delete,
+  HttpCode,
 } from "@nestjs/common";
 import {AuthGuard} from "@nestjs/passport";
 import {Request} from "express";
@@ -76,11 +77,13 @@ export class AuthController {
   }
 
   @Post("verify-otp")
+  @HttpCode(200)
   async verifyOtp(@Body() otp: OtpDto) {
     return this.userService.verifyOTP(otp.otp);
   }
 
   @Post("resend-otp")
+  @HttpCode(200)
   @UseGuards(JwtAuthGuard)
   async resendOtp(@Req() req: Request) {
     //@ts-ignore
