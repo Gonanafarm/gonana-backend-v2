@@ -13,9 +13,9 @@ export class UserEventHanders {
   async handleAccountCreatedEvent(payload: any) {
     console.log("account created");
     const otp = this.userService.generateOtp();
-    this.userMailer.sendOTP(payload.user.email, otp);
     await this.userService.createOtpModel(payload.user.email, otp);
-    console.log('mail sent')
+    this.userMailer.sendOTP(payload.user.email, otp);
+    console.log("mail sent");
   }
 
   @OnEvent("account.activation.updated")

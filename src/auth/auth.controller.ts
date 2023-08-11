@@ -39,6 +39,7 @@ import {AppRequest} from "../generic/generic.interface";
 import {UserService} from "../user/user.service";
 import {User} from "../user/user.schema";
 import {UpdateUserDto} from "../user/user.dto";
+import { JwtAuthGuard } from "./jwt-auth.guard";
 
 @ApiTags("auth")
 @ApiBearerAuth()
@@ -77,6 +78,14 @@ export class AuthController {
   @Post("verify-otp")
   async verifyOtp(@Body() otp: OtpDto) {
     return this.userService.verifyOTP(otp.otp);
+  }
+
+  @Post("resend-otp")
+  @UseGuards(JwtAuthGuard)
+  async resendOtp(@Req() req: Request) {
+    //@ts-ignore
+    const email = req.user?.email;
+    return this.userService.resendOtp(email)
   }
 
   @UseGuards(AuthGuard())

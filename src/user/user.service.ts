@@ -1,7 +1,11 @@
 import {Model} from "mongoose";
 import * as mongoose from "mongoose";
 import {v4 as uuid} from "uuid";
-import {Injectable} from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import config from "../config";
 import {comparePassword, hashPassword} from "../common/auth";
@@ -82,6 +86,10 @@ export class UserService extends GenericService<UserDocument> {
   ): Promise<{success: boolean; message: string}> {
     const deletedUser = await this.userModel.deleteOne({email: email});
     if (!deletedUser) {
+      throw DeletionException();
+    }
+    const deleteOtp = await this.otpModel.deleteOne({email: email});
+    if (!deleteOtp) {
       throw DeletionException();
     }
     return {
@@ -239,24 +247,48 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async verifyOTP(reqOTP: string): Promise<boolean> {
+  async verifyOTP(reqOTP: string) {
     try {
       const otpModel = await this.otpModel.findOne({otp: reqOTP});
 
-      if (otpModel) {
-        await this.userModel.updateOne(
-          {email: otpModel.email},
-          {$set: {email_activated: true}},
-        );
-        console.log("success");
-        return true;
-      } else {
-        console.log("fail");
-        return false;
+      if (!otpModel) {
+        throw new NotFoundException("Otp Invalid");
       }
+      await this.userModel.updateOne(
+        {email: otpModel.email},
+        {$set: {email_activated: true}},
+      );
+
+      return {
+        success: true,
+        message: "Email Verified",
+      };
     } catch (error) {
       console.error("An error occurred:", error);
       throw new Error("Error while verifying OTP");
+    }
+  }
+
+  async resendOtp(email: string) {
+    try {
+      this.eventEmitter.emit("resendOtp");
+      const otpExists = await this.otpModel.findOne({email: email});
+      if (!otpExists) {
+        const otp = this.generateOtp();
+        await this.otpModel.create({otp: otp, email: email});
+        this.userMailer.sendOTP(email, otp);
+        return {success: true, message: "otp mail sent"};
+      }
+      await this.otpModel.deleteOne({email: email});
+      const otp = this.generateOtp();
+      await this.otpModel.create({otp: otp, email: email});
+      this.userMailer.sendOTP(email, otp);
+      return {success: true, message: "otp mail sent"};
+    } catch (error) {
+      console.error(error);
+      throw new BadRequestException(
+        "Email Not provided or something. If you're seeing this you really fucked up",
+      );
     }
   }
 
@@ -270,7 +302,6 @@ export class UserService extends GenericService<UserDocument> {
           {$set: {profile_photo: image.secure_url}},
         );
         console.log("success");
-        return true;
       }
     } catch (e) {
       console.error(e);
@@ -279,27 +310,47 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async updateUserDetails(id: string, details: any) {
-    const updatedUser = await this.updateItem(id, details);
-    return updatedUser;
+    try {
+      const updatedUser = await this.updateItem(id, details);
+      return updatedUser;
+    } catch (error: any) {
+      console.log(error);
+      throw new Error(`${error.message}`);
+    }
   }
   async updatePasscode(id: string, passcode: string) {
     const details = await hashPassword(passcode);
     const user = await this.userModel.findById(id);
-    if (user) {
-      await this.userModel.updateOne(
-        {email: user.email},
-        {$set: {passcode: details}},
-      );
-      console.log("success");
-      return true;
-    } else return false;
+    if (!user) {
+      throw new NotFoundException("User not found, login and try again");
+    }
+    await this.userModel.updateOne(
+      {email: user.email},
+      {$set: {passcode: details}},
+    );
+    return {
+      success: true,
+      message: "Passcode created",
+    };
   }
 
   async verifyPasscode(id: string, passcode: string) {
     const user = await this.userModel.findById(id);
-    //@ts-ignore
+    if (!user) {
+      throw new NotFoundException(`User not found, login and try again`);
+    }
     const verify = comparePassword(passcode, user.passcode);
-    if (verify) return true;
-    else return false;
+    if (!verify) {
+      throw new BadRequestException("Passcode not valid");
+    }
+    return {
+      success: true,
+      message: "Passcode verified",
+    };
+  }
+
+  async getUserData(id: string) {
+    const user = await this.userModel.findById(id);
+    return user?.getPublicData();
   }
 }
