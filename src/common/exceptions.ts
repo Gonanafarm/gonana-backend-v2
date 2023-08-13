@@ -11,6 +11,9 @@ export const EmailAlreadyUsedException = () =>
 export const DeletionException = () =>
   new Error("Error Occured while deleting");
 
+  export const InvalidPasscodeException = () =>
+  new Error("Invalid Passcode");
+
 export const UserNotFoundException = () =>
   new NotFoundException("Requested user does not exist.");
 

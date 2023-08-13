@@ -131,4 +131,5 @@ export class PostController {
     let res = await this.cloudinary.uploadImage(file);
     return res.eager[0].url;
   }
+
 }

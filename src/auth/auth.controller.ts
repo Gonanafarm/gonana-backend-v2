@@ -26,6 +26,7 @@ import {
   AuthenticatedUser,
   UserProfileResponse,
   OtpDto,
+  DeleteUserDto,
 } from "./auth.interface";
 import {AuthService} from "./auth.service";
 import {getOriginHeader} from "../common/auth";
@@ -40,7 +41,7 @@ import {AppRequest} from "../generic/generic.interface";
 import {UserService} from "../user/user.service";
 import {User} from "../user/user.schema";
 import {UpdateUserDto} from "../user/user.dto";
-import { JwtAuthGuard } from "./jwt-auth.guard";
+import {JwtAuthGuard} from "./jwt-auth.guard";
 
 @ApiTags("auth")
 @ApiBearerAuth()
@@ -88,7 +89,7 @@ export class AuthController {
   async resendOtp(@Req() req: Request) {
     //@ts-ignore
     const email = req.user?.email;
-    return this.userService.resendOtp(email)
+    return this.userService.resendOtp(email);
   }
 
   @UseGuards(AuthGuard())
@@ -131,7 +132,11 @@ export class AuthController {
   }
 
   @Delete("delete")
-  async deleteUser(@Body() body: ForgottenPasswordDto) {
-    return await this.userService.deleteUser(body.email);
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Body("passcode") passcode: string, @Req() req: Request) {
+    //@ts-ignore
+    const email = req?.user?.email;
+    return await this.userService.deleteUser(email, passcode);
   }
 }

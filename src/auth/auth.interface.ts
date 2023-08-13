@@ -85,6 +85,14 @@ export class ForgottenPasswordDto {
   readonly email!: string;
 }
 
+export class DeleteUserDto {
+  @IsEmail()
+  readonly email!: string;
+
+  @Length(4, 4)
+  readonly passcode!: string;
+}
+
 export class OtpDto {
   @Length(4, 4)
   readonly otp!: string;

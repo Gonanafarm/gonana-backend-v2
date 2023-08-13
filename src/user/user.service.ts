@@ -15,6 +15,7 @@ import {
   PasswordResetTokenInvalidException,
   ActivationTokenInvalidException,
   DeletionException,
+  InvalidPasscodeException,
 } from "../common/exceptions";
 import {UserMailerService} from "./user.mailer.service";
 import {UserDocument} from "./user.schema";
@@ -83,7 +84,14 @@ export class UserService extends GenericService<UserDocument> {
   }
   async deleteUser(
     email: string,
+    passcode: string,
   ): Promise<{success: boolean; message: string}> {
+    
+    const verifyPasscode = await this.verifyPasscode(email, passcode);
+    
+    if (!verifyPasscode) {
+      return {success: false, message: "Passcode mismatch"};
+    }
     const deletedUser = await this.userModel.deleteOne({email: email});
     if (!deletedUser) {
       throw DeletionException();
@@ -337,17 +345,18 @@ export class UserService extends GenericService<UserDocument> {
     };
   }
 
-  async verifyPasscode(id: string, passcode: string) {
+  async verifyPasscode(email: string, passcode: string) {
     if (passcode.length !== 4) {
       throw new BadRequestException("Passcode must be 4 characters");
     }
-    const user = await this.userModel.findById(id);
+    const user = await this.findByEmail(email);
     if (!user) {
       throw new NotFoundException(`User not found, login and try again`);
     }
     const verify = comparePassword(passcode, user.passcode);
+
     if (!verify) {
-      throw new BadRequestException("Passcode not valid");
+      throw new BadRequestException(`Passcode Invalid`);
     }
     return {
       success: true,
