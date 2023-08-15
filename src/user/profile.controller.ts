@@ -45,8 +45,8 @@ export class ProfileController {
   @HttpCode(200)
   verifyPasscode(@Req() req: Request, @Body("passcode") passcode: string) {
     //@ts-ignore
-    const id = req?.user?.id;
-    return this.userService.verifyPasscode(id, passcode);
+    const email = req?.user?.email;
+    return this.userService.verifyPasscode(email, passcode);
   }
 
   @Get("/user-data")
