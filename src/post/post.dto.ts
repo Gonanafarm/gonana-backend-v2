@@ -75,12 +75,17 @@ export class PublishPostDto {
   @ApiProperty({})
   @IsString()
   @IsOptional()
-  geo_long:string
+  geo_long: string;
 
   @ApiProperty({})
   @IsString()
   @IsOptional()
-  geo_lat: string
+  weight: string;
+
+  @ApiProperty({})
+  @IsString()
+  @IsOptional()
+  geo_lat: string;
 
   @ApiProperty({})
   @IsString({})
@@ -108,4 +113,16 @@ export class UpdatePostDto {
   @IsString()
   @IsOptional()
   status: string;
+}
+
+export class UpdateAmountDto {
+  @ApiProperty({required: true})
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @ApiProperty({required: true})
+  @IsNumber()
+  @IsNotEmpty()
+  amount: number;
 }

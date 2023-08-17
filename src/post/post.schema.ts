@@ -71,8 +71,12 @@ export class Post {
   quantity: number;
 
   @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.Number})
+  weight: number;
+
+  @ApiProperty()
   @Prop({
-    type:mongoose.SchemaTypes.String ,
+    type: mongoose.SchemaTypes.String,
   })
   category: string;
 
