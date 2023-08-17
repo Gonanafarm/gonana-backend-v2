@@ -51,6 +51,11 @@ export class PostService extends GenericService<PostDocument> {
   }
 
   async deleteDiscount(productid: string) {
+    const exists = await this.discountModel.findOne({productid: productid});
+    if (!exists) {
+      console.log("discount model does not exist");
+      return;
+    }
     const deleteProduct = await this.discountModel.deleteOne({
       productid: productid,
     });
