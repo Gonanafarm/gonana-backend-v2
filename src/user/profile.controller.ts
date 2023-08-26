@@ -55,4 +55,11 @@ export class ProfileController {
     const id = req?.user?.id;
     return this.userService.getUserData(id);
   }
+
+  @Post("/test")
+  virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
+    //@ts-ignore
+    const name = req?.user?.first_name;
+    return this.userService.virtualAccount(name, bvn);
+  }
 }

@@ -44,7 +44,7 @@ export class Post {
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.String})
-  name: string;
+  title: string;
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Array})

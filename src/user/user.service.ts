@@ -23,6 +23,8 @@ import {EventEmitter2} from "@nestjs/event-emitter";
 import {GenericService} from "../generic/generic.service";
 import {OtpDocument} from "./otp.schema";
 import {CloudinaryService} from "../post/cloudinary.service";
+import {HttpService} from "@nestjs/axios";
+import {catchError, firstValueFrom} from "rxjs";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -33,6 +35,7 @@ export class UserService extends GenericService<UserDocument> {
     private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
     private eventEmitter: EventEmitter2,
+    private httpService: HttpService,
   ) {
     super(userModel);
   }
@@ -86,9 +89,8 @@ export class UserService extends GenericService<UserDocument> {
     email: string,
     passcode: string,
   ): Promise<{success: boolean; message: string}> {
-    
     const verifyPasscode = await this.verifyPasscode(email, passcode);
-    
+
     if (!verifyPasscode) {
       return {success: false, message: "Passcode mismatch"};
     }
@@ -367,5 +369,25 @@ export class UserService extends GenericService<UserDocument> {
   async getUserData(id: string) {
     const user = await this.userModel.findById(id);
     return user?.getPublicData();
+  }
+
+  async virtualAccount(name: string, bvn: string) {
+    const base_url = process.env.MINTYN_BASE_URL;
+    const id = process.env.MERCHANT_ID;
+    const secret = process.env.MINTYN_SECRET;
+    const url = `${base_url}/api/v1/authorization/generate-token/${id}`;
+    console.log(url);
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url).pipe(
+          catchError(error => {
+            throw new Error("Error fetching data: " + error.message);
+          }),
+        ),
+      );
+      return response.data;
+    } catch (error: any) {
+      throw new Error("Error fetching data: " + error.message);
+    }
   }
 }

@@ -96,6 +96,9 @@ export class User {
   @Prop({ type: mongoose.SchemaTypes.String, default:""})
   passcode: string;
 
+  @Prop({type: mongoose.SchemaTypes.String, default:"0"})
+  balance: string;
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

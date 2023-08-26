@@ -11,11 +11,13 @@ import config from "../config";
 import {UserEventHanders} from "./user.events-handler";
 import {ProfileController} from "./profile.controller";
 import { CloudinaryService } from "../post/cloudinary.service";
+import { HttpModule } from "@nestjs/axios";
 
 @Module({
   imports: [
     OtpModel,
     UserModel,
+    HttpModule,
     JwtModule.register({
       secret: config.auth.secret,
       signOptions: {expiresIn: config.auth.jwtTokenExpireInSec},

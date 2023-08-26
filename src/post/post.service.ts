@@ -78,4 +78,8 @@ export class PostService extends GenericService<PostDocument> {
 
     return {success: true, data: discountedProducts};
   }
+
+// async getByPublisherId(id: string) {
+//   const products = await this.
+// }
 }
