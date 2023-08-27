@@ -15,7 +15,12 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import {ApiResponse, ApiTags, ApiHeader} from "@nestjs/swagger";
-import {PublishPostDto, UpdateAmountDto, UpdatePostDto} from "./post.dto";
+import {
+  PostType,
+  PublishPostDto,
+  UpdateAmountDto,
+  UpdatePostDto,
+} from "./post.dto";
 import {PostService} from "./post.service";
 import {Post as PostModel} from "./post.schema";
 import {ApiBearerAuth} from "@nestjs/swagger";
@@ -43,10 +48,14 @@ export class PostController {
     type: PostModel,
   })
   get(@Req() req: Request, @Query("type") type: string) {
-    let publisher_id = "";
+    return this.dataService.get(type);
+  }
+
+  @Get("/user-products")
+  async getUserProducts(@Req() req: Request, @Query("type") type?: string) {
     //@ts-ignore
-    publisher_id = req.user?.sub ?? "";
-    return this.dataService.retrieveItems({publisher_id: publisher_id, type});
+    const id = req?.user?.id;
+    return await this.dataService.getByPublisherId(id, type);
   }
 
   @Post("")
@@ -107,7 +116,7 @@ export class PostController {
 
   @Get("discounted-products")
   async discountedProducts() {
-    return this.dataService.discountedProducts()
+    return this.dataService.discountedProducts();
   }
 
   @Get(":item")

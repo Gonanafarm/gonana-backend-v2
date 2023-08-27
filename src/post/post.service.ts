@@ -79,7 +79,46 @@ export class PostService extends GenericService<PostDocument> {
     return {success: true, data: discountedProducts};
   }
 
-// async getByPublisherId(id: string) {
-//   const products = await this.
-// }
+  async getByPublisherId(id: string, type?: string) {
+    try {
+      const query: Record<string, unknown> = {publisher_id: id};
+
+      if (type !== undefined) {
+        query.type = type;
+      }
+      const products = await this.productModel.find(query);
+      if (products.length < 1) {
+        return {
+          success: false,
+          message: "No posts with these parameters were found",
+        };
+      }
+      return {
+        success: true,
+        data: products,
+      };
+    } catch (error: any) {
+      console.error(error);
+      throw new Error(`${error.message}`);
+    }
+  }
+  async get(type: string) {
+    try {
+      const query: Record<string, unknown> = {};
+      if (type !== undefined) {
+        query.type = type;
+      }
+      const products = await this.productModel.find(query);
+      if (products.length < 1) {
+        return {
+          success: false,
+          message: "No posts with these parameters were found",
+        };
+      }
+      return {success: true, data: products};
+    } catch (error: any) {
+      console.error(error);
+      throw new Error(`${error.message}`);
+    }
+  }
 }
