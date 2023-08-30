@@ -25,6 +25,8 @@ import {OtpDocument} from "./otp.schema";
 import {CloudinaryService} from "../post/cloudinary.service";
 import {HttpService} from "@nestjs/axios";
 import {catchError, firstValueFrom} from "rxjs";
+import {Request, Response} from "express";
+import axios from "axios";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -375,17 +377,30 @@ export class UserService extends GenericService<UserDocument> {
     const base_url = process.env.MINTYN_BASE_URL;
     const id = process.env.MERCHANT_ID;
     const secret = process.env.MINTYN_SECRET;
-    const url = `${base_url}/api/v1/authorization/generate-token/${id}`;
-    console.log(url);
+    const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
+    const tokenHeaders = {
+      "secret-key": process.env.MINTYN_SECRET,
+    };
+
     try {
-      const response = await firstValueFrom(
-        this.httpService.get(url).pipe(
-          catchError(error => {
-            throw new Error("Error fetching data: " + error.message);
-          }),
-        ),
-      );
-      return response.data;
+      const response = await axios.get(tokenUrl, {headers: tokenHeaders});
+
+      const token = response.data.data.token;
+
+      const accountHeaders = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      const data = {
+        customerFirstName: name,
+        customerBVN: bvn,
+      };
+      const accountUrl = `${base_url}/api/v1/merchant/virtual-account/reserved-account`;
+      const createAccount = await axios.post(accountUrl, data, {
+        headers: accountHeaders,
+      });
+
+      return createAccount.data;
     } catch (error: any) {
       throw new Error("Error fetching data: " + error.message);
     }

@@ -56,7 +56,7 @@ export class ProfileController {
     return this.userService.getUserData(id);
   }
 
-  @Post("/test")
+  @Post("/create-virtual-account")
   virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
     //@ts-ignore
     const name = req?.user?.first_name;
