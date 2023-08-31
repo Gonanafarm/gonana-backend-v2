@@ -1,12 +1,16 @@
 /* eslint-disable no-useless-catch */
-import {Controller, Injectable} from "@nestjs/common";
+import {Controller, Injectable, NotFoundException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 import {PostSchema, Post, PostDocument} from "./post.schema";
 import {GenericService} from "../generic/generic.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {DiscountDocument} from "./discount.schema";
-import {DeletionException} from "../common/exceptions";
+import * as mongoose from "mongoose";
+import {
+  DeletionException,
+  ResourceNotFoundException,
+} from "../common/exceptions";
 
 @Injectable()
 export class PostService extends GenericService<PostDocument> {
@@ -17,6 +21,8 @@ export class PostService extends GenericService<PostDocument> {
   ) {
     super(productModel);
   }
+
+
   async updatePrice(id: string, price: number) {
     try {
       const product = await this.productModel.findById(id);

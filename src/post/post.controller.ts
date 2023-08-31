@@ -127,6 +127,7 @@ export class PostController {
     type: PostModel,
   })
   async getById(@Param("item") item: string) {
+    console.log(item)
     return await this.dataService.getItem(item);
   }
 

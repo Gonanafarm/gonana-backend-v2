@@ -97,6 +97,10 @@ export class Post {
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.String})
   updated_at: string;
+
+  @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.String})
+  delivery_company: string;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

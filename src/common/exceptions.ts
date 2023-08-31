@@ -9,7 +9,7 @@ export const EmailAlreadyUsedException = () =>
   new ConflictException("Email already in use.");
 
 export const DeletionException = () =>
-  new Error("Error Occured while deleting");
+   new NotFoundException("Error Occured while deleting");
 
   export const InvalidPasscodeException = () =>
   new Error("Invalid Passcode");

@@ -1,14 +1,14 @@
 /* eslint-disable no-useless-catch */
 import {Controller, Injectable, Module} from "@nestjs/common";
 import {Model, Document} from "mongoose";
-import {ResourceNotFoundException} from "../common/exceptions";
+import {
+  DeletionException,
+  ResourceNotFoundException,
+} from "../common/exceptions";
 import {ServiceInterface} from "./generic.interface";
 
-
 export class GenericService<T extends Document> implements ServiceInterface {
-  constructor(
-    public dataModel: Model<T>
-  ) {}
+  constructor(public dataModel: Model<T>) {}
 
   create = async (publisher_id: string, publishItemDto: any) => {
     return new this.dataModel({...publishItemDto, publisher_id}).save();
@@ -31,7 +31,11 @@ export class GenericService<T extends Document> implements ServiceInterface {
   };
 
   deleteItem = async (item_id: string): Promise<any> => {
-    return await this.dataModel.deleteOne({_id: item_id});
+    const deletedItem = await this.dataModel.deleteOne({_id: item_id});
+    if (deletedItem.deletedCount !== 1) {
+      throw DeletionException();
+    }
+    return {success: true, message: `deleted item with id ${item_id}`};
   };
 
   getItem = async (item_id: string) => {
