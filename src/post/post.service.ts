@@ -22,7 +22,6 @@ export class PostService extends GenericService<PostDocument> {
     super(productModel);
   }
 
-
   async updatePrice(id: string, price: number) {
     try {
       const product = await this.productModel.findById(id);
@@ -77,12 +76,14 @@ export class PostService extends GenericService<PostDocument> {
       return {message: "No products found"};
     }
     const ids = products.map(product => product.productid);
-    const discountedProductsPromises = ids.map(async id =>
-      this.productModel.findOne({_id: id}),
-    );
+    const discountedProductsPromises = ids.map(async id => {
+      const product = await this.productModel.findOne({_id: id});
+      return product !== null ? product : undefined;
+    });
     const discountedProducts = await Promise.all(discountedProductsPromises);
+    const filteredDiscountedProducts = discountedProducts.filter(product => product !== undefined);
 
-    return {success: true, data: discountedProducts};
+    return {success: true, data: filteredDiscountedProducts};
   }
 
   async getByPublisherId(id: string, type?: string) {
