@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -36,7 +37,7 @@ export class CartItemController {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-    return this.dataService.retrieveItems({publisher_id});
+    return this.dataService.getCartItems(publisher_id);
   }
 
   @Post("")
@@ -46,17 +47,12 @@ export class CartItemController {
     isArray: false,
     type: CartItemModel,
   })
-  async publish(@Body() body: CartItem, @Req() req: any) {
+  async publish(@Body("product_id") body: string, @Req() req: any) {
     let publisher_id = "";
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-    try {
-      let item = await this.dataService.createCartItem(publisher_id, body);
-      return item;
-    } catch (err) {
-      throw err;
-    }
+    return this.dataService.createCartItem(publisher_id, body);
   }
 
   @Get(":item")
@@ -84,19 +80,28 @@ export class CartItemController {
     return await this.dataService.updateItem(item, body);
   }
 
-  @Post("place-order")
-  @ApiResponse({
-    status: 200,
-    description: "Update cart quantity",
-    isArray: true,
-    type: Order,
-  })
-  async placeOrder(@Req() req: any) {
+  @Delete("")
+  async removeCartItem(@Body("product_id") body: string, @Req() req: any) {
     let publisher_id = "";
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-
-    return this.dataService.placeOrder(publisher_id);
+    return this.dataService.reomoveCartItem(publisher_id, body);
   }
+
+  // @Post("place-order")
+  // @ApiResponse({
+  //   status: 200,
+  //   description: "Update cart quantity",
+  //   isArray: true,
+  //   type: Order,
+  // })
+  // async placeOrder(@Req() req: any) {
+  //   let publisher_id = "";
+  //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //   //@ts-ignore
+  //   publisher_id = req.user?.sub ?? "";
+
+  //   return this.dataService.placeOrder(publisher_id);
+  // }
 }

@@ -3,7 +3,7 @@ import {ApiProperty} from "@nestjs/swagger";
 import {IsArray, IsMongoId, IsNumber, IsString} from "class-validator";
 import * as mongoose from "mongoose";
 import {Document} from "mongoose";
-export type CartItemDocument = Request & Document;
+export type CartItemDocument = CartItem & Document;
 
 @Schema({
   timestamps: {
@@ -15,43 +15,19 @@ export class CartItem {
   @Prop({type: mongoose.SchemaTypes.String})
   publisher_id: string;
 
-  @Prop({type: mongoose.SchemaTypes.String})
-  @ApiProperty()
-  @IsString()
-  image: string;
-  @ApiProperty()
-  @IsString()
-  @Prop({type: mongoose.SchemaTypes.String})
-  product_name: string;
-
   @ApiProperty()
   @IsMongoId()
-  @Prop({type: mongoose.SchemaTypes.ObjectId})
-  farmer_id: string;
-
-  @ApiProperty()
-  @IsMongoId()
-  @Prop({type: mongoose.SchemaTypes.ObjectId})
+  @Prop({type: mongoose.SchemaTypes.ObjectId, unique: true})
   product_id: string;
 
   @ApiProperty()
   @IsNumber()
-  @Prop({type: mongoose.SchemaTypes.Number})
+  @Prop({type: mongoose.SchemaTypes.Number, default: 1})
   quantity: number;
 
-  @ApiProperty()
-  @IsNumber()
-  @Prop({type: mongoose.SchemaTypes.Number})
-  amount: number;
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  updated_at: string;
 }
 
 export const CartItemSchema = SchemaFactory.createForClass(CartItem);
-
-
 
 CartItemSchema.virtual("id").get(function () {
   //@ts-ignore

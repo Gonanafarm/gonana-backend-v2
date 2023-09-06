@@ -12,23 +12,23 @@ export class OrderService extends GenericService<OrderDocument> {
     super(model);
   }
 
-  async createOrder(
-    publisher_id: string,
-    items: CartItem[],
-    farmer_id: string,
-  ) {
-    let order_sum = items.reduce((c, e) => {
-      return c + (e.quantity ?? 1) * e.amount ?? 0;
-    }, 0);
+  // async createOrder(
+  //   publisher_id: string,
+  //   items: CartItem[],
+  //   farmer_id: string,
+  // ) {
+  //   let order_sum = items.reduce((c, e) => {
+  //     return c + (e.quantity ?? 1) * e.amount ?? 0;
+  //   }, 0);
 
-    let newOrder = await this.create(publisher_id, {
-      items: items,
-      sum_total: order_sum,
-      farmer_id: farmer_id,
-      customer_id: publisher_id,
-      payment_method: "wallet",
-      payment_status: "pending",
-    });
-    return newOrder;
-  }
+  //   let newOrder = await this.create(publisher_id, {
+  //     items: items,
+  //     sum_total: order_sum,
+  //     farmer_id: farmer_id,
+  //     customer_id: publisher_id,
+  //     payment_method: "wallet",
+  //     payment_status: "pending",
+  //   });
+  //   return newOrder;
+  // }
 }
