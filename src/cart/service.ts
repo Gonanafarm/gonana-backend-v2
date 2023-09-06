@@ -37,7 +37,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (itemExists) {
         itemExists.quantity += 1;
         await itemExists.save();
-        return {success: true, product: product, cartItem: itemExists};
+        return {
+          message: "Quantity increased",
+          success: true,
+          product: product,
+          cartItem: itemExists,
+        };
       }
 
       const cartItem = await this.cartItemsModel.create({
@@ -78,7 +83,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (cartItem.quantity > 1) {
         cartItem.quantity -= 1;
         await cartItem.save();
-        return {success: true, cartItem: cartItem, product: product};
+        return {
+          meaasge: "Quantity Reduced",
+          success: true,
+          cartItem: cartItem,
+          product: product,
+        };
       }
 
       await cartItem.deleteOne({product_id: product_id});
@@ -101,11 +111,13 @@ export class CartItemService extends GenericService<CartItemDocument> {
             amount: product.amount,
             body: product.body,
             images: product.images,
-            id: product.id
+            id: product.id,
           };
         } else return null;
       });
-      const productsInCart = (await Promise.all(cartItemsPromise)).filter(Boolean);
+      const productsInCart = (await Promise.all(cartItemsPromise)).filter(
+        Boolean,
+      );
       return productsInCart;
     } catch (error: any) {
       console.error(error);
