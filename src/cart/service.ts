@@ -12,6 +12,8 @@ import {CartItem, CartItemDocument} from "./schema";
 import {GenericService} from "../generic/generic.service";
 import {OrderService} from "../order/order.service";
 import {Post, PostDocument} from "../post/post.schema";
+import {publish} from "rxjs";
+import {User, UserDocument} from "src/user/user.schema";
 
 @Injectable()
 export class CartItemService extends GenericService<CartItemDocument> {
@@ -20,6 +22,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
     @InjectModel(CartItem.name) private cartItemsModel: Model<CartItemDocument>,
     //@ts-ignore
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
+    //@ts-ignore
+    @InjectModel("User") private userModel: Model<UserDocument>,
     private readonly orderService: OrderService,
   ) {
     super(cartItemsModel);
@@ -31,26 +35,39 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (!product) {
         throw new NotFoundException("Product not found");
       }
+
+      const user_id = product.publisher_id;
+
+      const user = await this.userModel.findById(user_id);
+      if (!user) {
+        throw new NotFoundException(
+          "The Owner of the Product may have deleted their account",
+        );
+      }
+      const firstname = user.first_name;
+      const lastname = user.last_name;
+
+      const productOwner = `${firstname} ${lastname}`;
+      // if (product.quantity < 1) {
+      //   return { success: false, message: "Product is out of stock"};
+      // }
       const itemExists = await this.cartItemsModel.findOne({
         product_id: product_id,
       });
       if (itemExists) {
-        itemExists.quantity += 1;
-        await itemExists.save();
-        return {
-          message: "Quantity increased",
-          success: true,
-          product: product,
-          cartItem: itemExists,
-        };
+        // itemExists.quantity += 1;
+        // await itemExists.save();
+        throw new BadRequestException("Item is already in cart");
       }
 
       const cartItem = await this.cartItemsModel.create({
-        publisher_id,
-        product_id,
+        publisher_id: publisher_id,
+        product_id: product_id,
+        productOwner: productOwner,
       });
       return {
         success: true,
+        productOwner: `${firstname} ${lastname}`,
         message: "Cart item created",
         cartItem: cartItem,
         product: product,
@@ -76,20 +93,20 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (publisher_id !== cartItem.publisher_id) {
         throw new ForbiddenException("You did not add this item to the cart");
       }
-      if (cartItem.quantity === 1) {
-        await cartItem.deleteOne({product_id: product_id});
-        return {success: true, message: "removed item from cart"};
-      }
-      if (cartItem.quantity > 1) {
-        cartItem.quantity -= 1;
-        await cartItem.save();
-        return {
-          meaasge: "Quantity Reduced",
-          success: true,
-          cartItem: cartItem,
-          product: product,
-        };
-      }
+      // if (cartItem.quantity === 1) {
+      //   await cartItem.deleteOne({product_id: product_id});
+      //   return {success: true, message: "removed item from cart"};
+      // }
+      // if (cartItem.quantity > 1) {
+      //   cartItem.quantity -= 1;
+      //   await cartItem.save();
+      //   return {
+      //     meaasge: "Quantity Reduced",
+      //     success: true,
+      //     cartItem: cartItem,
+      //     product: product,
+      //   };
+      // }
 
       await cartItem.deleteOne({product_id: product_id});
       return {success: true, message: "cart item removed"};
@@ -105,6 +122,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const productIds = items.map(item => item.product_id);
       const cartItemsPromise = productIds.map(async id => {
         const product = await this.productModel.findById(id);
+        const user_id = product?.publisher_id;
+        const user = await this.userModel.findById(user_id);
+        const firstname = user?.first_name;
+        const lastname = user?.last_name;
+
+        const productOwner = `${firstname}${lastname}`;
         if (product) {
           return {
             title: product.title,
@@ -112,6 +135,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
             body: product.body,
             images: product.images,
             id: product.id,
+            productOwner: productOwner,
           };
         } else return null;
       });
