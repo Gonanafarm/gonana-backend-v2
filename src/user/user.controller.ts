@@ -8,7 +8,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Body,
-  Patch
+  Patch,
 } from "@nestjs/common";
 import {Request} from "express";
 import {ApiBearerAuth, ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
@@ -44,5 +44,15 @@ export class UserController {
     @Body("email") email: string,
   ) {
     return this.userService.updateImage(email, file);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("/verify-transaction")
+  verifyTransaction(@Body() body: any, @Req() req: Request) {
+    //@ts-ignore
+    const email = req.user.email;
+    console.log(email);
+    console.log(body);
+    return this.userService.verifyTransaction(email, body);
   }
 }

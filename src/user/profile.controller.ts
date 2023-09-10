@@ -62,4 +62,6 @@ export class ProfileController {
     const name = req?.user?.first_name;
     return this.userService.virtualAccount(name, bvn);
   }
+
+
 }

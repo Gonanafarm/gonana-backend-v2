@@ -48,22 +48,20 @@ export class UserEventHanders {
   }
 
   @OnEvent("account.password.updated")
-  handleAccountPasswordUpdatedEvent(email: string) {
+  handleAccountPasswordUpdatedEvent(payload: string) {
     // handle and process "OrderCreatedEvent" event
     console.log("on account password update");
-    this.userMailer.sendResetPasswordMail(email);
+    this.userMailer.sendResetPasswordMail(payload);
   }
 
-  @OnEvent("account.password.update.trigger")
+  @OnEvent("forgot.password")
   handleAccountPasswordUpdateStartEvent(payload: any) {
     // handle and process "OrderCreatedEvent" event
     console.log("account password update trigger");
     console.log(payload);
-    this.userMailer.sendForgottenPasswordMail(
-      payload.user.email,
-      payload.user.passwordResetToken,
-      payload.origin,
-    );
+    
+    this.userMailer.sendOTP(payload.email, payload.otp);
+  
   }
 
   @OnEvent("driver.disapproved")

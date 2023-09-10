@@ -178,66 +178,43 @@ export class UserService extends GenericService<UserDocument> {
     return user;
   }
 
-  async forgottenPassword(email: string, origin: string) {
-    const user = await this.userModel.findOneAndUpdate(
-      {
-        email: email.toLowerCase(),
-      },
-      {
-        // set reset token
-        passwordResetToken: uuid(),
-        passwordResetExpires: Date.now() + config.auth.passwordResetExpireInMs,
-      },
-      {
-        new: true,
-        runValidators: true,
-      },
-    );
-
-    if (!user) {
-      throw UserNotFoundException();
+  async forgottenPassword(email: string) {
+    const user = await this.userModel.findOne({email: email});
+    const otpExists = await this.otpModel.findOne({email: email});
+    if (otpExists) {
+      await this.otpModel.deleteOne({email: email});
     }
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
+    const otp = this.generateOtp();
+    await this.createOtpModel(email, otp);
 
     // trigger passwor update
-    this.eventEmitter.emit("account.password.update.trigger", {
-      user,
-      origin,
-    });
+    this.eventEmitter.emit("forgot.password", {email, otp});
+
+    return {success: true, message: `Otp sent`};
   }
 
-  async resetPassword(
-    email: string,
-    passwordResetToken: string,
-    password: string,
-  ) {
-    const user = await this.userModel
-      .findOneAndUpdate(
-        {
-          email: email.toLowerCase(),
-          passwordResetToken,
-        },
-        {
-          password: await hashPassword(password),
-          passwordResetToken: undefined,
-          passwordResetExpires: undefined,
-        },
-        {
-          new: true,
-          runValidators: true,
-        },
-      )
-      .where("passwordResetExpires")
-      .gt(Date.now())
-      .exec();
-
-    if (!user) {
-      throw PasswordResetTokenInvalidException();
+  async verifyPasswordOtp(otp: string) {
+    const isValid = await this.otpModel.findOne({otp: otp});
+    if (!isValid) {
+      throw new NotFoundException(`Otp Invalid`);
     }
+    this.eventEmitter.emit("verifyPasswordOtp", isValid.email);
+    return {success: true, message: `Otp valid`, email: isValid.email};
+  }
 
-    // emit password update emit event
-    this.eventEmitter.emit("account.password.updated", user.email);
+  async resetPassword(email: string, password: string) {
+    const user = await this.userModel.findOne({email: email});
+    if (!user) {
+      throw new NotFoundException(`account does not exist`);
+    }
+    user.password = await hashPassword(password);
+    await user.save();
+    this.eventEmitter.emit("account.password.updated", email);
 
-    return user;
+    return {success: true, message: `Password updated successfully`};
   }
   generateOtp(): string {
     const min = 0;
@@ -403,6 +380,19 @@ export class UserService extends GenericService<UserDocument> {
       return createAccount.data;
     } catch (error: any) {
       throw new Error("Error fetching data: " + error.message);
+    }
+  }
+  async verifyTransaction(email: string, data: any) {
+    try {
+      this.userMailer.transactionVerification(
+        email,
+        data.eventType,
+        data.payload.transactionAmount,
+      );
+      return {success: true, message: `Notification sent to ${email}`}
+    } catch (error: any) {
+      console.error(error);
+      return {success: false, error: error.message};
     }
   }
 }

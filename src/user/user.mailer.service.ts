@@ -69,15 +69,27 @@ export class UserMailerService {
       .catch();
   }
 
-   sendOTP(email: string, OTP: string) {
+  sendOTP(email: string, OTP: string) {
     try {
-     this.mailerService.sendMail({
+      this.mailerService.sendMail({
         to: email,
-        subject: "Verify your OTP",
-        html: `Your OTP is ${OTP}`,
+        subject: "OTP Verification",
+        html: `Your OTP is ${OTP}. It expires in 10 Minutes`,
       });
     } catch (error) {
       console.error(`Error sending OTP email to ${email}:`, error);
+    }
+  }
+
+  transactionVerification(email: string, eventType: string, transactionAmount: number) {
+    try {
+      this.mailerService.sendMail({
+        to: email,
+        subject: eventType,
+        html: `A transaction with amount ${transactionAmount} is about to be performed on your account`
+      });
+    } catch (error) {
+      console.error(error);
     }
   }
 }

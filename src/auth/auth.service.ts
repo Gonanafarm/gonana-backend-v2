@@ -1,24 +1,29 @@
-import { HttpException, HttpStatus, Injectable, UnauthorizedException } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
-import { comparePassword } from "../common/auth";
-import { UserService } from "../user/user.service";
-import { LoginCredentialsException } from "../common/exceptions";
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
+import {JwtService} from "@nestjs/jwt";
+import {comparePassword} from "../common/auth";
+import {UserService} from "../user/user.service";
+import {LoginCredentialsException} from "../common/exceptions";
 import {
   ActivateParams,
   ForgottenPasswordDto,
   ResetPasswordDto,
   SignUpDto,
 } from "./auth.interface";
-import { User, UserDocument } from "../user/user.schema";
-import { EventEmitter2 } from "@nestjs/event-emitter";
+import {User, UserDocument} from "../user/user.schema";
+import {EventEmitter2} from "@nestjs/event-emitter";
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-    private eventEmitter: EventEmitter2
-  ) { }
+    private eventEmitter: EventEmitter2,
+  ) {}
   async validateUser(email: string, password: string): Promise<UserDocument> {
     const user = await this.userService.findByEmail(email);
 
@@ -28,11 +33,11 @@ export class AuthService {
     return user;
   }
 
-  async activate({ userId, activationToken }: ActivateParams) {
+  async activate({userId, activationToken}: ActivateParams) {
     const user = await this.userService.activate(userId, activationToken);
 
     return {
-      token: this.jwtService.sign({ id: user.id }, { subject: `${user.id}` }),
+      token: this.jwtService.sign({id: user.id}, {subject: `${user.id}`}),
       user: user.getPublicData(),
     };
   }
@@ -41,11 +46,11 @@ export class AuthService {
   async login(user?: any) {
     this.eventEmitter.emit("account.login", user);
 
-    console.log(user?.getPublicData(), " On Login user ")
+    console.log(user?.getPublicData(), " On Login user ");
     return {
       token: this.jwtService.sign(
-        { ...user?.getPublicData() },
-        { subject: `${user?.id}` }
+        {...user?.getPublicData()},
+        {subject: `${user?.id}`},
       ),
       user: user?.getPublicData(),
     };
@@ -57,11 +62,11 @@ export class AuthService {
     if (user.account_type !== "ADMIN") {
       throw new UnauthorizedException();
     }
-    console.log(user?.getPublicData(), " On Login user ")
+    console.log(user?.getPublicData(), " On Login user ");
     return {
       token: this.jwtService.sign(
-        { ...user?.getPublicData() },
-        { subject: `${user?.id}` }
+        {...user?.getPublicData()},
+        {subject: `${user?.id}`},
       ),
       user: user?.getPublicData(),
     };
@@ -75,36 +80,27 @@ export class AuthService {
       userData.email,
       userData.password,
       origin,
-      userData.account_type
+      userData.account_type,
     );
 
     return {
       token: this.jwtService.sign(
-        { ...user.getPublicData() },
-        { subject: `${user.id}` }
+        {...user.getPublicData()},
+        {subject: `${user.id}`},
       ),
       user: user.getPublicData(),
     };
   }
 
-  async forgottenPassword({ email }: ForgottenPasswordDto, origin: string) {
-    return await this.userService.forgottenPassword(email, origin);
+  async forgottenPassword(email: string) {
+    return await this.userService.forgottenPassword(email);
   }
 
-  async resetPassword({
-    email,
-    passwordResetToken,
-    password,
-  }: ResetPasswordDto) {
-    const user = await this.userService.resetPassword(
-      email,
-      passwordResetToken,
-      password
-    );
+  async resetPassword(email: string, password: string) {
+    return await this.userService.resetPassword(email, password);
+  }
 
-    return {
-      token: this.jwtService.sign({}, { subject: `${user.id}` }),
-      user: user.getPublicData(),
-    };
+  async verifyOtp(otp: string) {
+    return await this.userService.verifyPasswordOtp(otp);
   }
 }

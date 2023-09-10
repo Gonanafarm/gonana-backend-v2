@@ -113,13 +113,21 @@ export class AuthController {
   }
 
   @Post("forgotten-password")
-  forgottenPassword(@Body() body: ForgottenPasswordDto, @Req() req: Request) {
-    return this.authService.forgottenPassword(body, getOriginHeader(req));
+  @HttpCode(200)
+  forgottenPassword(@Body() body: ForgottenPasswordDto) {
+    return this.authService.forgottenPassword(body.email);
+  }
+
+  @Post("VerifyPasswordOtp")
+  @HttpCode(200)
+  verifyPasswordOtp(@Body("otp") body: string){
+    return this.authService.verifyOtp(body);
   }
 
   @Post("reset-password")
+  @HttpCode(200)
   resetPassword(@Body() body: ResetPasswordDto) {
-    return this.authService.resetPassword(body);
+    return this.authService.resetPassword(body.email, body.password);
   }
 
   @UseGuards(AuthGuard())

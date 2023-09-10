@@ -72,6 +72,8 @@ export class UpdateTransferReceipient {
   account_number: string;
 }
 
+
+
 export class UpdateAccountStatus {
   @ApiProperty({ enum: AccountStatus })
   @IsEnum(AccountStatus)
