@@ -51,43 +51,42 @@ export class UserService extends GenericService<UserDocument> {
     password: string,
     origin: string,
     account_type: string,
-    bvn:string
+    bvn: string,
     //imageFile: Express.Multer.File,
   ) {
-         // const image = await this.cloudinaryService.uploadImage(imageFile);
-         const emailExists = await this.userModel.findOne({email: email});
-         if (emailExists) {
-          throw EmailAlreadyUsedException()
-         }
-         const numberExists = await this.userModel.findOne({phone: phone});
-         if (numberExists){
-          throw NumberAlreadyUsedException()
-         }
-         const bvnExists = await this.userModel.findOne({bvn: bvn});
-         if (bvnExists){
-          throw BvnAlreadyUsedException()
-         }
-      const user = await this.userModel.create({
-        email: email.toLowerCase(),
-        first_name,
-        last_name,
-        phone,
-        account_type,
-        password: await hashPassword(password),
-        activationToken: uuid(),
-        activationExpires: Date.now() + config.auth.activationExpireInMs,
-        bvn
-        //   image,
-      });
+    // const image = await this.cloudinaryService.uploadImage(imageFile);
+    const emailExists = await this.userModel.findOne({email: email});
+    if (emailExists) {
+      throw EmailAlreadyUsedException();
+    }
+    const numberExists = await this.userModel.findOne({phone: phone});
+    if (numberExists) {
+      throw NumberAlreadyUsedException();
+    }
+    const bvnExists = await this.userModel.findOne({bvn: bvn});
+    if (bvnExists) {
+      throw BvnAlreadyUsedException();
+    }
+    const user = await this.userModel.create({
+      email: email.toLowerCase(),
+      first_name,
+      last_name,
+      phone,
+      account_type,
+      password: await hashPassword(password),
+      activationToken: uuid(),
+      activationExpires: Date.now() + config.auth.activationExpireInMs,
+      bvn,
+      //   image,
+    });
 
-      // on account created
-      this.eventEmitter.emit("account.created", {
-        user,
-        origin,
-      });
+    // on account created
+    this.eventEmitter.emit("account.created", {
+      user,
+      origin,
+    });
 
-      return user;
-
+    return user;
   }
 
   async findById(id: string): Promise<UserDocument> {
@@ -361,19 +360,31 @@ export class UserService extends GenericService<UserDocument> {
     return user?.getPublicData();
   }
 
-  async virtualAccount(name: string, bvn: string) {
-    const base_url = process.env.MINTYN_BASE_URL;
-    const id = process.env.MERCHANT_ID;
-    const secret = process.env.MINTYN_SECRET;
-    const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
-    const tokenHeaders = {
-      "secret-key": process.env.MINTYN_SECRET,
-    };
-
+  async generateToken() {
     try {
+      const base_url = process.env.MINTYN_BASE_URL;
+      const id = process.env.MERCHANT_ID;
+      const secret = process.env.MINTYN_SECRET;
+      const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
+      const tokenHeaders = {
+        "secret-key": secret,
+      };
+
       const response = await axios.get(tokenUrl, {headers: tokenHeaders});
 
       const token = response.data.data.token;
+      return token;
+    } catch (error: any) {
+      console.error(error);
+      return {success: false, error: error.message};
+    }
+  }
+
+  async virtualAccount(name: string, bvn: string) {
+    const base_url = process.env.MINTYN_BASE_URL;
+    const id = process.env.MERCHANT_ID;
+    try {
+      const token = await this.generateToken();
 
       const accountHeaders = {
         Authorization: `Bearer ${token}`,
@@ -388,27 +399,96 @@ export class UserService extends GenericService<UserDocument> {
         headers: accountHeaders,
       });
       const user = await this.userModel.findOne({bvn: bvn});
-      if(!user){
+      if (!user) {
         console.log("failed to find user");
-        return 
+        return;
       }
-      user.virtual_account_number= createAccount.data.data.accountNumber
-      await user.save()
+      user.virtual_account_number = createAccount.data.data.accountNumber;
+      await user.save();
       return createAccount.data;
     } catch (error: any) {
       throw new Error("Error fetching data: " + error.message);
     }
   }
-  async verifyTransaction(email: string, data: any) {
+  async verifyTransaction(data: any) {
+    const user = await this.userModel.findOne({ bvn: data.payload.customerBVN});
+    if(!user){
+      console.log("email not sent");
+      
+      return{success: false, message:"Email not sent"}
+    }
+    const email = user.email
     try {
       this.userMailer.transactionVerification(
         email,
         data.eventType,
         data.payload.transactionAmount,
       );
-      return {success: true, message: `Notification sent to ${email}`}
+      return {success: true, message: `Notification sent to ${email}`};
     } catch (error: any) {
       console.error(error);
+      return {success: false, error: error.message};
+    }
+  }
+  async getBankCode(bank_name: string) {
+    try {
+      const token = await this.generateToken();
+      const bankHeaders = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      const base_url = process.env.MINTYN_BASE_URL;
+      const url = `${base_url}/api/v1/merchant/transfer-service/banks`;
+      const response = await axios.get(url, {headers: bankHeaders});
+      const banks = response.data.data;
+      const bank = banks.find(
+        (bank: any) => bank.name.toLowerCase() === bank_name.toLowerCase(),
+      );
+      if (!bank) {
+        return {success: false, message: `Bank not found`};
+      }
+      return bank.code;
+    } catch (error: any) {
+      console.error(error);
+      return {success: false, error: error.message};
+    }
+  }
+
+  async resolveAccountNumber(account_number: string, bank: string) {
+    try {
+      const bankCode = await this.getBankCode(bank);
+      console.log(bankCode);
+
+      const token = await this.generateToken();
+      const bankHeaders = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+      const base_url = process.env.MINTYN_BASE_URL;
+      const url = `${base_url}/api/v1/merchant/transfer-service/resolve-account?accountNumber=${account_number}&bankCode=${bankCode}`;
+      const response = await axios.get(url, {headers: bankHeaders});
+      return {data: response.data, bankCode: bankCode};
+    } catch (error: any) {
+      console.error(error);
+      return {success: false, error: error.message};
+    }
+  }
+
+  async transferFunds(transferFundsDto: any) {
+    try {
+      const token = await this.generateToken();
+      const base_url = process.env.MINTYN_BASE_URL;
+      const url = `${base_url}/api/v1/merchant/transfer-service/transfer`;
+      const response = await axios.post(url, transferFundsDto, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      console.log(error);
       return {success: false, error: error.message};
     }
   }

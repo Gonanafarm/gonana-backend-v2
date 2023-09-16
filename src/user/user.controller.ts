@@ -9,13 +9,14 @@ import {
   UploadedFile,
   Body,
   Patch,
+  Query,
 } from "@nestjs/common";
 import {Request} from "express";
 import {ApiBearerAuth, ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {User} from "./user.schema";
-import {UpdateUserDto} from "./user.dto";
+import {ResolveAccountNumber, UpdateUserDto, TransferFundsDto} from "./user.dto";
 import {AuthGuard} from "@nestjs/passport";
 import {FileInterceptor} from "@nestjs/platform-express";
 
@@ -37,6 +38,16 @@ export class UserController {
     return this.userService.getItem(id);
   }
 
+  @Get("/banks")
+  getBanks(@Query() body:ResolveAccountNumber){
+    return this.userService.resolveAccountNumber(body.account_number,body.bank);
+  }
+
+  @Post("/transfer")
+  transfer(@Body() body:TransferFundsDto){
+    return this.userService.transferFunds(body);
+  }
+
   @Patch("update-image")
   @UseInterceptors(FileInterceptor("file"))
   uploadImage(
@@ -46,10 +57,10 @@ export class UserController {
     return this.userService.updateImage(email, file);
   }
 
-  @UseGuards(JwtAuthGuard)
+
   @Post("/verify-transaction")
-  verifyTransaction(@Body() body: any, @Req() req: Request) {
-    //@ts-ignore
-    return this.userService.verifyTransaction( body);
+  verifyTransaction(@Body() body: any, ) {
+    
+    return this.userService.verifyTransaction(body);
   }
 }

@@ -11,9 +11,7 @@ import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 import {CartItem, CartItemDocument} from "./schema";
 import {GenericService} from "../generic/generic.service";
-import {OrderService} from "../order/order.service";
 import {Post, PostDocument} from "../post/post.schema";
-import {publish} from "rxjs";
 import {User, UserDocument} from "../user/user.schema";
 import {UserService} from "../user/user.service";
 import axios from "axios";
@@ -27,7 +25,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
     //@ts-ignore
     @InjectModel("User") private userModel: Model<UserDocument>,
-    private readonly orderService: OrderService,
     private readonly userService: UserService,
   ) {
     super(cartItemsModel);
@@ -181,15 +178,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
     const base_url = process.env.MINTYN_BASE_URL;
     const id = process.env.MERCHANT_ID;
     const secret = process.env.MINTYN_SECRET;
-    const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
-    const tokenHeaders = {
-      "secret-key": secret,
-    };
 
     try {
-      const response = await axios.get(tokenUrl, {headers: tokenHeaders});
-
-      const token = response.data.data.token;
+ 
+      const token = await this.userService.generateToken()
+      
       const accountHeaders = {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -198,7 +191,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const accountResponse = await axios.get(accountDetailsUrl, {
         headers: accountHeaders,
       });
-      console.log(accountResponse.data);
 
       const res = accountResponse.data.data.records[0];
       if (Array.isArray(cartItems)) {
@@ -219,4 +211,5 @@ export class CartItemService extends GenericService<CartItemDocument> {
       return {success: false, error: error.message};
     }
   }
+
 }

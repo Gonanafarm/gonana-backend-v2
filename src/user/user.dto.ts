@@ -1,6 +1,6 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsOptional, IsString } from "class-validator";
-import { AccountStatus } from "../common/enums";
+import {ApiProperty} from "@nestjs/swagger";
+import {IsEnum, IsNumber, IsOptional, IsString, Length} from "class-validator";
+import {AccountStatus} from "../common/enums";
 
 export class UserPublicData {
   @ApiProperty({})
@@ -25,7 +25,6 @@ export class UserPublicData {
   bio: string;
   @ApiProperty({})
   phone: string;
-
 }
 
 export class UpdateUserDto {
@@ -72,16 +71,53 @@ export class UpdateTransferReceipient {
   account_number: string;
 }
 
+export class ResolveAccountNumber {
+  @ApiProperty({})
+  @IsString()
+  @Length(10)
+  account_number: string;
+  @ApiProperty({})
+  @IsString()
+  bank: string;
+}
 
+export class TransferFundsDto {
+  @ApiProperty({})
+  @IsString()
+  @Length(12)
+  requestReference: string;
+
+  @ApiProperty({})
+  @IsString()
+  @Length(10)
+  accountNumber: string;
+
+  @ApiProperty({})
+  @IsString()
+  bankCode: string;
+
+  @ApiProperty({})
+  @IsString()
+  @IsOptional()
+  narration: string;
+
+  @ApiProperty({})
+  @IsNumber()
+  amount: number;
+ 
+  @ApiProperty({})
+  @IsString()
+  nameEnquirySessionId: string;
+}
 
 export class UpdateAccountStatus {
-  @ApiProperty({ enum: AccountStatus })
+  @ApiProperty({enum: AccountStatus})
   @IsEnum(AccountStatus)
   account_status: string;
 }
 
 export class UpdateDriverAccountStatus {
-  @ApiProperty({ enum: AccountStatus })
+  @ApiProperty({enum: AccountStatus})
   @IsEnum(AccountStatus)
   driver_account_status: string;
 }
