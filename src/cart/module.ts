@@ -7,10 +7,11 @@ import { PostModule } from '../post/post.module';
 import { PostModel } from '../post/post.model';
 import { UserModule } from '../user/user.module';
 import { UserModel } from '../user/user.model';
+import { UserService } from '../user/user.service';
 
 @Module({
-  providers: [CartItemService, PostModule, UserModule],
-  imports: [CartItemModel, OrderModule, PostModel, UserModel],
+  providers: [CartItemService, PostModule, ],
+  imports: [CartItemModel, OrderModule, PostModel, UserModel, UserModule],
   exports: [CartItemModel, CartItemService],
 })
 export class CartItemModule {}

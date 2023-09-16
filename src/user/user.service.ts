@@ -16,9 +16,11 @@ import {
   ActivationTokenInvalidException,
   DeletionException,
   InvalidPasscodeException,
+  NumberAlreadyUsedException,
+  BvnAlreadyUsedException,
 } from "../common/exceptions";
 import {UserMailerService} from "./user.mailer.service";
-import {UserDocument} from "./user.schema";
+import {User, UserDocument} from "./user.schema";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {GenericService} from "../generic/generic.service";
 import {OtpDocument} from "./otp.schema";
@@ -32,12 +34,11 @@ import axios from "axios";
 export class UserService extends GenericService<UserDocument> {
   constructor(
     //@ts-ignore
-    @InjectModel("User") private readonly userModel: Model<UserDocument>,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel("Otp") private readonly otpModel: Model<OtpDocument>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
     private eventEmitter: EventEmitter2,
-    private httpService: HttpService,
   ) {
     super(userModel);
   }
@@ -50,10 +51,22 @@ export class UserService extends GenericService<UserDocument> {
     password: string,
     origin: string,
     account_type: string,
+    bvn:string
     //imageFile: Express.Multer.File,
-  ): Promise<UserDocument> {
-    try {
-      // const image = await this.cloudinaryService.uploadImage(imageFile);
+  ) {
+         // const image = await this.cloudinaryService.uploadImage(imageFile);
+         const emailExists = await this.userModel.findOne({email: email});
+         if (emailExists) {
+          throw EmailAlreadyUsedException()
+         }
+         const numberExists = await this.userModel.findOne({phone: phone});
+         if (numberExists){
+          throw NumberAlreadyUsedException()
+         }
+         const bvnExists = await this.userModel.findOne({bvn: bvn});
+         if (bvnExists){
+          throw BvnAlreadyUsedException()
+         }
       const user = await this.userModel.create({
         email: email.toLowerCase(),
         first_name,
@@ -63,6 +76,7 @@ export class UserService extends GenericService<UserDocument> {
         password: await hashPassword(password),
         activationToken: uuid(),
         activationExpires: Date.now() + config.auth.activationExpireInMs,
+        bvn
         //   image,
       });
 
@@ -73,10 +87,7 @@ export class UserService extends GenericService<UserDocument> {
       });
 
       return user;
-    } catch (e) {
-      console.log(e);
-      throw EmailAlreadyUsedException();
-    }
+
   }
 
   async findById(id: string): Promise<UserDocument> {
@@ -376,7 +387,13 @@ export class UserService extends GenericService<UserDocument> {
       const createAccount = await axios.post(accountUrl, data, {
         headers: accountHeaders,
       });
-
+      const user = await this.userModel.findOne({bvn: bvn});
+      if(!user){
+        console.log("failed to find user");
+        return 
+      }
+      user.virtual_account_number= createAccount.data.data.accountNumber
+      await user.save()
       return createAccount.data;
     } catch (error: any) {
       throw new Error("Error fetching data: " + error.message);

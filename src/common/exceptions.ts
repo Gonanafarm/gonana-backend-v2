@@ -8,11 +8,16 @@ import {
 export const EmailAlreadyUsedException = () =>
   new ConflictException("Email already in use.");
 
-export const DeletionException = () =>
-   new NotFoundException("Error Occured while deleting");
+export const NumberAlreadyUsedException = () =>
+  new ConflictException("Number already in use.");
 
-  export const InvalidPasscodeException = () =>
-  new Error("Invalid Passcode");
+  export const BvnAlreadyUsedException = () =>
+  new ConflictException("Bvn already in use.");
+
+export const DeletionException = () =>
+  new NotFoundException("Error Occured while deleting");
+
+export const InvalidPasscodeException = () => new Error("Invalid Passcode");
 
 export const UserNotFoundException = () =>
   new NotFoundException("Requested user does not exist.");

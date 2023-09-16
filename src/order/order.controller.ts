@@ -22,29 +22,5 @@ import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 // @ApiHeader({ name: 'Bypass-Tunnel-Reminder', required: true })
 export class OrderController {
   constructor(private readonly dataService: OrderService) {}
-  @Get("")
-  @ApiResponse({
-    status: 200,
-    description: "Returns list of orders associated with account",
-    isArray: true,
-    type: OrderModel,
-  })
-  get(@Req() req: any) {
-    let publisher_id = "";
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
-    publisher_id = req.user?.sub ?? "";
-    return this.dataService.retrieveItems({publisher_id});
-  }
-
-  @Get(":item")
-  @ApiResponse({
-    status: 200,
-    description: "Returns item by id",
-    isArray: false,
-    type: OrderModel,
-  })
-  async getById(@Param("item") item: string) {
-    return await this.dataService.getItem(item);
-  }
+  
 }

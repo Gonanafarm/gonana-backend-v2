@@ -17,6 +17,7 @@ import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {UpdateCartItemDto} from "./dto";
 import {Order} from "../order/order.schema";
+import { log } from "console";
 
 @ApiTags("cart-controller")
 @UseGuards(JwtAuthGuard)
@@ -52,6 +53,8 @@ export class CartItemController {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
+    console.log(publisher_id);
+    
     return this.dataService.createCartItem(publisher_id, body);
   }
 
@@ -89,19 +92,19 @@ export class CartItemController {
     return this.dataService.reomoveCartItem(publisher_id, body);
   }
 
-  // @Post("place-order")
-  // @ApiResponse({
-  //   status: 200,
-  //   description: "Update cart quantity",
-  //   isArray: true,
-  //   type: Order,
-  // })
-  // async placeOrder(@Req() req: any) {
-  //   let publisher_id = "";
-  //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //   //@ts-ignore
-  //   publisher_id = req.user?.sub ?? "";
+  @Post("place-order")
+  @ApiResponse({
+    status: 200,
+    description: "Update cart quantity",
+    isArray: true,
+    type: Order,
+  })
+  async placeOrder(@Req() req: any) {
+    let publisher_id = "";
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
+    publisher_id = req.user?.sub ?? "";
 
-  //   return this.dataService.placeOrder(publisher_id);
-  // }
+    return this.dataService.placeOrder(publisher_id);
+  }
 }

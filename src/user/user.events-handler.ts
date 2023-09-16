@@ -13,9 +13,13 @@ export class UserEventHanders {
   async handleAccountCreatedEvent(payload: any) {
     console.log("account created");
     const otp = this.userService.generateOtp();
+    //await this.userService.virtualAccount(payload.user.first_name, payload.user.bvn)
     await this.userService.createOtpModel(payload.user.email, otp);
     this.userMailer.sendOTP(payload.user.email, otp);
     console.log("mail sent");
+    await this.userService.virtualAccount(payload.user.first_name, payload.user.bvn)
+    console.log("Virtual Account Created");
+    
   }
 
   @OnEvent("account.activation.updated")

@@ -1,10 +1,10 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { ApiProperty } from "@nestjs/swagger";
+import {Prop, Schema, SchemaFactory} from "@nestjs/mongoose";
+import {ApiProperty} from "@nestjs/swagger";
 import * as mongoose from "mongoose";
-import { Document } from "mongoose";
-import { UserPublicData } from "./user.dto";
-import { AccountStatus, AccountType } from "../common/enums";
-import { OtpDocument } from "./otp.schema";
+import {Document} from "mongoose";
+import {UserPublicData} from "./user.dto";
+import {AccountStatus, AccountType} from "../common/enums";
+import {OtpDocument} from "./otp.schema";
 
 export type UserMethods = {
   getPublicData: () => UserPublicData;
@@ -23,31 +23,31 @@ export class User {
   id: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, required: true, unique: true })
+  @Prop({type: mongoose.SchemaTypes.String, required: true, unique: true})
   email: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.Boolean, default: false })
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
   email_activated: boolean;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, required: true, unique: true })
+  @Prop({type: mongoose.SchemaTypes.String, required: true, unique: true})
   phone: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
+  @Prop({type: mongoose.SchemaTypes.String})
   first_name: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
+  @Prop({type: mongoose.SchemaTypes.String})
   last_name: string;
 
-  @Prop({ type: mongoose.SchemaTypes.Mixed })
+  @Prop({type: mongoose.SchemaTypes.Mixed})
   @ApiProperty({type: Object})
-  location:  object;
+  location: object;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, enum: AccountType })
+  @Prop({type: mongoose.SchemaTypes.String, enum: AccountType})
   account_type: string;
 
   @ApiProperty()
@@ -59,46 +59,51 @@ export class User {
   account_status: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, required: true })
+  @Prop({type: mongoose.SchemaTypes.String, required: true})
   password: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
+  @Prop({type: mongoose.SchemaTypes.String})
   passwordResetToken: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.Date })
+  @Prop({type: mongoose.SchemaTypes.Date})
   passwordResetExpires: Date;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
+  @Prop({type: mongoose.SchemaTypes.String})
   activationToken: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String })
+  @Prop({type: mongoose.SchemaTypes.String})
   activationExpires: Date;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, default: "" })
+  @Prop({type: mongoose.SchemaTypes.String, default: ""})
   profile_photo: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, default: "" })
+  @Prop({type: mongoose.SchemaTypes.String, default: ""})
   cover_photo: string;
 
   @ApiProperty()
-  @Prop({ type: mongoose.SchemaTypes.String, default: "" })
+  @Prop({type: mongoose.SchemaTypes.String, default: ""})
   bio: string;
 
-  @Prop({ type: mongoose.SchemaTypes.String, default: "n/a" })
+  @Prop({type: mongoose.SchemaTypes.String, default: "n/a"})
   technical_skill: string;
 
-  @Prop({ type: mongoose.SchemaTypes.String, default:""})
+  @Prop({type: mongoose.SchemaTypes.String, default: ""})
   passcode: string;
 
-  @Prop({type: mongoose.SchemaTypes.String, default:"0"})
+  @Prop({type: mongoose.SchemaTypes.String, default: "0"})
   balance: string;
 
+  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
+  bvn: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
+  virtual_account_number: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -119,6 +124,7 @@ UserSchema.methods.getPublicData = function () {
     bio,
     phone,
     email_activated,
+    virtual_account_number,
   } = this;
   return {
     id,
@@ -131,9 +137,8 @@ UserSchema.methods.getPublicData = function () {
     account_status,
     bio,
     phone,
-  
     email_activated,
-
+    virtual_account_number,
   };
 };
 

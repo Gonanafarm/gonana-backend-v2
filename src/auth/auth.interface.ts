@@ -55,6 +55,10 @@ export class SignUpDto {
   @MinLength(8)
   readonly password!: string;
 
+  @ApiProperty({example: "12345678987", minLength: 11})
+  @Length(11)
+  readonly bvn!: string;
+
 }
 
 export class LoginDto {

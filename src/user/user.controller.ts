@@ -50,9 +50,6 @@ export class UserController {
   @Post("/verify-transaction")
   verifyTransaction(@Body() body: any, @Req() req: Request) {
     //@ts-ignore
-    const email = req.user.email;
-    console.log(email);
-    console.log(body);
-    return this.userService.verifyTransaction(email, body);
+    return this.userService.verifyTransaction( body);
   }
 }

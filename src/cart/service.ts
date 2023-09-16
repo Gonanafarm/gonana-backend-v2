@@ -1,6 +1,7 @@
 /* eslint-disable no-useless-catch */
 import {
   BadRequestException,
+  ConflictException,
   Controller,
   ForbiddenException,
   Injectable,
@@ -13,7 +14,9 @@ import {GenericService} from "../generic/generic.service";
 import {OrderService} from "../order/order.service";
 import {Post, PostDocument} from "../post/post.schema";
 import {publish} from "rxjs";
-import {User, UserDocument} from "src/user/user.schema";
+import {User, UserDocument} from "../user/user.schema";
+import {UserService} from "../user/user.service";
+import axios from "axios";
 
 @Injectable()
 export class CartItemService extends GenericService<CartItemDocument> {
@@ -25,6 +28,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
     //@ts-ignore
     @InjectModel("User") private userModel: Model<UserDocument>,
     private readonly orderService: OrderService,
+    private readonly userService: UserService,
   ) {
     super(cartItemsModel);
   }
@@ -51,13 +55,16 @@ export class CartItemService extends GenericService<CartItemDocument> {
       // if (product.quantity < 1) {
       //   return { success: false, message: "Product is out of stock"};
       // }
-      const itemExists = await this.cartItemsModel.findOne({
+      const itemExists = await this.cartItemsModel.find({
         product_id: product_id,
+        publisher_id: publisher_id,
       });
-      if (itemExists) {
+      console.log(itemExists);
+
+      if (itemExists.length > 0) {
         // itemExists.quantity += 1;
         // await itemExists.save();
-        throw new BadRequestException("Item is already in cart");
+        throw new ConflictException("Item is already in cart");
       }
 
       const cartItem = await this.cartItemsModel.create({
@@ -148,37 +155,68 @@ export class CartItemService extends GenericService<CartItemDocument> {
       return {error: error.message};
     }
   }
+  async placeOrder(user_id: string) {
+    const cartItems = await this.getCartItems(user_id);
+    const user = await this.userModel.findById(user_id);
+    if (!user) {
+      throw new NotFoundException("User Not Logged in");
+    }
+    if (user?.bvn === undefined) {
+      return {success: false, message: `Must have a bvn`};
+    }
 
-  // async placeOrder(publisher_id: string) {
-  //   let items = await this.retrieveItems({publisher_id: publisher_id});
+    if (user?.virtual_account_number === undefined) {
+      const virtual_account = await this.userService.virtualAccount(
+        user.first_name,
+        user.bvn,
+      );
+      user.virtual_account_number = virtual_account.data.accountNumber;
+      await user.save();
+      return {
+        account_number: virtual_account.data.accountNumber,
+        account_name: virtual_account.data.accountName,
+        bank_name: virtual_account.data.bankName,
+      };
+    }
+    const base_url = process.env.MINTYN_BASE_URL;
+    const id = process.env.MERCHANT_ID;
+    const secret = process.env.MINTYN_SECRET;
+    const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
+    const tokenHeaders = {
+      "secret-key": secret,
+    };
 
-  //   let uniqueFarmsMap: {[key: string]: any[]} = {};
+    try {
+      const response = await axios.get(tokenUrl, {headers: tokenHeaders});
 
-  //   items.forEach(element => {
-  //     //@ts-ignore
-  //     if (uniqueFarmsMap[element.farmer_id] == undefined) {
-  //       //@ts-ignore
-  //       uniqueFarmsMap[element.farmer_id] = [];
-  //     }
+      const token = response.data.data.token;
+      const accountHeaders = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      const accountDetailsUrl = `${base_url}/api/v1/merchant/virtual-account/accounts?bvn=${user.bvn}&page=0&size=100`;
+      const accountResponse = await axios.get(accountDetailsUrl, {
+        headers: accountHeaders,
+      });
+      console.log(accountResponse.data);
 
-  //     //@ts-ignore
-  //     uniqueFarmsMap[element.farmer_id].push(element);
-  //   });
+      const res = accountResponse.data.data.records[0];
+      if (Array.isArray(cartItems)) {
+        // Using reduce to sum the 'amount' property of each object
+        const totalAmount = cartItems.reduce((accumulator, currentItem) => {
+          // Check if 'amount' property exists in currentItem
+          if (currentItem && "amount" in currentItem) {
+            return accumulator + currentItem.amount;
+          } else {
+            return accumulator;
+          }
+        }, 0); // Initialize accumulator with 0
 
-  //   let orders = [];
-
-  //   for (const [farmer_id, items] of Object.entries(uniqueFarmsMap)) {
-  //     let res = await this.orderService.createOrder(
-  //       publisher_id,
-  //       items,
-  //       farmer_id,
-  //     );
-
-  //     orders.push(res);
-  //   }
-
-  //   this.dataModel.deleteMany({publisher_id: publisher_id}).exec();
-
-  //   return orders;
-  // }
+        return {accountDetails:res, amountToPay: totalAmount};
+      }
+    } catch (error: any) {
+      console.error(error);
+      return {success: false, error: error.message};
+    }
+  }
 }
