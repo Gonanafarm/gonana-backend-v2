@@ -406,7 +406,7 @@ export class UserService extends GenericService<UserDocument> {
         return;
       }
       console.log(createAccount.data);
-      
+
       user.virtual_account_number = createAccount.data.data.accountNumber;
       await user.save();
 
@@ -422,7 +422,7 @@ export class UserService extends GenericService<UserDocument> {
   }
   async verifyTransaction(data: any) {
     console.log(data);
-    
+
     const user = await this.userModel.findOne({bvn: data.payload.customerBVN});
     if (!user) {
       console.log("email not sent");

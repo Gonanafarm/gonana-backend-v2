@@ -100,7 +100,7 @@ export class CartItemController {
   })
   async placeOrder(
     @Req() req: any,
-    @Body("producId")
+    @Body("orders")
     body: {
       id: string;
       units: number;
