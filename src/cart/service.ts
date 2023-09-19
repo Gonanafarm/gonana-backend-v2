@@ -38,8 +38,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
 
       const user_id = product.publisher_id;
+      console.log(user_id);
+      
 
       const user = await this.userModel.findById(user_id);
+      console.log(user);
+      
       if (!user) {
         throw new NotFoundException(
           "The Owner of the Product may have deleted their account",
@@ -143,17 +147,40 @@ export class CartItemService extends GenericService<CartItemDocument> {
           };
         } else return null;
       });
-      const productsInCart = (await Promise.all(cartItemsPromise)).filter(
-        Boolean,
-      );
+      let productsInCart: {
+        title: string;
+        amount: number;
+        body: string;
+        images: string[];
+        id: any;
+        productOwner: string;
+      }[] = [];
+      
+      if (Array.isArray(await Promise.all(cartItemsPromise))) {
+        productsInCart = (await Promise.all(cartItemsPromise)).filter(
+          Boolean
+        ) as {
+          title: string;
+          amount: number;
+          body: string;
+          images: string[];
+          id: any;
+          productOwner: string;
+        }[];
+      }
+      
       return productsInCart;
     } catch (error: any) {
       console.error(error);
       return {error: error.message};
     }
   }
-  async placeOrder(user_id: string) {
-    const cartItems = await this.getCartItems(user_id);
+  async placeOrder(productId: string[], user_id: string) {
+    console.log(productId);
+    
+    let cartItems = await this.getCartItems(user_id);
+    console.log(user_id)
+    console.log(cartItems)
     const user = await this.userModel.findById(user_id);
     if (!user) {
       throw new NotFoundException("User Not Logged in");
@@ -182,6 +209,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
     try {
  
       const token = await this.userService.generateToken()
+      console.log("here");
+      console.log(token);
+      
       
       const accountHeaders = {
         Authorization: `Bearer ${token}`,
@@ -191,8 +221,19 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const accountResponse = await axios.get(accountDetailsUrl, {
         headers: accountHeaders,
       });
+      console.log("there");
+      
 
       const res = accountResponse.data.data.records[0];
+     if(Array.isArray(cartItems)){
+      if(cartItems.length < 1){
+        return {success:false, message:"no item in cart"}
+      }
+     }
+      //@ts-ignore
+      cartItems = cartItems.filter((product:any) => productId.includes(product.id));
+      console.log(cartItems);
+      
       if (Array.isArray(cartItems)) {
         // Using reduce to sum the 'amount' property of each object
         const totalAmount = cartItems.reduce((accumulator, currentItem) => {

@@ -60,7 +60,6 @@ export class UserController {
 
   @Post("/verify-transaction")
   verifyTransaction(@Body() body: any, ) {
-    
     return this.userService.verifyTransaction(body);
   }
 }

@@ -104,6 +104,9 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   virtual_account_number: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
+  virtual_account_bank_name: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

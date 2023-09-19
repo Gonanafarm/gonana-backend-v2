@@ -405,6 +405,9 @@ export class UserService extends GenericService<UserDocument> {
       }
       user.virtual_account_number = createAccount.data.data.accountNumber;
       await user.save();
+
+      user.virtual_account_bank_name= createAccount.data.data.bankName;
+      await user.save();
       return createAccount.data;
     } catch (error: any) {
       throw new Error("Error fetching data: " + error.message);

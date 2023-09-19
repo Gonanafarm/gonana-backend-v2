@@ -53,7 +53,6 @@ export class CartItemController {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-    console.log(publisher_id);
     
     return this.dataService.createCartItem(publisher_id, body);
   }
@@ -99,12 +98,12 @@ export class CartItemController {
     isArray: true,
     type: Order,
   })
-  async placeOrder(@Req() req: any) {
+  async placeOrder(@Req() req: any, @Body('producId') body: string[]) {
     let publisher_id = "";
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
 
-    return this.dataService.placeOrder(publisher_id);
+    return this.dataService.placeOrder(body, publisher_id);
   }
 }
