@@ -174,54 +174,50 @@ export class CartItemService extends GenericService<CartItemDocument> {
       return {error: error.message};
     }
   }
-  async placeOrder(productId: string[], user_id: string) {
-    console.log(productId);
-    if (!productId) {
-      return {success: false, message: "no product ids provided"};
+  async placeOrder(orderItems: { id: string; units: number }[], user_id: string) {
+    if (!orderItems || orderItems.length === 0) {
+      return { success: false, message: "No order items provided" };
     }
-
+  
     let cartItems = await this.getCartItems(user_id);
     const user = await this.userModel.findById(user_id);
     if (!user) {
       throw new NotFoundException("User Not Logged in");
     }
-    if (user?.bvn == undefined || null || "") {
-      return {success: false, message: `Must have a bvn`};
+    if (!user.bvn || user.bvn === "") {
+      return { success: false, message: "Must have a BVN" };
     }
-
-    if (user?.virtual_account_number == undefined || null || "") {
-      console.log("here");
-
+  
+    if (!user.virtual_account_number || user.virtual_account_number === "") {
       await this.userService.virtualAccount(user.first_name, user.bvn);
     }
-
+  
     try {
-      if (Array.isArray(cartItems)) {
-        if (cartItems.length < 1) {
-          return {success: false, message: "no item in cart"};
-        }
+      if (Array.isArray(cartItems) && cartItems.length < 1) {
+        return { success: false, message: "No item in cart" };
       }
+  
       //@ts-ignore
       cartItems = cartItems.filter((product: any) =>
-        productId.includes(product.id),
+        orderItems.map((item) => item.id).includes(product.id)
       );
-      if (Array.isArray(cartItems)) {
-        if (cartItems.length < 1) {
-          return {success: false, message: "no item in cart"};
-        }
+  
+      if (Array.isArray(cartItems) && cartItems.length < 1) {
+        return { success: false, message: "No item in cart" };
       }
-
+  
       if (Array.isArray(cartItems)) {
-        // Using reduce to sum the 'amount' property of each object
+        // Calculate the total amount based on order items
         const totalAmount = cartItems.reduce((accumulator, currentItem) => {
-          // Check if 'amount' property exists in currentItem
-          if (currentItem && "amount" in currentItem) {
-            return accumulator + currentItem.amount;
+          // Find the corresponding order item
+          const orderItem = orderItems.find((item) => item.id === currentItem.id);
+          if (orderItem) {
+            return accumulator + (currentItem.amount * orderItem.units);
           } else {
             return accumulator;
           }
-        }, 0); // Initialize accumulator with 0
-
+        }, 0);
+  
         return {
           accountNumber: user.virtual_account_number,
           bankName: user.virtual_account_bank_name,
@@ -230,7 +226,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
     } catch (error: any) {
       console.error(error);
-      return {success: false, error: error.message};
+      return { success: false, error: error.message };
     }
   }
+  
 }

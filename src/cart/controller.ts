@@ -17,7 +17,7 @@ import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {UpdateCartItemDto} from "./dto";
 import {Order} from "../order/order.schema";
-import { log } from "console";
+import {log} from "console";
 
 @ApiTags("cart-controller")
 @UseGuards(JwtAuthGuard)
@@ -53,7 +53,7 @@ export class CartItemController {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-    
+
     return this.dataService.createCartItem(publisher_id, body);
   }
 
@@ -98,7 +98,14 @@ export class CartItemController {
     isArray: true,
     type: Order,
   })
-  async placeOrder(@Req() req: any, @Body('producId') body: string[]) {
+  async placeOrder(
+    @Req() req: any,
+    @Body("producId")
+    body: {
+      id: string;
+      units: number;
+    }[],
+  ) {
     let publisher_id = "";
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
