@@ -385,7 +385,9 @@ export class UserService extends GenericService<UserDocument> {
     const id = process.env.MERCHANT_ID;
     try {
       const token = await this.generateToken();
-
+      if (!token) {
+        return {success: false, message: "Failed to get token"};
+      }
       const accountHeaders = {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -403,24 +405,31 @@ export class UserService extends GenericService<UserDocument> {
         console.log("failed to find user");
         return;
       }
+      console.log(createAccount.data);
+      
       user.virtual_account_number = createAccount.data.data.accountNumber;
       await user.save();
 
-      user.virtual_account_bank_name= createAccount.data.data.bankName;
+      user.virtual_account_bank_name = createAccount.data.data.bankName;
       await user.save();
+      if (createAccount.status === 500) {
+        return {success: false, message: "request failed"};
+      }
       return createAccount.data;
     } catch (error: any) {
       throw new Error("Error fetching data: " + error.message);
     }
   }
   async verifyTransaction(data: any) {
-    const user = await this.userModel.findOne({ bvn: data.payload.customerBVN});
-    if(!user){
+    console.log(data);
+    
+    const user = await this.userModel.findOne({bvn: data.payload.customerBVN});
+    if (!user) {
       console.log("email not sent");
-      
-      return{success: false, message:"Email not sent"}
+
+      return {success: false, message: "Email not sent"};
     }
-    const email = user.email
+    const email = user.email;
     try {
       this.userMailer.transactionVerification(
         email,

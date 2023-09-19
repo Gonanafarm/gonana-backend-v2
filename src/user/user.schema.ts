@@ -128,6 +128,7 @@ UserSchema.methods.getPublicData = function () {
     phone,
     email_activated,
     virtual_account_number,
+    virtual_account_bank_name
   } = this;
   return {
     id,
@@ -142,6 +143,7 @@ UserSchema.methods.getPublicData = function () {
     phone,
     email_activated,
     virtual_account_number,
+    virtual_account_bank_name
   };
 };
 

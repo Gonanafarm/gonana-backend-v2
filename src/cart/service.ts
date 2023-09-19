@@ -39,11 +39,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
 
       const user_id = product.publisher_id;
       console.log(user_id);
-      
 
       const user = await this.userModel.findById(user_id);
       console.log(user);
-      
+
       if (!user) {
         throw new NotFoundException(
           "The Owner of the Product may have deleted their account",
@@ -155,10 +154,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
         id: any;
         productOwner: string;
       }[] = [];
-      
+
       if (Array.isArray(await Promise.all(cartItemsPromise))) {
         productsInCart = (await Promise.all(cartItemsPromise)).filter(
-          Boolean
+          Boolean,
         ) as {
           title: string;
           amount: number;
@@ -168,7 +167,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
           productOwner: string;
         }[];
       }
-      
+
       return productsInCart;
     } catch (error: any) {
       console.error(error);
@@ -177,63 +176,41 @@ export class CartItemService extends GenericService<CartItemDocument> {
   }
   async placeOrder(productId: string[], user_id: string) {
     console.log(productId);
-    
+    if (!productId) {
+      return {success: false, message: "no product ids provided"};
+    }
+
     let cartItems = await this.getCartItems(user_id);
-    console.log(user_id)
-    console.log(cartItems)
     const user = await this.userModel.findById(user_id);
     if (!user) {
       throw new NotFoundException("User Not Logged in");
     }
-    if (user?.bvn === undefined) {
+    if (user?.bvn == undefined || null || "") {
       return {success: false, message: `Must have a bvn`};
     }
 
-    if (user?.virtual_account_number === undefined) {
-      const virtual_account = await this.userService.virtualAccount(
-        user.first_name,
-        user.bvn,
-      );
-      user.virtual_account_number = virtual_account.data.accountNumber;
-      await user.save();
-      return {
-        account_number: virtual_account.data.accountNumber,
-        account_name: virtual_account.data.accountName,
-        bank_name: virtual_account.data.bankName,
-      };
+    if (user?.virtual_account_number == undefined || null || "") {
+      console.log("here");
+
+      await this.userService.virtualAccount(user.first_name, user.bvn);
     }
-    const base_url = process.env.MINTYN_BASE_URL;
-    const id = process.env.MERCHANT_ID;
-    const secret = process.env.MINTYN_SECRET;
 
     try {
- 
-      const token = await this.userService.generateToken()
-      console.log("here");
-      console.log(token);
-      
-      
-      const accountHeaders = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-      const accountDetailsUrl = `${base_url}/api/v1/merchant/virtual-account/accounts?bvn=${user.bvn}&page=0&size=100`;
-      const accountResponse = await axios.get(accountDetailsUrl, {
-        headers: accountHeaders,
-      });
-      console.log("there");
-      
-
-      const res = accountResponse.data.data.records[0];
-     if(Array.isArray(cartItems)){
-      if(cartItems.length < 1){
-        return {success:false, message:"no item in cart"}
+      if (Array.isArray(cartItems)) {
+        if (cartItems.length < 1) {
+          return {success: false, message: "no item in cart"};
+        }
       }
-     }
       //@ts-ignore
-      cartItems = cartItems.filter((product:any) => productId.includes(product.id));
-      console.log(cartItems);
-      
+      cartItems = cartItems.filter((product: any) =>
+        productId.includes(product.id),
+      );
+      if (Array.isArray(cartItems)) {
+        if (cartItems.length < 1) {
+          return {success: false, message: "no item in cart"};
+        }
+      }
+
       if (Array.isArray(cartItems)) {
         // Using reduce to sum the 'amount' property of each object
         const totalAmount = cartItems.reduce((accumulator, currentItem) => {
@@ -245,12 +222,15 @@ export class CartItemService extends GenericService<CartItemDocument> {
           }
         }, 0); // Initialize accumulator with 0
 
-        return {accountDetails:res, amountToPay: totalAmount};
+        return {
+          accountNumber: user.virtual_account_number,
+          bankName: user.virtual_account_bank_name,
+          amountToPay: totalAmount,
+        };
       }
     } catch (error: any) {
       console.error(error);
       return {success: false, error: error.message};
     }
   }
-
 }
