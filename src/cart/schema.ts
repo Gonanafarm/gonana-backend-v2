@@ -17,7 +17,7 @@ export class CartItem {
 
   @ApiProperty()
   @IsMongoId()
-  @Prop({type: mongoose.SchemaTypes.ObjectId, unique: true})
+  @Prop({type: mongoose.SchemaTypes.ObjectId, })
   product_id: string;
 
   @ApiProperty()

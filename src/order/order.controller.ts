@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
+import {Request} from "express";
 import {ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {OrderService} from "./order.service";
 import {Order as OrderModel} from "./order.schema";
@@ -22,5 +23,11 @@ import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 // @ApiHeader({ name: 'Bypass-Tunnel-Reminder', required: true })
 export class OrderController {
   constructor(private readonly dataService: OrderService) {}
-  
+
+  @Get("")
+  async getCouriers() {
+    return this.dataService.getAvailableCouriers();
+  }
+
+
 }

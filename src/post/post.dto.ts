@@ -130,3 +130,14 @@ export class UpdateAmountDto {
   @IsNotEmpty()
   amount: number;
 }
+
+export class GetUserDto {
+  @ApiProperty({})
+  @IsString()
+  id: string;
+
+  @ApiProperty({})
+  @IsString()
+  @IsOptional()
+  type: string;
+}

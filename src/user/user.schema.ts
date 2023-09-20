@@ -107,6 +107,12 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   virtual_account_bank_name: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, default: "Gonana"})
+  virtual_account_name: string
+
+  @Prop({type: mongoose.SchemaTypes.Array, default: ""})
+  address: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -128,7 +134,7 @@ UserSchema.methods.getPublicData = function () {
     phone,
     email_activated,
     virtual_account_number,
-    virtual_account_bank_name
+    virtual_account_bank_name,
   } = this;
   return {
     id,
@@ -143,7 +149,7 @@ UserSchema.methods.getPublicData = function () {
     phone,
     email_activated,
     virtual_account_number,
-    virtual_account_bank_name
+    virtual_account_bank_name,
   };
 };
 

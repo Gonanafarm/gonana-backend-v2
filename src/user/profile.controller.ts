@@ -48,6 +48,16 @@ export class ProfileController {
     const email = req?.user?.email;
     return this.userService.verifyPasscode(email, passcode);
   }
+  @Post("/validate-address")
+  async validateAddress(@Body("address") body: string, @Req() req: Request) {
+    //@ts-ignore
+    const email = req.user.email;
+    //@ts-ignore
+    const phone = req.user.phone;
+    //@ts-ignore
+    const name = `${req.user.last_name} ${req.user.first_name}`;
+    return this.userService.validateAddress(name, email, phone, body);
+  }
 
   @Get("/user-data")
   getUserData(@Req() req: Request) {

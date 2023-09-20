@@ -16,6 +16,7 @@ import {
 } from "@nestjs/common";
 import {ApiResponse, ApiTags, ApiHeader} from "@nestjs/swagger";
 import {
+  GetUserDto,
   PostType,
   PublishPostDto,
   UpdateAmountDto,
@@ -50,7 +51,10 @@ export class PostController {
   get(@Req() req: Request, @Query("type") type: string) {
     return this.dataService.get(type);
   }
-
+  @Get("any-user-products")
+  async getAnyUserProduct(@Query() body: GetUserDto) {
+    return await this.dataService.getUsersProducts(body.id, body.type || undefined);
+  }
   @Get("/user-products")
   async getUserProducts(@Req() req: Request, @Query("type") type?: string) {
     //@ts-ignore
@@ -127,7 +131,7 @@ export class PostController {
     type: PostModel,
   })
   async getById(@Param("item") item: string) {
-    console.log(item)
+    console.log(item);
     return await this.dataService.getItem(item);
   }
 

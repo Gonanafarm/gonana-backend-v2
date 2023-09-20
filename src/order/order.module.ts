@@ -10,7 +10,7 @@ import { UserService } from '../user/user.service';
 
 
 @Module({
-  providers: [OrderService, PostModule],
+  providers: [OrderService, PostModule, UserModule],
   imports: [OrderModel, PostModel, UserModel],
   exports: [OrderModel, OrderService],
 })

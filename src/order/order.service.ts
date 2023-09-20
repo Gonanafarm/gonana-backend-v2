@@ -14,6 +14,12 @@ import {Post, PostDocument} from "../post/post.schema";
 import {User, UserDocument} from "../user/user.schema";
 import axios from "axios";
 
+const key = process.env.SHIPBUBBLE_API_KEY;
+const base_url = process.env.SHIPBUBBLE_BASE_URL;
+const Headers = {
+  Authorization: `Bearer ${key}`,
+  "Content-Type": "application/json",
+};
 @Injectable()
 export class OrderService {
   //@ts-ignore
@@ -23,94 +29,40 @@ export class OrderService {
     //@ts-ignore
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
     //@ts-ignore
-    @InjectModel(User.name) private UserModel: Model<UserDocument>,
-  ) 
-  async createOrder(product_id: string) {
-    const product = await this.productModel.findById(product_id);
-    if (!product) {
-      throw new NotFoundException(`Product Not Found`);
-    }
-    const user_id = product?.publisher_id;
-    const user = await this.UserModel.findById(user_id);
-    if (!user) {
-      throw new NotFoundException("User Not Found");
-    }
-    if (user?.bvn === undefined) {
-      return {success: false, message: `Must have a bvn`};
-    }
+    @InjectModel("User") private userModel: Model<UserDocument>,
+  );
 
-    if (user?.virtual_account_number === undefined) {
-      const virtual_account = await this.virtualAccount(
-        user.first_name,
-        user.bvn,
-      );
-      user.virtual_account_number = virtual_account.data.accountNumber;
-      await user.save();
-      return {
-        account_number: virtual_account.data.accountNumber,
-        account_name: virtual_account.data.accountName,
-        bank_name: virtual_account.data.bankName,
-      };
-    }
-    const base_url = process.env.MINTYN_BASE_URL;
-    const id = process.env.MERCHANT_ID;
-    const secret = process.env.MINTYN_SECRET;
-    const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
-    const tokenHeaders = {
-      "secret-key": secret,
-    };
+  async getAvailableCouriers() {
+    const url = `${base_url}/shipping/couriers`;
 
     try {
-      const response = await axios.get(tokenUrl, {headers: tokenHeaders});
+      const res = await axios.get(url, {headers: Headers});
 
-      const token = response.data.data.token;
-      const accountHeaders = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-      const accountDetailsUrl = `${base_url}/api/v1/merchant/virtual-account/accounts?bvn=${user.bvn}&page=0&size=100`;
-      const accountResponse = await axios.get(accountDetailsUrl, {
-        headers: accountHeaders,
-      });
-      console.log(accountResponse.data);
+      if (res.data.status !== "success") {
+        return {success: false, message: "Request failed"};
+      }
 
-      const res = accountResponse.data.data.records[0];
-      return {res, amount: product.amount};
-    } catch (error: any) {
+      const couriers = res.data.data;
+
+      // Filter the data array to get names and pin_images of couriers with id 24032950 and status "operational"
+      const filteredCouriers = couriers
+        .filter(
+          (courier: any) =>
+            courier.package_categories.some(
+              (category: any) => category.id === 24032950,
+            ) && courier.status === "operational",
+        )
+        .map((courier: any) => ({
+          name: courier.name,
+          pin_image: courier.pin_image,
+          service_code: courier.service_code,
+        }));
+
+      return {success: true, couriers: filteredCouriers};
+    } catch (error) {
       console.error(error);
-      return {success: false, error: error.message};
+      return {success: false, message: "An error occurred"};
     }
   }
-  async virtualAccount(name: string, bvn: string) {
-    const base_url = process.env.MINTYN_BASE_URL;
-    const id = process.env.MERCHANT_ID;
-    const secret = process.env.MINTYN_SECRET;
-    const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
-    const tokenHeaders = {
-      "secret-key": process.env.MINTYN_SECRET,
-    };
 
-    try {
-      const response = await axios.get(tokenUrl, {headers: tokenHeaders});
-
-      const token = response.data.data.token;
-
-      const accountHeaders = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-      const data = {
-        customerFirstName: name,
-        customerBVN: bvn,
-      };
-      const accountUrl = `${base_url}/api/v1/merchant/virtual-account/reserved-account`;
-      const createAccount = await axios.post(accountUrl, data, {
-        headers: accountHeaders,
-      });
-
-      return createAccount.data;
-    } catch (error: any) {
-      throw new Error("Error fetching data: " + error.message);
-    }
-  }
 }

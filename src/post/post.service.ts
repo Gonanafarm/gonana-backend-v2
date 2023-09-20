@@ -7,6 +7,7 @@ import {GenericService} from "../generic/generic.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {DiscountDocument} from "./discount.schema";
 import * as mongoose from "mongoose";
+import { Types } from 'mongoose';
 import {
   DeletionException,
   ResourceNotFoundException,
@@ -126,6 +127,29 @@ export class PostService extends GenericService<PostDocument> {
     } catch (error: any) {
       console.error(error);
       throw new Error(`${error.message}`);
+    }
+  }
+  async getUsersProducts(id:string,type?:string){
+    try {
+      const query: Record<string, unknown> = {};
+      if (type !== undefined) {
+        query.type = type;
+      }
+      query.publisher_id=id;
+      
+      const products = await this.productModel.find(query)
+      if (products.length < 1) {
+        return {
+          success: false,
+          message: "No posts with these parameters were found",
+        };
+      }
+      return {success: true, data: products};
+
+    } catch (error:any) {
+      console.error(error);
+      return{success:false, error:error.message}
+      
     }
   }
 }

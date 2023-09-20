@@ -412,6 +412,9 @@ export class UserService extends GenericService<UserDocument> {
 
       user.virtual_account_bank_name = createAccount.data.data.bankName;
       await user.save();
+
+      user.virtual_account_bank_name= createAccount.data.data.accountName
+      await user.save();
       if (createAccount.status === 500) {
         return {success: false, message: "request failed"};
       }
@@ -504,4 +507,46 @@ export class UserService extends GenericService<UserDocument> {
       return {success: false, error: error.message};
     }
   }
+  async validateAddress(
+    name: string,
+    email: string,
+    phone: string,
+    address: string,
+  ) {
+    try {
+      console.log(name, email, phone, address);
+      const key = process.env.SHIPBUBBLE_API_KEY;
+      const base_url = process.env.SHIPBUBBLE_BASE_URL;
+      const Headers = {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      };
+
+      const url = `${base_url}/shipping/address/validate`;
+      const data = {name: name, email: email, phone: phone, address: address};
+      const res = await axios.post(url, data, {headers: Headers});
+      if (res.data.status !== "success") {
+        return {success: false, message: "Request failed"};
+      }
+      const response = res.data.data;
+      console.log(response);
+
+      const user = await this.userModel.findOne({email: email});
+      console.log(user);
+
+      const addressExists = user?.address.find(
+        (string: any) => string === response.formatted_address,
+      );
+      if (!addressExists) {
+        user?.address.push(response.formatted_address);
+        await user?.save();
+      }
+
+      return {success: true, data: response};
+    } catch (error: any) {
+      console.error(error);
+      return {success: false, message: error.message};
+    }
+  }
+
 }
