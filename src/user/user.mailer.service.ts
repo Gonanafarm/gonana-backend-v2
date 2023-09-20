@@ -85,7 +85,7 @@ export class UserMailerService {
       this.mailerService.sendMail({
         to: email,
         subject: eventType,
-        html: `A transaction with amount ${transactionAmount} is about to be performed on your account`
+        html: `A credit transaction with amount ${transactionAmount} has occured on your account`
       });
     } catch (error) {
       console.error(error);
