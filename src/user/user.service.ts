@@ -413,7 +413,7 @@ export class UserService extends GenericService<UserDocument> {
       user.virtual_account_bank_name = createAccount.data.data.bankName;
       await user.save();
 
-      user.virtual_account_bank_name= createAccount.data.data.accountName
+      user.virtual_account_bank_name = createAccount.data.data.accountName;
       await user.save();
       if (createAccount.status === 500) {
         return {success: false, message: "request failed"};
@@ -432,6 +432,9 @@ export class UserService extends GenericService<UserDocument> {
 
       return {success: false, message: "Email not sent"};
     }
+    const session_id = data.payload.sessionId;
+    user.session_id.push(data.payload.sessionId);
+    await user.save();
     const email = user.email;
     try {
       this.userMailer.transactionVerification(
@@ -439,10 +442,37 @@ export class UserService extends GenericService<UserDocument> {
         data.eventType,
         data.payload.transactionAmount,
       );
+      setTimeout(() => {
+        this.confirmTransaction(session_id, email);
+      }, 60000);
       return {success: true, message: `Notification sent to ${email}`};
     } catch (error: any) {
       console.error(error);
       return {success: false, error: error.message};
+    }
+  }
+  async confirmTransaction(session_id: string, email: string) {
+    console.log(session_id, email);
+
+    try {
+      const token = await this.generateToken();
+      const Headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      const base_url = process.env.MINTYN_BASE_URL;
+      const url = `${base_url}/api/v1/merchant/virtual-account/verify-transaction?sessionId=${session_id}`;
+      const res = await axios.get(url, {headers: Headers});
+      if (res.data.data.settlementStatus !== "SETTLED") {
+        console.log(
+          `Transaction with sessionId:${session_id} is still pending`,
+        );
+      }
+      const transactionAmount = res.data.data.transactionAmount;
+      this.userMailer.transactionSucess(email, transactionAmount);
+      return true;
+    } catch (error) {
+      console.error(error);
     }
   }
   async getBankCode(bank_name: string) {
@@ -548,5 +578,4 @@ export class UserService extends GenericService<UserDocument> {
       return {success: false, message: error.message};
     }
   }
-
 }

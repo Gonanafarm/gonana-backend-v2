@@ -80,13 +80,29 @@ export class UserMailerService {
     }
   }
 
-  transactionVerification(email: string, eventType: string, transactionAmount: number) {
+  transactionVerification(
+    email: string,
+    eventType: string,
+    transactionAmount: number,
+  ) {
     try {
       this.mailerService.sendMail({
         to: email,
         subject: eventType,
-        html: `A credit transaction with amount ${transactionAmount} has occured on your account`
+        html: `Your credit transaction with amount ${transactionAmount} is pending`,
       });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  transactionSucess(email: string, transactionAmount: number) {
+    try {
+      this.mailerService.sendMail({
+        to: email,
+        subject: "TRANSACTION SUCCESS",
+        html: `Your credit transaction with amount ${transactionAmount} is successfull`,
+      });
+      console.log("Transaction Successful");
     } catch (error) {
       console.error(error);
     }

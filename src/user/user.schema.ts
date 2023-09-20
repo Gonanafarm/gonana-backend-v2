@@ -111,8 +111,11 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String, default: "Gonana"})
   virtual_account_name: string
 
-  @Prop({type: mongoose.SchemaTypes.Array, default: ""})
+  @Prop({type: mongoose.SchemaTypes.Array})
   address: string[];
+
+  @Prop({type: mongoose.SchemaTypes.Array})
+  session_id: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
