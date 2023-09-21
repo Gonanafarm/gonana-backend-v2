@@ -7,7 +7,9 @@ import {GenericService} from "../generic/generic.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {DiscountDocument} from "./discount.schema";
 import * as mongoose from "mongoose";
-import { Types } from 'mongoose';
+import {Types} from "mongoose";
+import {UserDocument, User} from "../user/user.schema";
+
 import {
   DeletionException,
   ResourceNotFoundException,
@@ -18,6 +20,7 @@ export class PostService extends GenericService<PostDocument> {
   constructor(
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
     @InjectModel("Discounts") private discountModel: Model<DiscountDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private eventEmmiter: EventEmitter2,
   ) {
     super(productModel);
@@ -82,7 +85,9 @@ export class PostService extends GenericService<PostDocument> {
       return product !== null ? product : undefined;
     });
     const discountedProducts = await Promise.all(discountedProductsPromises);
-    const filteredDiscountedProducts = discountedProducts.filter(product => product !== undefined);
+    const filteredDiscountedProducts = discountedProducts.filter(
+      product => product !== undefined,
+    );
 
     return {success: true, data: filteredDiscountedProducts};
   }
@@ -116,6 +121,7 @@ export class PostService extends GenericService<PostDocument> {
       if (type !== undefined) {
         query.type = type;
       }
+            
       const products = await this.productModel.find(query);
       if (products.length < 1) {
         return {
@@ -123,33 +129,55 @@ export class PostService extends GenericService<PostDocument> {
           message: "No posts with these parameters were found",
         };
       }
-      return {success: true, data: products};
+      const productPromises = products.map(async (product: any) => {
+        const id = product.publisher_id;
+        const user = await this.userModel.findById(id);
+        return {
+          product: product,
+          ownerId: user?._id,
+          ownerPhoto: user?.profile_photo,
+          ownerName: `${user?.last_name} ${user?.first_name}`,
+        };
+      });
+      const productsWithOwners = await Promise.all(productPromises);
+
+      return {success: true, data: productsWithOwners};
     } catch (error: any) {
       console.error(error);
       throw new Error(`${error.message}`);
     }
   }
-  async getUsersProducts(id:string,type?:string){
+  async getUsersProducts(id: string, type?: string) {
     try {
       const query: Record<string, unknown> = {};
       if (type !== undefined) {
         query.type = type;
       }
-      query.publisher_id=id;
-      
-      const products = await this.productModel.find(query)
+      query.publisher_id = id;
+
+      const products = await this.productModel.find(query);
       if (products.length < 1) {
         return {
           success: false,
           message: "No posts with these parameters were found",
         };
       }
-      return {success: true, data: products};
+      const productPromises = products.map(async (product: any) => {
+        const id = product.publisher_id;
+        const user = await this.userModel.findById(id);
+        return {
+          product: product,
+          ownerId: user?._id,
+          ownerPhoto: user?.profile_photo,
+          ownerName: `${user?.last_name} ${user?.first_name}`,
+        };
+      });
+      const productsWithOwners = await Promise.all(productPromises);
 
-    } catch (error:any) {
+      return {success: true, data: productsWithOwners};
+    } catch (error: any) {
       console.error(error);
-      return{success:false, error:error.message}
-      
+      return {success: false, error: error.message};
     }
   }
 }
