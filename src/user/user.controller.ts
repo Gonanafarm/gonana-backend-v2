@@ -19,12 +19,15 @@ import {User} from "./user.schema";
 import {ResolveAccountNumber, UpdateUserDto, TransferFundsDto} from "./user.dto";
 import {AuthGuard} from "@nestjs/passport";
 import {FileInterceptor} from "@nestjs/platform-express";
+import { LogisticsService } from "./logistics.service";
 
 @ApiTags("user-controller")
 @ApiBearerAuth()
 @Controller("api/user")
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService, private readonly logisticsService: LogisticsService) {}
+
+
   @Get("/find-by-email/:email")
   @ApiResponse({type: User})
   findAccountByEmail(@Req() req: Request, @Param("email") email: string) {

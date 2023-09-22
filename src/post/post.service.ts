@@ -9,6 +9,7 @@ import {DiscountDocument} from "./discount.schema";
 import * as mongoose from "mongoose";
 import {Types} from "mongoose";
 import {UserDocument, User} from "../user/user.schema";
+import { GeocodeService } from "../geocoder/service";
 
 import {
   DeletionException,
@@ -21,6 +22,7 @@ export class PostService extends GenericService<PostDocument> {
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
     @InjectModel("Discounts") private discountModel: Model<DiscountDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private geocoderService: GeocodeService,
     private eventEmmiter: EventEmitter2,
   ) {
     super(productModel);

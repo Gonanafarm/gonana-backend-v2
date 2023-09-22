@@ -18,6 +18,7 @@ import {CatalogModule} from "./catalog/catalog.module";
 import {JwtModule} from "@nestjs/jwt";
 import {PassportModule} from "@nestjs/passport";
 import {PublicModule} from "./public/public.module";
+import { GeocodeModule } from "./geocoder/module";
 
 const DEV_TRANSPORTER = {
   service: 'Gmail',
@@ -31,6 +32,7 @@ const DEV_TRANSPORTER = {
     AuthModule,
     UserModule,
     MorganModule,
+    GeocodeModule,
     PublicModule,
     CatalogModule,
     MongooseModule.forRoot(config.db ?? ""),

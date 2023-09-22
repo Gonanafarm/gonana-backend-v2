@@ -24,10 +24,6 @@ import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 export class OrderController {
   constructor(private readonly dataService: OrderService) {}
 
-  @Get("")
-  async getCouriers() {
-    return this.dataService.getAvailableCouriers();
-  }
 
 
 }

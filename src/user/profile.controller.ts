@@ -8,7 +8,7 @@ import {
   Get,
   UseInterceptors,
   UploadedFile,
-  HttpCode,
+  HttpCode,forwardRef,Inject
 } from "@nestjs/common";
 import {Request} from "express";
 import {ApiBearerAuth, ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
@@ -17,13 +17,17 @@ import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {User} from "./user.schema";
 import {UpdateTransferReceipient, UpdateUserDto} from "./user.dto";
 import {FileInterceptor} from "@nestjs/platform-express";
+import {LogisticsService} from "./logistics.service";
 
 @ApiTags("profile-controller")
 @ApiBearerAuth()
 @Controller("api/profile")
 @UseGuards(JwtAuthGuard)
 export class ProfileController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly logisticsService: LogisticsService,
+  ) {}
 
   @Put("/update-profile")
   @UseInterceptors(FileInterceptor("image"))
@@ -56,7 +60,7 @@ export class ProfileController {
     const phone = req.user.phone;
     //@ts-ignore
     const name = `${req.user.last_name} ${req.user.first_name}`;
-    return this.userService.validateAddress(name, email, phone, body);
+    return this.logisticsService.validateAddress(name, email, phone, body);
   }
 
   @Get("/user-data")
@@ -72,6 +76,4 @@ export class ProfileController {
     const name = req?.user?.first_name;
     return this.userService.virtualAccount(name, bvn);
   }
-
-
 }

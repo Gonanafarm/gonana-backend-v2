@@ -4,6 +4,7 @@ import {
   ConflictException,
   Controller,
   ForbiddenException,
+  HttpException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -55,28 +56,29 @@ export class CartItemService extends GenericService<CartItemDocument> {
       // if (product.quantity < 1) {
       //   return { success: false, message: "Product is out of stock"};
       // }
-      const itemExists = await this.cartItemsModel.find({
-        product_id: product_id,
+      const cartModel = await this.cartItemsModel.findOne({
         publisher_id: publisher_id,
       });
-      console.log(itemExists);
-
-      if (itemExists.length > 0) {
-        // itemExists.quantity += 1;
-        // await itemExists.save();
-        throw new ConflictException("Item is already in cart");
+      if (!cartModel) {
+        const cart = await this.cartItemsModel.create({
+          publisher_id: publisher_id,
+          product_id: [product_id],
+          productOwner: productOwner,
+        });
+        return {success: true, data: cart};
       }
+      const productexists = cartModel.product_id.includes(product_id);
+      if (productexists) {
+        throw new ConflictException("Product already exists in cart");
+      }
+      cartModel.product_id.push(product_id);
+      await cartModel.save();
 
-      const cartItem = await this.cartItemsModel.create({
-        publisher_id: publisher_id,
-        product_id: product_id,
-        productOwner: productOwner,
-      });
       return {
         success: true,
-        productOwner: `${firstname} ${lastname}`,
+        productOwner: productOwner,
         message: "Cart item created",
-        cartItem: cartItem,
+        cart: cartModel,
         product: product,
       };
     } catch (error: any) {
@@ -87,15 +89,30 @@ export class CartItemService extends GenericService<CartItemDocument> {
 
   async reomoveCartItem(publisher_id: string, product_id: string) {
     try {
+      if (!publisher_id) {
+        throw new BadRequestException("Login and try again");
+      }
       const product = await this.productModel.findById(product_id);
       if (!product) {
         throw new NotFoundException(`Product not found`);
       }
+
       const cartItem = await this.cartItemsModel.findOne({
-        product_id: product_id,
+        publisher_id: publisher_id,
       });
+      const user = await this.userModel.findById(publisher_id);
+      const firstname = user?.first_name;
+      const lastname = user?.last_name;
+
+      const productOwner = `${firstname} ${lastname}`;
+
       if (!cartItem) {
-        throw new NotFoundException("Product not in cart");
+        await this.cartItemsModel.create({
+          publisher_id: publisher_id,
+          product_id: [],
+          productOwner: productOwner,
+        });
+        throw new NotFoundException("Item is not in cart");
       }
       if (publisher_id !== cartItem.publisher_id) {
         throw new ForbiddenException("You did not add this item to the cart");
@@ -114,9 +131,22 @@ export class CartItemService extends GenericService<CartItemDocument> {
       //     product: product,
       //   };
       // }
+      const productArray = cartItem.product_id;
 
-      await cartItem.deleteOne({product_id: product_id});
-      return {success: true, message: "cart item removed"};
+      const index = productArray.indexOf(product_id);
+      if (index !== -1) {
+        // String found in the array, remove it
+        productArray.splice(index, 1);
+        await cartItem.save();
+
+        return {
+          success: true,
+          cartItems: productArray,
+          message: "Item removed",
+        };
+      } else {
+        throw new NotFoundException("product not in cart");
+      }
     } catch (error: any) {
       console.error(error);
       return {success: false, message: error.message};
@@ -125,99 +155,80 @@ export class CartItemService extends GenericService<CartItemDocument> {
 
   async getCartItems(publisher_id: string) {
     try {
-      const items = await this.retrieveItems({publisher_id});
-      const productIds = items.map(item => item.product_id);
-      const cartItemsPromise = productIds.map(async id => {
-        const product = await this.productModel.findById(id);
+      const cartItems = await this.cartItemsModel.findOne({
+        publisher_id: publisher_id,
+      });
+      if (!cartItems) {
+        throw new NotFoundException(`No items in cart`);
+      }
+      const productIds = cartItems.product_id;
+      if (productIds?.length < 1) {
+        throw new NotFoundException(`No items in cart`);
+      }
+      const productPromises = productIds.map(async productId => {
+        const product = await this.productModel.findById(productId);
         const user_id = product?.publisher_id;
         const user = await this.userModel.findById(user_id);
-        const firstname = user?.first_name;
-        const lastname = user?.last_name;
-
-        const productOwner = `${firstname}${lastname}`;
-        if (product) {
-          return {
-            title: product.title,
-            amount: product.amount,
-            body: product.body,
-            images: product.images,
-            id: product.id,
-            productOwner: productOwner,
-          };
-        } else return null;
+        return {
+          Title: product?.title,
+          Amount: product?.amount,
+          body: product?.body,
+          From: `${user?.first_name} ${user?.last_name}`,
+          image: product?.images,
+        };
       });
-      let productsInCart: {
-        title: string;
-        amount: number;
-        body: string;
-        images: string[];
-        id: any;
-        productOwner: string;
-      }[] = [];
-
-      if (Array.isArray(await Promise.all(cartItemsPromise))) {
-        productsInCart = (await Promise.all(cartItemsPromise)).filter(
-          Boolean,
-        ) as {
-          title: string;
-          amount: number;
-          body: string;
-          images: string[];
-          id: any;
-          productOwner: string;
-        }[];
-      }
-
-      return productsInCart;
+      const products = await Promise.all(productPromises);
+      const foundProducts = products.filter(product => !!product);
+      return {success: true, products: foundProducts};
     } catch (error: any) {
       console.error(error);
       return {error: error.message};
     }
   }
-  async placeOrder(orderItems: { id: string; units: number }[], user_id: string) {
+  async placeOrder(orderItems: {id: string; units: number}[], user_id: string) {
     if (!orderItems || orderItems.length === 0) {
-      return { success: false, message: "No order items provided" };
+      return {success: false, message: "No order items provided"};
     }
-  
+
     let cartItems = await this.getCartItems(user_id);
     const user = await this.userModel.findById(user_id);
     if (!user) {
       throw new NotFoundException("User Not Logged in");
     }
     if (!user.bvn || user.bvn === "") {
-      return { success: false, message: "Must have a BVN" };
+      return {success: false, message: "Must have a BVN"};
     }
-  
+
     if (!user.virtual_account_number || user.virtual_account_number === "") {
       await this.userService.virtualAccount(user.first_name, user.bvn);
     }
-  
+
     try {
       if (Array.isArray(cartItems) && cartItems.length < 1) {
-        return { success: false, message: "No item in cart" };
+        return {success: false, message: "No item in cart"};
       }
-  
+
       //@ts-ignore
       cartItems = cartItems.filter((product: any) =>
-        orderItems.map((item) => item.id).includes(product.id)
+        orderItems.map(item => item.id).includes(product.id),
       );
-  
+
       if (Array.isArray(cartItems) && cartItems.length < 1) {
-        return { success: false, message: "No item in cart" };
+        return {success: false, message: "No item in cart"};
       }
-  
+
       if (Array.isArray(cartItems)) {
         // Calculate the total amount based on order items
         const totalAmount = cartItems.reduce((accumulator, currentItem) => {
           // Find the corresponding order item
-          const orderItem = orderItems.find((item) => item.id === currentItem.id);
+          const orderItem = orderItems.find(item => item.id === currentItem.id);
           if (orderItem) {
-            return accumulator + (currentItem.amount * orderItem.units);
+            return accumulator + currentItem.amount * orderItem.units;
           } else {
             return accumulator;
           }
         }, 0);
-  
+
         return {
           accountNumber: user.virtual_account_number,
           bankName: user.virtual_account_bank_name,
@@ -226,8 +237,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
     } catch (error: any) {
       console.error(error);
-      return { success: false, error: error.message };
+      return {success: false, error: error.message};
     }
   }
-  
 }

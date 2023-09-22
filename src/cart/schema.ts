@@ -12,13 +12,13 @@ export type CartItemDocument = CartItem & Document;
   },
 })
 export class CartItem {
-  @Prop({type: mongoose.SchemaTypes.String})
+  @Prop({type: mongoose.SchemaTypes.String, unique: true})
   publisher_id: string;
 
   @ApiProperty()
   @IsMongoId()
-  @Prop({type: mongoose.SchemaTypes.ObjectId, })
-  product_id: string;
+  @Prop({type: mongoose.SchemaTypes.Array, })
+  product_id: string[];
 
   @ApiProperty()
   @IsNumber()

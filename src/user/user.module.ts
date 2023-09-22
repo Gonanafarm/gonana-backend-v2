@@ -1,4 +1,4 @@
-import {Module} from "@nestjs/common";
+import {Module, forwardRef } from "@nestjs/common";
 
 import {UserMailerService} from "./user.mailer.service";
 import {UserService} from "./user.service";
@@ -12,9 +12,15 @@ import {UserEventHanders} from "./user.events-handler";
 import {ProfileController} from "./profile.controller";
 import { CloudinaryService } from "../post/cloudinary.service";
 import { HttpModule } from "@nestjs/axios";
+import { LogisticsService } from "./logistics.service";
+import { PostModule } from "../post/post.module";
+import { GeocodeModule } from "../geocoder/module";
+import { LogisticsController } from "./logistics.controller";
 
 @Module({
   imports: [
+    forwardRef(() => PostModule),
+    GeocodeModule,
     OtpModel,
     UserModel,
     HttpModule,
@@ -23,9 +29,9 @@ import { HttpModule } from "@nestjs/axios";
       signOptions: {expiresIn: config.auth.jwtTokenExpireInSec},
     }),
   ],
-  controllers: [UserController, ProfileController],
-  providers: [UserMailerService, UserService, UserEventHanders, CloudinaryService],
-  exports: [UserService, UserModel],
+  controllers: [UserController, ProfileController, LogisticsController],
+  providers: [UserMailerService, UserService, UserEventHanders, CloudinaryService, LogisticsService],
+  exports: [UserService, UserModel, LogisticsService],
 })
 export class UserModule {}
 
