@@ -59,6 +59,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const cartModel = await this.cartItemsModel.findOne({
         publisher_id: publisher_id,
       });
+
       if (!cartModel) {
         const cart = await this.cartItemsModel.create({
           publisher_id: publisher_id,
@@ -162,6 +163,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         throw new NotFoundException(`No items in cart`);
       }
       const productIds = cartItems.product_id;
+      const productArray = [];
       if (productIds?.length < 1) {
         throw new NotFoundException(`No items in cart`);
       }
@@ -169,7 +171,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const product = await this.productModel.findById(productId);
         const user_id = product?.publisher_id;
         const user = await this.userModel.findById(user_id);
-        return {
+        return  {
+          id:product?.id,
           Title: product?.title,
           Amount: product?.amount,
           body: product?.body,
@@ -187,7 +190,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
   }
   async placeOrder(orderItems: {id: string; units: number}[], user_id: string) {
     if (!orderItems || orderItems.length === 0) {
-      return {success: false, message: "No order items provided"};
+      throw new BadRequestException(`No order items selected`)
     }
 
     let cartItems = await this.getCartItems(user_id);
@@ -204,7 +207,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
     }
 
     try {
-      if (Array.isArray(cartItems) && cartItems.length < 1) {
+      if (Array.isArray(cartItems.products) && cartItems.products.length < 1) {
         return {success: false, message: "No item in cart"};
       }
 
