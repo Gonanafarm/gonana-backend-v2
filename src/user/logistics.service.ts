@@ -94,7 +94,7 @@ export class LogisticsService {
     }
   }
 
-  async getShippingRates(service_code: string,sender_address_code:number, receiver_address_code:number) {
+  async getShippingRates(service_code: string,sender_address_code:number, receiver_address_code:number, package_items:any) {
     const availableCouriers = await this.getAvailableCouriers();
     if (availableCouriers.success !== true) {
       return {
@@ -116,6 +116,8 @@ export class LogisticsService {
     const url = `${base_url}/shipping/fetch_rates/${service_code}`;
     const data = {
       sender_address_code: sender_address_code,
+      receiver_address_code: receiver_address_code,
+      category_id:24032950,
 
     }
   }

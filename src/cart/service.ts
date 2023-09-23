@@ -171,8 +171,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const product = await this.productModel.findById(productId);
         const user_id = product?.publisher_id;
         const user = await this.userModel.findById(user_id);
-        return  {
-          id:product?.id,
+        return {
+          id: product?.id,
           Title: product?.title,
           Amount: product?.amount,
           body: product?.body,
@@ -190,10 +190,15 @@ export class CartItemService extends GenericService<CartItemDocument> {
   }
   async placeOrder(orderItems: {id: string; units: number}[], user_id: string) {
     if (!orderItems || orderItems.length === 0) {
-      throw new BadRequestException(`No order items selected`)
+      throw new BadRequestException(`No order items selected`);
     }
 
-    let cartItems = await this.getCartItems(user_id);
+    const cartItems = (await this.getCartItems(user_id)).products;
+    if (!cartItems) {
+      throw new NotFoundException(`No cart items found`);
+    }
+    console.log(cartItems);
+
     const user = await this.userModel.findById(user_id);
     if (!user) {
       throw new NotFoundException("User Not Logged in");
@@ -207,37 +212,23 @@ export class CartItemService extends GenericService<CartItemDocument> {
     }
 
     try {
-      if (Array.isArray(cartItems.products) && cartItems.products.length < 1) {
-        return {success: false, message: "No item in cart"};
-      }
+      const cartItemMap = new Map(cartItems.map(item => [item.id, item]));
 
-      //@ts-ignore
-      cartItems = cartItems.filter((product: any) =>
-        orderItems.map(item => item.id).includes(product.id),
-      );
-
-      if (Array.isArray(cartItems) && cartItems.length < 1) {
-        return {success: false, message: "No item in cart"};
-      }
-
-      if (Array.isArray(cartItems)) {
-        // Calculate the total amount based on order items
-        const totalAmount = cartItems.reduce((accumulator, currentItem) => {
-          // Find the corresponding order item
-          const orderItem = orderItems.find(item => item.id === currentItem.id);
-          if (orderItem) {
-            return accumulator + currentItem.amount * orderItem.units;
-          } else {
-            return accumulator;
-          }
-        }, 0);
-
-        return {
-          accountNumber: user.virtual_account_number,
-          bankName: user.virtual_account_bank_name,
-          amountToPay: totalAmount,
-        };
-      }
+      // Calculate the total amount
+      const totalAmount = orderItems.reduce((sum, orderItem) => {
+        const cartItem = cartItemMap.get(orderItem.id);
+        if (cartItem) {
+          //@ts-ignore
+          return sum + orderItem.units * cartItem.Amount;
+        }
+        return sum;
+      }, 0);
+      return {
+        accountNumber: user.virtual_account_number,
+        bankName: user.virtual_account_bank_name,
+        accountName: user.virtual_account_name,
+        amountToPay: totalAmount,
+      };
     } catch (error: any) {
       console.error(error);
       return {success: false, error: error.message};
