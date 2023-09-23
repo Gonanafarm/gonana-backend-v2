@@ -2,6 +2,9 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import axios from "axios";
@@ -23,7 +26,7 @@ const Headers = {
 export class LogisticsService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-    @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
+    @InjectModel(Post.name) private readonly productModel: Model<PostDocument>,
     private geocodeService: GeocodeService,
   ) {}
   async validateAddress(
@@ -33,8 +36,6 @@ export class LogisticsService {
     address: string,
   ) {
     try {
-      console.log(name, email, phone, address);
-
       const url = `${base_url}/shipping/address/validate`;
       const data = {name: name, email: email, phone: phone, address: address};
       const res = await axios.post(url, data, {headers: Headers});
@@ -46,11 +47,15 @@ export class LogisticsService {
       const user = await this.userModel.findOne({email: email});
 
       const addressExists = user?.address.find(
-        (string: any) => string === response.formatted_address,
+        (address: any) => address.address === response.formatted_address,
       );
+      const addressData = {
+        address: response.formatted_address,
+        code: response.address_code,
+      };
 
       if (!addressExists) {
-        user?.address.push(response.formatted_address);
+        user?.address.push(addressData);
         await user?.save();
       }
 
@@ -60,7 +65,6 @@ export class LogisticsService {
       return {success: false, message: error.message};
     }
   }
-  async getPickupAddress(id: string) {}
   async getAvailableCouriers() {
     const url = `${base_url}/shipping/couriers`;
 
@@ -93,8 +97,72 @@ export class LogisticsService {
       return {success: false, message: error.message};
     }
   }
+  async validatePostAddress(
+    address: string,
+    product_id: string,
+    user_id: string,
+  ) {
+    try {
+      const product = await this.productModel.findById(product_id);
+      if (!product) {
+        throw new NotFoundException(`Product not found`);
+      }
+      const publisher_id = product.publisher_id;
+      
+      const user = await this.userModel.findById(publisher_id);
+      if (!user) {
+        throw new NotFoundException(`User not found`);
+      }
+      if (user_id !== publisher_id) {
+        throw new ForbiddenException("You did not create this post");
+      }
+      const name = `${user.last_name} ${user.first_name}`;
+      const email = user.email;
+      const phone = user.phone;
+      const url = `${base_url}/shipping/address/validate`;
+      const data = {name: name, email: email, phone: phone, address: address};
+      const res = await axios.post(url, data, {headers: Headers});
+      if (res.data.status !== "success") {
+        throw new HttpException(
+          {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            error: "Shipbubble request failed",
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      const response = res.data.data;
+      const addressExists = product.address.find(
+        (address: any) => address.address === response.formatted_address,
+      );
+      const addressData = {
+        address: response.formatted_address,
+        code: response.address_code,
+      };
+      if (!addressExists) {
+        product.address.push(addressData);
+        await product.save();
+      }
 
-  async getShippingRates(service_code: string,sender_address_code:number, receiver_address_code:number, package_items:any) {
+      return {success: true, data: response};
+    } catch (error: any) {
+      console.error(error);
+      const statusCode = error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(
+        {status: statusCode, error: error.message},
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getShippingRates(
+    service_code: string,
+    sender_address_code: number,
+    receiver_address_code: number,
+    package_items: any,
+    package_dimensions: any,
+    delivery_instructions?: string,
+  ) {
     const availableCouriers = await this.getAvailableCouriers();
     if (availableCouriers.success !== true) {
       return {
@@ -117,8 +185,10 @@ export class LogisticsService {
     const data = {
       sender_address_code: sender_address_code,
       receiver_address_code: receiver_address_code,
-      category_id:24032950,
-
-    }
+      category_id: 24032950,
+      package_items: package_items,
+      package_dimensions: package_dimensions,
+      delivery_instructions: delivery_instructions,
+    };
   }
 }

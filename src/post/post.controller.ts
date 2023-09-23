@@ -110,6 +110,7 @@ export class PostController {
       amount,
       weight,
     };
+    
     return await this.dataService.create(publisher_id, payload);
   }
 

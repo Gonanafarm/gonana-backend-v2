@@ -121,3 +121,10 @@ export class UpdateDriverAccountStatus {
   @IsEnum(AccountStatus)
   driver_account_status: string;
 }
+
+export class ValidatePostAdress {
+  @IsString()
+  address: string;
+  @IsString()
+  productId: string
+}

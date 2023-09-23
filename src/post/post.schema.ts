@@ -99,16 +99,8 @@ export class Post {
   updated_at: string;
 
   @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  delivery_company: string;
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.Number})
-  address_code: string;
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  address: string;
+  @Prop({type: mongoose.SchemaTypes.Array})
+  address: Array<Record<string, any>>;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

@@ -10,18 +10,26 @@ import * as mongoose from "mongoose";
 import {Types} from "mongoose";
 import {UserDocument, User} from "../user/user.schema";
 import { GeocodeService } from "../geocoder/service";
-
+import { LogisticsService } from "../user/logistics.service";
 import {
   DeletionException,
   ResourceNotFoundException,
 } from "../common/exceptions";
+import axios from "axios";
 
+const key = process.env.SHIPBUBBLE_API_KEY;
+const base_url = process.env.SHIPBUBBLE_BASE_URL;
+const Headers = {
+  Authorization: `Bearer ${key}`,
+  "Content-Type": "application/json",
+};
 @Injectable()
 export class PostService extends GenericService<PostDocument> {
   constructor(
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
     @InjectModel("Discounts") private discountModel: Model<DiscountDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private logisticsService:LogisticsService,
     private geocoderService: GeocodeService,
     private eventEmmiter: EventEmitter2,
   ) {
@@ -182,4 +190,5 @@ export class PostService extends GenericService<PostDocument> {
       return {success: false, error: error.message};
     }
   }
+
 }

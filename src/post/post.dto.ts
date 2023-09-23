@@ -97,9 +97,6 @@ export class PublishPostDto {
   @IsOptional()
   tags: string[];
   
-  @ApiProperty({})
-  @IsString({})
-  delivery_company: string;
 }
 
 export class UpdatePostDto {

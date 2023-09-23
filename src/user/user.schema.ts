@@ -109,16 +109,16 @@ export class User {
   virtual_account_bank_name: string;
 
   @Prop({type: mongoose.SchemaTypes.String, default: "Gonana"})
-  virtual_account_name: string
+  virtual_account_name: string;
 
   @Prop({type: mongoose.SchemaTypes.Array})
-  address: string[];
+  address: Array<Record<string, any>>;
 
   @Prop({type: mongoose.SchemaTypes.Array})
   session_id: string[];
 
   @Prop({type: mongoose.SchemaTypes.String})
-  address_code:number;
+  address_code: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
