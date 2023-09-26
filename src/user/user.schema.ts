@@ -116,9 +116,6 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.Array})
   session_id: string[];
-
-  @Prop({type: mongoose.SchemaTypes.String})
-  address_code: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -141,6 +138,7 @@ UserSchema.methods.getPublicData = function () {
     email_activated,
     virtual_account_number,
     virtual_account_bank_name,
+    address
   } = this;
   return {
     id,
@@ -156,6 +154,7 @@ UserSchema.methods.getPublicData = function () {
     email_activated,
     virtual_account_number,
     virtual_account_bank_name,
+    address
   };
 };
 

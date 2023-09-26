@@ -111,6 +111,6 @@ export class CartItemController {
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
 
-    return this.dataService.placeOrder(body, publisher_id);
+  //  return this.dataService.placeOrder(body, publisher_id);
   }
 }

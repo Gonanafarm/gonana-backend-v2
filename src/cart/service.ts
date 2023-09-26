@@ -15,6 +15,7 @@ import {GenericService} from "../generic/generic.service";
 import {Post, PostDocument} from "../post/post.schema";
 import {User, UserDocument} from "../user/user.schema";
 import {UserService} from "../user/user.service";
+import {LogisticsService} from "../user/logistics.service";
 import axios from "axios";
 
 @Injectable()
@@ -27,6 +28,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
     //@ts-ignore
     @InjectModel("User") private userModel: Model<UserDocument>,
     private readonly userService: UserService,
+    private readonly logisticsService: LogisticsService,
   ) {
     super(cartItemsModel);
   }
@@ -188,7 +190,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
       return {error: error.message};
     }
   }
-  async placeOrder(orderItems: {id: string; units: number}[], user_id: string) {
+  async placeOrder(
+    orderItems: {id: string; units: number}[],
+    user_id: string,
+    service_code: string,
+  ) {
     if (!orderItems || orderItems.length === 0) {
       throw new BadRequestException(`No order items selected`);
     }
@@ -197,12 +203,44 @@ export class CartItemService extends GenericService<CartItemDocument> {
     if (!cartItems) {
       throw new NotFoundException(`No cart items found`);
     }
-    console.log(cartItems);
+    const prodId1 = orderItems[0].id;
+    const product1 = await this.productModel.findById(prodId1);
+    if (!product1) {
+      throw new NotFoundException(`No product found`);
+    }
+
+    const itemsToShipPromises = cartItems.map(async (item: any) => {
+      const productId = item.id;
+      const product = await this.productModel.findById(productId);
+      return {
+        name: product?.title,
+        description: product?.body,
+        unit_weight: product?.weight,
+        unit_amount: product?.amount,
+        quantity: product?.quantity,
+      };
+    });
+
+    const packageItems = await Promise.all(itemsToShipPromises);
+    console.log(packageItems);
 
     const user = await this.userModel.findById(user_id);
     if (!user) {
       throw new NotFoundException("User Not Logged in");
     }
+
+    const sender_address_code = product1.address[0].code;
+    console.log(sender_address_code);
+    const receiver_address_code = user.address[0].code;
+    console.log(receiver_address_code);
+
+    const shippingRates = await this.logisticsService.getShippingRates(
+      service_code,
+      sender_address_code,
+      receiver_address_code,
+      packageItems,
+    );
+
     if (!user.bvn || user.bvn === "") {
       return {success: false, message: "Must have a BVN"};
     }
@@ -228,6 +266,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         bankName: user.virtual_account_bank_name,
         accountName: user.virtual_account_name,
         amountToPay: totalAmount,
+        shippingRates: shippingRates,
       };
     } catch (error: any) {
       console.error(error);

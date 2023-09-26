@@ -108,7 +108,7 @@ export class LogisticsService {
         throw new NotFoundException(`Product not found`);
       }
       const publisher_id = product.publisher_id;
-      
+
       const user = await this.userModel.findById(publisher_id);
       if (!user) {
         throw new NotFoundException(`User not found`);
@@ -126,7 +126,7 @@ export class LogisticsService {
         throw new HttpException(
           {
             status: HttpStatus.INTERNAL_SERVER_ERROR,
-            error: "Shipbubble request failed",
+            error: res.data.message,
           },
           HttpStatus.INTERNAL_SERVER_ERROR,
         );
@@ -160,35 +160,62 @@ export class LogisticsService {
     sender_address_code: number,
     receiver_address_code: number,
     package_items: any,
-    package_dimensions: any,
     delivery_instructions?: string,
   ) {
-    const availableCouriers = await this.getAvailableCouriers();
-    if (availableCouriers.success !== true) {
-      return {
-        success: false,
-        message: "Request failed",
-        error: availableCouriers.message,
-      };
-    }
+    try {
+      const availableCouriers = await this.getAvailableCouriers();
+      if (availableCouriers.success !== true) {
+        throw new HttpException(
+          {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            error: availableCouriers.message,
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
 
-    const exists: boolean = availableCouriers.couriers.some((obj: any) =>
-      Object.values(obj).includes(service_code),
-    );
-    if (!exists) {
-      return {
-        success: false,
-        message: "Courier not Available or invalid service code",
+      const exists: boolean = availableCouriers.couriers.some((obj: any) =>
+        Object.values(obj).includes(service_code),
+      );
+      if (!exists) {
+        return {
+          success: false,
+          message: "Courier not Available or invalid service code",
+        };
+      }
+      const package_dimensions = {
+        length: 30,
+        width: 30,
+        height: 30,
       };
+      const url = `${base_url}/shipping/fetch_rates/${service_code}`;
+      const data = {
+        sender_address_code: sender_address_code,
+        receiver_address_code: receiver_address_code,
+        category_id: 24032950,
+        package_items: package_items,
+        package_dimensions: package_dimensions,
+        delivery_instructions: delivery_instructions,
+      };
+      const res = await axios.post(url, data, {headers: Headers});
+      if (res.data.status !== "success") {
+        throw new HttpException(
+          {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            error: res.data.message,
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      const response = res.data.data;
+      return {success: true, data: response};
+    } catch (error: any) {
+      console.error(error);
+      const statusCode = error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(
+        {status: statusCode, error: error.message},
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-    const url = `${base_url}/shipping/fetch_rates/${service_code}`;
-    const data = {
-      sender_address_code: sender_address_code,
-      receiver_address_code: receiver_address_code,
-      category_id: 24032950,
-      package_items: package_items,
-      package_dimensions: package_dimensions,
-      delivery_instructions: delivery_instructions,
-    };
   }
 }

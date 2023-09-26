@@ -29,10 +29,10 @@ export class LogisticsController {
   async getCouriers() {
     return this.logisticsService.getAvailableCouriers();
   }
-//   @Get("/get-shipping-rates")
-//   async getShippingRates(@Query("service_code") body: string) {
-//     return this.logisticsService.getShippingRates(body);
-//   }
+  // @Get("/get-shipping-rates")
+  // async getShippingRates(@Query("service_code") body: string) {
+  //   return this.logisticsService.getShippingRates(body);
+  // }
 @Post("/validate-user-address")
 async validateAddress(@Body("address") body: string, @Req() req: Request) {
   //@ts-ignore

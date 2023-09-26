@@ -25,6 +25,8 @@ export class UserPublicData {
   bio: string;
   @ApiProperty({})
   phone: string;
+  @ApiProperty({})
+  address: Array<Record<string, any>>
 }
 
 export class UpdateUserDto {

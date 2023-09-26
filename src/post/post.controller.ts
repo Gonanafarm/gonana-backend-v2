@@ -15,6 +15,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import {ApiResponse, ApiTags, ApiHeader} from "@nestjs/swagger";
+import {EventEmitter2} from "@nestjs/event-emitter";
 import {
   GetUserDto,
   PostType,
@@ -40,6 +41,8 @@ export class PostController {
   constructor(
     private readonly dataService: PostService,
     private cloudinary: CloudinaryService,
+    private eventEmmiter: EventEmitter2,
+
   ) {}
   @Get("")
   @ApiResponse({
@@ -110,8 +113,9 @@ export class PostController {
       amount,
       weight,
     };
-    
-    return await this.dataService.create(publisher_id, payload);
+    const createPost = await this.dataService.create(publisher_id, payload);
+    this.eventEmmiter.emit("created post", createPost)
+    return createPost
   }
 
   @Delete(":item")
