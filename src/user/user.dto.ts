@@ -130,3 +130,10 @@ export class ValidatePostAdress {
   @IsString()
   productId: string
 }
+
+export interface ShipmentData {
+  request_token: string;
+  service_code: string;
+  courier_id: string;
+  insurance_code?: string;
+}

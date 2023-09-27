@@ -41,10 +41,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
 
       const user_id = product.publisher_id;
-      console.log(user_id);
 
       const user = await this.userModel.findById(user_id);
-      console.log(user);
 
       if (!user) {
         throw new NotFoundException(
@@ -165,8 +163,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         throw new NotFoundException(`No items in cart`);
       }
       const productIds = cartItems.product_id;
-      const productArray = [];
-      if (productIds?.length < 1) {
+      if (productIds.length < 1) {
         throw new NotFoundException(`No items in cart`);
       }
       const productPromises = productIds.map(async productId => {
@@ -191,66 +188,73 @@ export class CartItemService extends GenericService<CartItemDocument> {
     }
   }
   async placeOrder(
-    orderItems: {id: string; units: number}[],
+    orderItems: Array<Record<string, any>>,
     user_id: string,
     service_code: string,
+    pickup_date: string,
   ) {
-    if (!orderItems || orderItems.length === 0) {
-      throw new BadRequestException(`No order items selected`);
-    }
-
-    const cartItems = (await this.getCartItems(user_id)).products;
-    if (!cartItems) {
-      throw new NotFoundException(`No cart items found`);
-    }
-    const prodId1 = orderItems[0].id;
-    const product1 = await this.productModel.findById(prodId1);
-    if (!product1) {
-      throw new NotFoundException(`No product found`);
-    }
-
-    const itemsToShipPromises = cartItems.map(async (item: any) => {
-      const productId = item.id;
-      const product = await this.productModel.findById(productId);
-      return {
-        name: product?.title,
-        description: product?.body,
-        unit_weight: product?.weight,
-        unit_amount: product?.amount,
-        quantity: product?.quantity,
-      };
-    });
-
-    const packageItems = await Promise.all(itemsToShipPromises);
-    console.log(packageItems);
-
-    const user = await this.userModel.findById(user_id);
-    if (!user) {
-      throw new NotFoundException("User Not Logged in");
-    }
-
-    const sender_address_code = product1.address[0].code;
-    console.log(sender_address_code);
-    const receiver_address_code = user.address[0].code;
-    console.log(receiver_address_code);
-
-    const shippingRates = await this.logisticsService.getShippingRates(
-      service_code,
-      sender_address_code,
-      receiver_address_code,
-      packageItems,
-    );
-
-    if (!user.bvn || user.bvn === "") {
-      return {success: false, message: "Must have a BVN"};
-    }
-
-    if (!user.virtual_account_number || user.virtual_account_number === "") {
-      await this.userService.virtualAccount(user.first_name, user.bvn);
-    }
-
     try {
-      const cartItemMap = new Map(cartItems.map(item => [item.id, item]));
+      if (!orderItems || orderItems.length === 0) {
+        throw new BadRequestException(`No order items selected`);
+      }
+
+      const cartItems = await this.getCartItems(user_id);
+
+      if (!cartItems.products) {
+        throw new NotFoundException(`No cart items found`);
+      }
+      const prodId1 = orderItems[0].id;
+      const product1 = await this.productModel.findById(prodId1);
+      if (!product1) {
+        throw new NotFoundException(`No product found`);
+      }
+
+      const itemsToShipPromises = cartItems.products.map(async (item: any) => {
+        const productId = item.id;
+        const product = await this.productModel.findById(productId);
+        return {
+          name: product?.title,
+          description: product?.body,
+          unit_weight: product?.weight,
+          unit_amount: product?.amount,
+          quantity: product?.quantity,
+        };
+      });
+
+      const packageItems = await Promise.all(itemsToShipPromises);
+      const user = await this.userModel.findById(user_id);
+      if (!user) {
+        throw new NotFoundException("User Not Logged in");
+      }
+
+      const sender_address_code = product1.address[0].code || undefined;
+      if (sender_address_code === undefined) {
+        throw new BadRequestException("product does not have a valid address");
+      }
+      const receiver_address_code = user.address[0].code || undefined;
+
+      if (receiver_address_code === undefined) {
+        throw new BadRequestException("user does not have a valid address");
+      }
+
+      const shippingRates = await this.logisticsService.getShippingRates(
+        service_code,
+        sender_address_code,
+        receiver_address_code,
+        packageItems,
+        pickup_date,
+      );
+
+      if (!user.bvn || user.bvn === "") {
+        return {success: false, message: "Must have a BVN"};
+      }
+
+      if (!user.virtual_account_number || user.virtual_account_number === "") {
+        await this.userService.virtualAccount(user.first_name, user.bvn);
+      }
+      const cartItemMap = new Map(
+        cartItems.products.map(item => [item.id, item]),
+      );
 
       // Calculate the total amount
       const totalAmount = orderItems.reduce((sum, orderItem) => {
@@ -265,8 +269,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
         accountNumber: user.virtual_account_number,
         bankName: user.virtual_account_bank_name,
         accountName: user.virtual_account_name,
-        amountToPay: totalAmount,
-        shippingRates: shippingRates,
+        product_cost: totalAmount,
+        shipping_req_token: shippingRates.data.request_token,
+        courier_id: shippingRates.data.couriers[0].courier_id,
+        courier_name: shippingRates.data.couriers[0].courier_name,
+        courier_image:shippingRates.data.couriers[0].courier_image,
+        service_code: shippingRates.data.couriers[0].service_code,
+        total_shipping_cost:shippingRates.data.couriers[0].total,
+        checkout_data:shippingRates.data.checkout_data
       };
     } catch (error: any) {
       console.error(error);

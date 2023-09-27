@@ -15,7 +15,7 @@ import {CartItemService} from "./service";
 import {CartItem, CartItem as CartItemModel} from "./schema";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
-import {UpdateCartItemDto} from "./dto";
+import {AddToCartDto, UpdateCartItemDto} from "./dto";
 import {Order} from "../order/order.schema";
 import {log} from "console";
 
@@ -100,17 +100,13 @@ export class CartItemController {
   })
   async placeOrder(
     @Req() req: any,
-    @Body("orders")
-    body: {
-      id: string;
-      units: number;
-    }[],
+    @Body()
+    body: AddToCartDto,
   ) {
     let publisher_id = "";
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-
-  //  return this.dataService.placeOrder(body, publisher_id);
+    return this.dataService.placeOrder(body.orders, publisher_id, body.service_code, body.pickup_date);
   }
 }

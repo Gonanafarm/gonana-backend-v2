@@ -15,3 +15,15 @@ export class UpdateCartItemDto {
   @IsNumber()
   quantity: number;
 }
+
+export class AddToCartDto{
+  @ApiProperty({})
+  @IsArray()
+  orders:  Array<Record<string, any>>;
+  @ApiProperty({})
+  @IsString()
+  service_code: string;
+  @ApiProperty({})
+  @IsString()
+  pickup_date:string;
+}

@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   HttpException,
   HttpStatus,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import axios from "axios";
@@ -14,6 +15,7 @@ import {Model} from "mongoose";
 import {PostModel} from "../post/post.model";
 import {Post, PostDocument} from "../post/post.schema";
 import {GeocodeService} from "../geocoder/service";
+import {ShipmentData} from "./user.dto";
 
 const key = process.env.SHIPBUBBLE_API_KEY;
 const base_url = process.env.SHIPBUBBLE_BASE_URL;
@@ -67,7 +69,6 @@ export class LogisticsService {
   }
   async getAvailableCouriers() {
     const url = `${base_url}/shipping/couriers`;
-
     try {
       const res = await axios.get(url, {headers: Headers});
 
@@ -160,18 +161,14 @@ export class LogisticsService {
     sender_address_code: number,
     receiver_address_code: number,
     package_items: any,
+    pickup_date: string,
     delivery_instructions?: string,
   ) {
     try {
       const availableCouriers = await this.getAvailableCouriers();
+
       if (availableCouriers.success !== true) {
-        throw new HttpException(
-          {
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            error: availableCouriers.message,
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw new InternalServerErrorException("Get courier request failed");
       }
 
       const exists: boolean = availableCouriers.couriers.some((obj: any) =>
@@ -191,31 +188,51 @@ export class LogisticsService {
       const url = `${base_url}/shipping/fetch_rates/${service_code}`;
       const data = {
         sender_address_code: sender_address_code,
-        receiver_address_code: receiver_address_code,
+        reciever_address_code: receiver_address_code,
         category_id: 24032950,
         package_items: package_items,
-        package_dimensions: package_dimensions,
+        package_dimension: package_dimensions,
         delivery_instructions: delivery_instructions,
+        pickup_date: pickup_date,
       };
       const res = await axios.post(url, data, {headers: Headers});
       if (res.data.status !== "success") {
-        throw new HttpException(
-          {
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            error: res.data.message,
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
+        throw new InternalServerErrorException(
+          "get shipping rates request failed",
         );
       }
       const response = res.data.data;
       return {success: true, data: response};
     } catch (error: any) {
       console.error(error);
-      const statusCode = error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
-      throw new HttpException(
-        {status: statusCode, error: error.message},
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new InternalServerErrorException(error.message);
     }
+  }
+
+  async createShipment(
+    request_token: string,
+    service_code: string,
+    courier_id: string,
+    insurance_code?: string,
+  ) {
+    const url = `${base_url}/shipping/labels`;
+    const data: ShipmentData = {
+      request_token: request_token,
+      service_code: service_code,
+      courier_id: courier_id,
+    };
+    if (insurance_code !== undefined) {
+      data.insurance_code = insurance_code;
+    }
+
+    const res = await axios.post(url, data, {headers: Headers});
+    if (res.data.status !== "success") {
+      throw new InternalServerErrorException("ShipBubble Request Failed");
+    }
+    return {
+      success: true,
+      message: res.data.message,
+      data: res.data.data
+    };
   }
 }
