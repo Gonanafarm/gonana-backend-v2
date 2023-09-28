@@ -16,17 +16,23 @@ import {ApiBearerAuth, ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {User} from "./user.schema";
-import {ResolveAccountNumber, UpdateUserDto, TransferFundsDto} from "./user.dto";
+import {
+  ResolveAccountNumber,
+  UpdateUserDto,
+  TransferFundsDto,
+} from "./user.dto";
 import {AuthGuard} from "@nestjs/passport";
 import {FileInterceptor} from "@nestjs/platform-express";
-import { LogisticsService } from "./logistics.service";
+import {LogisticsService} from "./logistics.service";
 
 @ApiTags("user-controller")
 @ApiBearerAuth()
 @Controller("api/user")
 export class UserController {
-  constructor(private readonly userService: UserService, private readonly logisticsService: LogisticsService) {}
-
+  constructor(
+    private readonly userService: UserService,
+    private readonly logisticsService: LogisticsService,
+  ) {}
 
   @Get("/find-by-email/:email")
   @ApiResponse({type: User})
@@ -41,13 +47,34 @@ export class UserController {
     return this.userService.getItem(id);
   }
 
-  @Get("/banks")
-  getBanks(@Query() body:ResolveAccountNumber){
-    return this.userService.resolveAccountNumber(body.account_number,body.bank);
+  @Get("/resolve-account-number")
+  getBanks(@Query() body: ResolveAccountNumber) {
+    return this.userService.resolveAccountNumber(
+      body.account_number,
+      body.bank,
+    );
+  }
+  
+  @UseGuards(JwtAuthGuard)
+  @Post("/save-account-number")
+  saveAccountNumber(@Body() body: ResolveAccountNumber, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.saveAccountNumber(
+      body.account_number,
+      body.bank,
+      user_id,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("bank-details")
+  getBankDetails() {
+    return this.userService.getBanks();
   }
 
   @Post("/transfer")
-  transfer(@Body() body:TransferFundsDto){
+  transfer(@Body() body: TransferFundsDto) {
     return this.userService.transferFunds(body);
   }
 
@@ -60,9 +87,8 @@ export class UserController {
     return this.userService.updateImage(email, file);
   }
 
-
   @Post("/verify-transaction")
-  verifyTransaction(@Body() body: any, ) {
+  verifyTransaction(@Body() body: any) {
     return this.userService.verifyTransaction(body);
   }
 }

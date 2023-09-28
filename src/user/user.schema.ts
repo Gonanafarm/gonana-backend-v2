@@ -116,6 +116,9 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.Array})
   session_id: string[];
+
+  @Prop({type: mongoose.SchemaTypes.Array})
+  account_details: Array<Record<string, any>>
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -5,6 +5,8 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  InternalServerErrorException,
+  UnauthorizedException,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import config from "../config";
@@ -406,6 +408,10 @@ export class UserService extends GenericService<UserDocument> {
         return;
       }
       console.log(createAccount.data);
+      if (createAccount.data.data === null) {
+        console.log("virtual account not created");
+        return;
+      }
 
       user.virtual_account_number = createAccount.data.data.accountNumber;
       await user.save();
@@ -413,7 +419,7 @@ export class UserService extends GenericService<UserDocument> {
       user.virtual_account_bank_name = createAccount.data.data.bankName;
       await user.save();
 
-      user.virtual_account_bank_name = createAccount.data.data.accountName;
+      user.virtual_account_name = createAccount.data.data.accountName;
       await user.save();
       if (createAccount.status === 500) {
         return {success: false, message: "request failed"};
@@ -475,6 +481,51 @@ export class UserService extends GenericService<UserDocument> {
       console.error(error);
     }
   }
+  async getBanks() {
+    try {
+      const token = await this.generateToken();
+      const bankHeaders = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      const base_url = process.env.MINTYN_BASE_URL;
+      const url = `${base_url}/api/v1/merchant/transfer-service/banks`;
+      const response = await axios.get(url, {headers: bankHeaders});
+      const banks = response.data.data;
+      return {success: true, data: banks};
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException("Request failed");
+    }
+  }
+
+  async saveAccountNumber(
+    account_number: string,
+    bank: string,
+    user_id: string,
+  ) {
+    const res = await this.resolveAccountNumber(account_number, bank);
+    if (res.success === false) {
+      throw new BadRequestException(res.error);
+    }
+    const account_details = res.data.data;
+    console.log(account_details);
+
+    const user = await this.userModel.findById(user_id);
+    if (!user) {
+      throw new UnauthorizedException("Login and try again");
+    }
+    const isDuplicate = user.account_details.some((existingAccount) => {
+      return existingAccount.accountnumber === account_details.accountnumber;
+    });
+  
+    if (isDuplicate) {
+      throw new BadRequestException("Account number already exists");
+    }
+    user.account_details.push(account_details);
+    await user.save();
+    return {success: true, user: user.account_details};
+  }
   async getBankCode(bank_name: string) {
     try {
       const token = await this.generateToken();
@@ -513,7 +564,7 @@ export class UserService extends GenericService<UserDocument> {
       const base_url = process.env.MINTYN_BASE_URL;
       const url = `${base_url}/api/v1/merchant/transfer-service/resolve-account?accountNumber=${account_number}&bankCode=${bankCode}`;
       const response = await axios.get(url, {headers: bankHeaders});
-      return {data: response.data, bankCode: bankCode};
+      return {success: true, data: response.data, bankCode: bankCode};
     } catch (error: any) {
       console.error(error);
       return {success: false, error: error.message};
@@ -537,5 +588,4 @@ export class UserService extends GenericService<UserDocument> {
       return {success: false, error: error.message};
     }
   }
-
 }
