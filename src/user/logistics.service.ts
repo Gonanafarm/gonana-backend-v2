@@ -42,7 +42,7 @@ export class LogisticsService {
       const data = {name: name, email: email, phone: phone, address: address};
       const res = await axios.post(url, data, {headers: Headers});
       if (res.data.status !== "success") {
-        return {success: false, message: "Request failed"};
+        throw new BadRequestException(`${res.data.message}`);
       }
       const response = res.data.data;
 
@@ -64,7 +64,7 @@ export class LogisticsService {
       return {success: true, data: response};
     } catch (error: any) {
       console.error(error);
-      return {success: false, message: error.message};
+     throw new InternalServerErrorException(`${error.message}`)
     }
   }
   async getAvailableCouriers() {
