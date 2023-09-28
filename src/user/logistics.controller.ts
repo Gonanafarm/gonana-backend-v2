@@ -47,7 +47,7 @@ export class LogisticsController {
     const phone = req.user.phone;
     //@ts-ignore
     const name = `${req.user.last_name} ${req.user.first_name}`;
-    return this.logisticsService.validateAddress(name, email, phone, body);
+    return this.logisticsService.validateUserAddress(name, email, phone, body);
   }
 
   @Post("/validate-post-address")

@@ -23,25 +23,5 @@ export class PostEventHandlers {
     await this.postService.deleteDiscount(payload);
     console.log("discount deleted");
   }
-  @OnEvent("created post")
-  async handleCreatePost(payload: any) {
-    const id = payload._id.toString();
-    console.log(id);
-    const product = await this.productModel.findById(id);
-    if (!product) {
-      console.log("Product not found");
-      return;
-    }
-    const userId = product?.publisher_id;
-    const user = await this.userModel.findById(userId);
-    if (!user) {
-      console.log("User not found");
-      return;
-    }
-    const userAddress = user.address[0];
-    console.log(userAddress);
-    product.address.push(userAddress);
-    await product.save();
-    console.log("product address updated");
-  }
+
 }

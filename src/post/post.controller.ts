@@ -32,6 +32,7 @@ import {Types} from "mongoose";
 import {CloudinaryService} from "./cloudinary.service";
 import {FileInterceptor, FilesInterceptor} from "@nestjs/platform-express";
 import {String} from "lodash";
+import {LogisticsService} from "../user/logistics.service";
 
 @ApiTags("posts-controller")
 @UseGuards(JwtAuthGuard)
@@ -42,7 +43,7 @@ export class PostController {
     private readonly dataService: PostService,
     private cloudinary: CloudinaryService,
     private eventEmmiter: EventEmitter2,
-
+    private logisticsService: LogisticsService,
   ) {}
   @Get("")
   @ApiResponse({
@@ -56,7 +57,10 @@ export class PostController {
   }
   @Get("any-user-products")
   async getAnyUserProduct(@Query() body: GetUserDto) {
-    return await this.dataService.getUsersProducts(body.id, body.type || undefined);
+    return await this.dataService.getUsersProducts(
+      body.id,
+      body.type || undefined,
+    );
   }
   @Get("/user-products")
   async getUserProducts(@Req() req: Request, @Query("type") type?: string) {
@@ -89,7 +93,6 @@ export class PostController {
     geo_lat = isNaN(geo_lat) == true ? 0 : geo_lat;
     geo_long = isNaN(geo_long) == true ? 0 : geo_long;
     weight = isNaN(weight) == true ? 0 : weight;
-
     let images = await Promise.all(
       files.map(async file => {
         let res = await this.cloudinary.uploadImage(file);
@@ -99,6 +102,23 @@ export class PostController {
     let publisher_id = "";
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
+    //@ts-ignore
+    const name = `${req.user?.first_name} ${req.user?.last_name}`;
+ 
+    //@ts-ignore
+    const phone = req.user?.phone;
+
+    //@ts-ignore
+    const email = req.user?.email;
+
+    const unformatted_address = body.address;
+    const validatedAdress = await this.logisticsService.validateAddress(
+      unformatted_address,
+      name,
+      email,
+      phone,
+    );
+    const address = [validatedAdress.data]
 
     let payload = {
       ...body,
@@ -112,10 +132,10 @@ export class PostController {
       quantity,
       amount,
       weight,
+      address
     };
     const createPost = await this.dataService.create(publisher_id, payload);
-    this.eventEmmiter.emit("created post", createPost)
-    return createPost
+    return createPost;
   }
 
   @Delete(":item")

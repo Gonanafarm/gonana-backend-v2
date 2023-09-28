@@ -31,7 +31,7 @@ export class LogisticsService {
     @InjectModel(Post.name) private readonly productModel: Model<PostDocument>,
     private geocodeService: GeocodeService,
   ) {}
-  async validateAddress(
+  async validateUserAddress(
     name: string,
     email: string,
     phone: string,
@@ -155,6 +155,40 @@ export class LogisticsService {
       );
     }
   }
+  async validateAddress(
+    address: string,
+    name: string,
+    email: string,
+    phone: string,
+  ) {
+    try {
+      const url = `${base_url}/shipping/address/validate`;
+      const data = {name: name, email: email, phone: phone, address: address};
+      const res = await axios.post(url, data, {headers: Headers});
+      if (res.data.status !== "success") {
+        throw new HttpException(
+          {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            error: res.data.message,
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      const formatted_address = res.data.data.formatted_address;
+      const address_code = res.data.data.address_code;
+      return {
+        success: true,
+        data: {address: formatted_address, code: address_code},
+      };
+    } catch (error: any) {
+      console.error(error);
+      const statusCode = error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
+      throw new HttpException(
+        {status: statusCode, error: error.message},
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
   async getShippingRates(
     service_code: string,
@@ -232,7 +266,7 @@ export class LogisticsService {
     return {
       success: true,
       message: res.data.message,
-      data: res.data.data
+      data: res.data.data,
     };
   }
 }

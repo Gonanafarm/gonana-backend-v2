@@ -96,6 +96,10 @@ export class PublishPostDto {
   @IsArray({})
   @IsOptional()
   tags: string[];
+
+  @ApiProperty({})
+  @IsString({})
+  address: string;
   
 }
 
