@@ -25,7 +25,8 @@ export class AuthService {
     private eventEmitter: EventEmitter2,
   ) {}
   async validateUser(email: string, password: string): Promise<UserDocument> {
-    const user = await this.userService.findByEmail(email);
+    const res = await this.userService.findByEmail(email);
+    const user = res.user
 
     if (!comparePassword(password, user.password)) {
       throw LoginCredentialsException();

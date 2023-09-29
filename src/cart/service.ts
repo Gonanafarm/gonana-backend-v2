@@ -249,7 +249,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
         return {success: false, message: "Must have a BVN"};
       }
 
-      if (!user.virtual_account_number || user.virtual_account_number === "") {
+      if (
+        !user.virtual_account_number ||
+        user.virtual_account_number === "" ||
+        user.virtual_account_number === undefined
+      ) {
         await this.userService.virtualAccount(user.first_name, user.bvn);
       }
       const cartItemMap = new Map(
@@ -273,10 +277,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
         shipping_req_token: shippingRates.data.request_token,
         courier_id: shippingRates.data.couriers[0].courier_id,
         courier_name: shippingRates.data.couriers[0].courier_name,
-        courier_image:shippingRates.data.couriers[0].courier_image,
+        courier_image: shippingRates.data.couriers[0].courier_image,
         service_code: shippingRates.data.couriers[0].service_code,
-        total_shipping_cost:shippingRates.data.couriers[0].total,
-        checkout_data:shippingRates.data.checkout_data
+        total_shipping_cost: shippingRates.data.couriers[0].total,
+        checkout_data: shippingRates.data.checkout_data,
       };
     } catch (error: any) {
       console.error(error);

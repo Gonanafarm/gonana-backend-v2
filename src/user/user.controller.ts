@@ -20,6 +20,7 @@ import {
   ResolveAccountNumber,
   UpdateUserDto,
   TransferFundsDto,
+  UserPublicData,
 } from "./user.dto";
 import {AuthGuard} from "@nestjs/passport";
 import {FileInterceptor} from "@nestjs/platform-express";
@@ -35,9 +36,12 @@ export class UserController {
   ) {}
 
   @Get("/find-by-email/:email")
-  @ApiResponse({type: User})
   findAccountByEmail(@Req() req: Request, @Param("email") email: string) {
     return this.userService.findByEmail(email);
+  }
+  @Get("/get-by-email/:email")
+  getByEmail(@Param("email") email:string){
+    return this.userService.getByEmail(email);
   }
 
   @Get("/find-by-id/:id")

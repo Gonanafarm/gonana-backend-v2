@@ -144,7 +144,7 @@ export class UserService extends GenericService<UserDocument> {
     });
   }
 
-  async findByEmail(email: string): Promise<UserDocument> {
+  async findByEmail(email: string) {
     const user = await this.userModel.findOne(
       {email: email.toLowerCase()},
       "+password",
@@ -154,7 +154,7 @@ export class UserService extends GenericService<UserDocument> {
       throw UserNotFoundException();
     }
 
-    return user;
+    return {user, data: user.getPublicData()};
   }
 
   async activate(userId: string, activationToken: string) {
@@ -342,7 +342,8 @@ export class UserService extends GenericService<UserDocument> {
     if (passcode.length !== 4) {
       throw new BadRequestException("Passcode must be 4 characters");
     }
-    const user = await this.findByEmail(email);
+    const res = await this.findByEmail(email);
+    const user = res.user
     if (!user) {
       throw new NotFoundException(`User not found, login and try again`);
     }
@@ -360,6 +361,14 @@ export class UserService extends GenericService<UserDocument> {
   async getUserData(id: string) {
     const user = await this.userModel.findById(id);
     return user?.getPublicData();
+  }
+
+  async getByEmail(email: string){
+   const user = await this.userModel.findOne({email: email});
+   if(!user){
+    throw new NotFoundException("User not found")
+   }
+   return user.getPublicData();
   }
 
   async generateToken() {
