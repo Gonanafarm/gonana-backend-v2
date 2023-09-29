@@ -27,6 +27,8 @@ export class UserPublicData {
   phone: string;
   @ApiProperty({})
   address: Array<Record<string, any>>
+  @ApiProperty({})
+  virtual_account_number:string;
 }
 
 export class UpdateUserDto {
