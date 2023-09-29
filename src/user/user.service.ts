@@ -516,7 +516,7 @@ export class UserService extends GenericService<UserDocument> {
       throw new UnauthorizedException("Login and try again");
     }
     const isDuplicate = user.account_details.some((existingAccount) => {
-      return existingAccount.accountnumber === account_details.accountnumber;
+      return existingAccount.accountNumber === account_details.accountNumber;
     });
   
     if (isDuplicate) {
