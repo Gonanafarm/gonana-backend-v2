@@ -209,6 +209,7 @@ export class LogisticsService {
       };
       
       const pickup_date = getTomorrowDate();
+      console.log(typeof pickup_date)
       console.log(pickup_date); 
       
       const availableCouriers = await this.getAvailableCouriers();

@@ -23,7 +23,4 @@ export class AddToCartDto{
   @ApiProperty({})
   @IsString()
   service_code: string;
-  @ApiProperty({})
-  @IsString()
-  pickup_date:string;
 }

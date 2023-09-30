@@ -107,6 +107,6 @@ export class CartItemController {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-    return this.dataService.placeOrder(body.orders, publisher_id, body.service_code, body.pickup_date);
+    return this.dataService.placeOrder(body.orders, publisher_id, body.service_code);
   }
 }
