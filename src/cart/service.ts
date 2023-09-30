@@ -5,6 +5,7 @@ import {
   Controller,
   ForbiddenException,
   HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -15,7 +16,10 @@ import {GenericService} from "../generic/generic.service";
 import {Post, PostDocument} from "../post/post.schema";
 import {User, UserDocument} from "../user/user.schema";
 import {UserService} from "../user/user.service";
-import {LogisticsService} from "../user/logistics.service";
+import {
+  LogisticsService,
+  showObjectProperties,
+} from "../user/logistics.service";
 import axios from "axios";
 
 @Injectable()
@@ -193,13 +197,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
     service_code: string,
   ) {
     try {
-
-      
       if (!orderItems || orderItems.length === 0) {
         throw new BadRequestException(`No order items selected`);
       }
 
-      const cartItems = await this.getCartItems(user_id);      
+      const cartItems = await this.getCartItems(user_id);
 
       if (!cartItems.products) {
         throw new NotFoundException(`No cart items found`);
@@ -227,11 +229,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (!user) {
         throw new NotFoundException("User Not Logged in");
       }
-console.log("here");
+      console.log("here");
 
       const sender_address_code = product1.address[0].code || undefined;
       console.log(sender_address_code);
-      
+
       if (sender_address_code === undefined) {
         throw new BadRequestException("product does not have a valid address");
       }
@@ -287,7 +289,14 @@ console.log("here");
       };
     } catch (error: any) {
       console.error(error);
-      return {success: false, error: error.message};
+      throw new HttpException(
+        {
+          success: false,
+          status: error.status,
+          message: error.message,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 }

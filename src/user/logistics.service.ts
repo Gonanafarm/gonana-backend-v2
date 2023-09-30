@@ -24,6 +24,14 @@ const Headers = {
   "Content-Type": "application/json",
 };
 
+export function showObjectProperties(obj: Record<string, any>): void {
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      console.log(`Key: ${key}, Value: ${obj[key]}`);
+    }
+  }
+}
+
 @Injectable()
 export class LogisticsService {
   constructor(
@@ -64,7 +72,7 @@ export class LogisticsService {
       return {success: true, data: response};
     } catch (error: any) {
       console.error(error);
-     throw new InternalServerErrorException(`${error.message}`)
+      throw new InternalServerErrorException(`${error.message}`);
     }
   }
   async getAvailableCouriers() {
@@ -200,33 +208,42 @@ export class LogisticsService {
     try {
       const getTomorrowDate = () => {
         const today = new Date();
-        today.setDate(today.getDate() + 1);       
+        today.setDate(today.getDate() + 1);
         const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0'); 
-        const day = String(today.getDate()).padStart(2, '0');
-      
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const day = String(today.getDate()).padStart(2, "0");
+
         return `${year}-${month}-${day}`;
       };
-      
+
       const pickup_date = getTomorrowDate();
-      console.log(typeof pickup_date)
-      console.log(pickup_date); 
-      
+
       const availableCouriers = await this.getAvailableCouriers();
 
       if (availableCouriers.success !== true) {
         throw new InternalServerErrorException("Get courier request failed");
       }
 
-      const exists: boolean = availableCouriers.couriers.some((obj: any) =>
-        Object.values(obj).includes(service_code),
-      );
-      if (!exists) {
+      const exists: boolean = availableCouriers.couriers.some((obj: any) => {
+        for (const key in obj) {
+          if (
+            Object.prototype.hasOwnProperty.call(obj, key) &&
+            obj[key] === service_code
+          ) {
+            throw new NotFoundException(
+              "Courier not Available or invalid service code",
+            );
+          }
+        }
+      });
+      if (exists) {
         return {
           success: false,
           message: "Courier not Available or invalid service code",
         };
       }
+      console.log("here");
+      
       const package_dimensions = {
         length: 30,
         width: 30,
@@ -248,11 +265,11 @@ export class LogisticsService {
           "get shipping rates request failed",
         );
       }
+      
       const response = res.data.data;
       return {success: true, data: response};
-    } catch (error: any) {
-      console.error(error);
-      throw new InternalServerErrorException(error.message);
+    } catch (error: any) {       
+      throw new BadRequestException(error.response.data.message);
     }
   }
 
