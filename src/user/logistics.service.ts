@@ -195,10 +195,22 @@ export class LogisticsService {
     sender_address_code: number,
     receiver_address_code: number,
     package_items: any,
-    pickup_date: string,
     delivery_instructions?: string,
   ) {
     try {
+      const getTomorrowDate = () => {
+        const today = new Date();
+        today.setDate(today.getDate() + 1);       
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); 
+        const day = String(today.getDate()).padStart(2, '0');
+      
+        return `${year}-${month}-${day}`;
+      };
+      
+      const pickup_date = getTomorrowDate();
+      console.log(pickup_date); 
+      
       const availableCouriers = await this.getAvailableCouriers();
 
       if (availableCouriers.success !== true) {

@@ -242,7 +242,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
         sender_address_code,
         receiver_address_code,
         packageItems,
-        pickup_date,
       );
 
       if (!user.bvn || user.bvn === "") {
