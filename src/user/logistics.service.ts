@@ -217,13 +217,6 @@ export class LogisticsService {
       };
 
       const pickup_date = getTomorrowDate();
-
-      const availableCouriers = await this.getAvailableCouriers();
-
-      if (availableCouriers.success !== true) {
-        throw new InternalServerErrorException("Get courier request failed");
-      }
-
       
       const package_dimensions = {
         length: 30,
