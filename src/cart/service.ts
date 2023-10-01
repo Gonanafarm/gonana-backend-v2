@@ -289,6 +289,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       };
     } catch (error: any) {
       console.error(error);
+      showObjectProperties(error);
       throw new HttpException(
         {
           success: false,

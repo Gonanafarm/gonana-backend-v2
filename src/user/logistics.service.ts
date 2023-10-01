@@ -236,7 +236,7 @@ export class LogisticsService {
           }
         }
       });
-      if (!exists) {
+      if (exists) {
         return {
           success: false,
           message: "Courier not Available or invalid service code",
@@ -270,6 +270,7 @@ export class LogisticsService {
       return {success: true, data: response};
     } catch (error: any) {       
       console.error(error);
+      showObjectProperties(error);
       throw new BadRequestException(error.response.data.message);
     }
   }
