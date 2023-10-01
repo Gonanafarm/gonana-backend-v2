@@ -224,25 +224,6 @@ export class LogisticsService {
         throw new InternalServerErrorException("Get courier request failed");
       }
 
-      const exists: boolean = availableCouriers.couriers.some((obj: any) => {
-        for (const key in obj) {
-          if (
-            Object.prototype.hasOwnProperty.call(obj, key) &&
-            obj[key] === service_code
-          ) {
-            throw new NotFoundException(
-              "Courier not Available or invalid service code",
-            );
-          }
-        }
-      });
-      if (exists) {
-        return {
-          success: false,
-          message: "Courier not Available or invalid service code",
-        };
-      }
-      console.log("here");
       
       const package_dimensions = {
         length: 30,
