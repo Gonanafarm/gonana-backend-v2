@@ -64,7 +64,7 @@ export class UserMailerService {
       .catch();
   }
 
-  //sendLoginSecurityMail(email: string) {}
+  sendLoginSecurityMail(email: string) {}
 
   sendNotification(email: string, title: string, message: string) {
     this.mailerService
