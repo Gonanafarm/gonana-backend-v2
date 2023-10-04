@@ -7,6 +7,8 @@ import {
   BadRequestException,
   InternalServerErrorException,
   UnauthorizedException,
+  HttpException,
+  HttpStatus,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import config from "../config";
@@ -31,6 +33,7 @@ import {HttpService} from "@nestjs/axios";
 import {catchError, firstValueFrom} from "rxjs";
 import {Request, Response} from "express";
 import axios from "axios";
+import {showObjectProperties} from "./logistics.service";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -343,7 +346,7 @@ export class UserService extends GenericService<UserDocument> {
       throw new BadRequestException("Passcode must be 4 characters");
     }
     const res = await this.findByEmail(email);
-    const user = res.user
+    const user = res.user;
     if (!user) {
       throw new NotFoundException(`User not found, login and try again`);
     }
@@ -363,12 +366,12 @@ export class UserService extends GenericService<UserDocument> {
     return user?.getPublicData();
   }
 
-  async getByEmail(email: string){
-   const user = await this.userModel.findOne({email: email});
-   if(!user){
-    throw new NotFoundException("User not found")
-   }
-   return user.getPublicData();
+  async getByEmail(email: string) {
+    const user = await this.userModel.findOne({email: email});
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    return user.getPublicData();
   }
 
   async generateToken() {
@@ -407,19 +410,26 @@ export class UserService extends GenericService<UserDocument> {
         customerFirstName: name,
         customerBVN: bvn,
       };
+      const user = await this.userModel.findOne({bvn: bvn});
+      if (!user) {
+        throw new NotFoundException(`User Not Found`);
+      }
       const accountUrl = `${base_url}/api/v1/merchant/virtual-account/reserved-account`;
       const createAccount = await axios.post(accountUrl, data, {
         headers: accountHeaders,
       });
-      const user = await this.userModel.findOne({bvn: bvn});
-      if (!user) {
-        console.log("failed to find user");
-        return;
-      }
+
       console.log(createAccount.data);
       if (createAccount.data.data === null) {
-        console.log("virtual account not created");
-        return;
+        console.log(createAccount.data);
+
+        throw new HttpException(
+          {
+            success: false,
+            message: createAccount.data.responseMessage,
+          },
+          400,
+        );
       }
 
       user.virtual_account_number = createAccount.data.data.accountNumber;
@@ -430,12 +440,16 @@ export class UserService extends GenericService<UserDocument> {
 
       user.virtual_account_name = createAccount.data.data.accountName;
       await user.save();
-      if (createAccount.status === 500) {
-        return {success: false, message: "request failed"};
-      }
+
       return createAccount.data;
     } catch (error: any) {
-      throw new Error("Error fetching data: " + error.message);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
   async verifyTransaction(data: any) {
@@ -482,6 +496,7 @@ export class UserService extends GenericService<UserDocument> {
         console.log(
           `Transaction with sessionId:${session_id} is still pending`,
         );
+        return
       }
       const transactionAmount = res.data.data.transactionAmount;
       this.userMailer.transactionSucess(email, transactionAmount);
@@ -524,10 +539,10 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       throw new UnauthorizedException("Login and try again");
     }
-    const isDuplicate = user.account_details.some((existingAccount) => {
+    const isDuplicate = user.account_details.some(existingAccount => {
       return existingAccount.accountNumber === account_details.accountNumber;
     });
-  
+
     if (isDuplicate) {
       throw new BadRequestException("Account number already exists");
     }

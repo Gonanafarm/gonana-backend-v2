@@ -16,12 +16,6 @@ import {ApiBearerAuth, ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {User} from "./user.schema";
-import {
-  ResolveAccountNumber,
-  UpdateUserDto,
-  TransferFundsDto,
-  UserPublicData,
-} from "./user.dto";
 import {AuthGuard} from "@nestjs/passport";
 import {FileInterceptor} from "@nestjs/platform-express";
 import {LogisticsService} from "./logistics.service";
@@ -51,36 +45,7 @@ export class UserController {
     return this.userService.getItem(id);
   }
 
-  @Get("/resolve-account-number")
-  getBanks(@Query() body: ResolveAccountNumber) {
-    return this.userService.resolveAccountNumber(
-      body.account_number,
-      body.bank,
-    );
-  }
-  
-  @UseGuards(JwtAuthGuard)
-  @Post("/save-account-number")
-  saveAccountNumber(@Body() body: ResolveAccountNumber, @Req() req: Request) {
-    //@ts-ignore
-    const user_id = req.user?.id;
-    return this.userService.saveAccountNumber(
-      body.account_number,
-      body.bank,
-      user_id,
-    );
-  }
 
-  @UseGuards(JwtAuthGuard)
-  @Get("bank-details")
-  getBankDetails() {
-    return this.userService.getBanks();
-  }
-
-  @Post("/transfer")
-  transfer(@Body() body: TransferFundsDto) {
-    return this.userService.transferFunds(body);
-  }
 
   @Patch("update-image")
   @UseInterceptors(FileInterceptor("file"))

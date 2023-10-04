@@ -17,8 +17,6 @@ export class UserEventHanders {
     await this.userService.createOtpModel(payload.user.email, otp);
     this.userMailer.sendOTP(payload.user.email, otp);
     console.log("mail sent");
-    await this.userService.virtualAccount("Gonana", payload.user.bvn)
-    console.log("Virtual Account Created");
     
   }
 

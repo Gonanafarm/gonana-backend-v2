@@ -61,6 +61,12 @@ export class UpdateUserDto {
   @IsOptional()
   @ApiProperty({})
   cover_photo: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({})
+  @Length(11)
+  bvn:string;
 }
 
 export class UpdateTransferReceipient {

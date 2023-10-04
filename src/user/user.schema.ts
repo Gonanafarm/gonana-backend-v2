@@ -96,8 +96,8 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String, default: ""})
   passcode: string;
 
-  @Prop({type: mongoose.SchemaTypes.String, default: "0"})
-  balance: string;
+  @Prop({type: mongoose.SchemaTypes.String, default: 0})
+  balance: number;
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   bvn: string;

@@ -16,6 +16,7 @@ import { LogisticsService } from "./logistics.service";
 import { PostModule } from "../post/post.module";
 import { GeocodeModule } from "../geocoder/module";
 import { LogisticsController } from "./logistics.controller";
+import { TransactionController } from "./transaction.controller";
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { LogisticsController } from "./logistics.controller";
       signOptions: {expiresIn: config.auth.jwtTokenExpireInSec},
     }),
   ],
-  controllers: [UserController, ProfileController, LogisticsController],
+  controllers: [UserController, ProfileController, LogisticsController, TransactionController],
   providers: [UserMailerService, UserService, UserEventHanders, CloudinaryService, LogisticsService],
   exports: [UserService, UserModel, LogisticsService],
 })
