@@ -417,7 +417,10 @@ export class UserService extends GenericService<UserDocument> {
       console.log(createAccount.data);
       if (createAccount.data.data === null) {
         console.log(createAccount.data);
-
+        this.userMailer.sendBvnVerificationFailedMail(
+          user.email,
+          createAccount.data.responseMessage,
+        );
         throw new HttpException(
           {
             success: false,
@@ -510,7 +513,8 @@ export class UserService extends GenericService<UserDocument> {
       }
 
       //@ts-ignore
-      const balance =parseInt(user.balance) + parseInt(transactionObject.amountSettled);
+      const balance =
+        parseInt(user.balance) + parseInt(transactionObject.amountSettled);
       //@ts-ignore
       user.balance = parseInt(balance);
       await user.save();

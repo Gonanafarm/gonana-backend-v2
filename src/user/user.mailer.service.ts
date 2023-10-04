@@ -39,6 +39,17 @@ export class UserMailerService {
       })
       .catch(console.log);
   }
+  sendBvnVerificationFailedMail(email: string, text: string) {
+    try {
+      this.mailerService.sendMail({
+        to: email,
+        subject: "BVN VERIFICATION FAILED",
+        html: text,
+      });
+    } catch (error: any) {
+      console.log(error);
+    }
+  }
 
   sendResetPasswordMail(email: string) {
     this.mailerService
@@ -53,7 +64,7 @@ export class UserMailerService {
       .catch();
   }
 
-  sendLoginSecurityMail(email: string) {}
+  //sendLoginSecurityMail(email: string) {}
 
   sendNotification(email: string, title: string, message: string) {
     this.mailerService
