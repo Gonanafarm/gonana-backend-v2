@@ -82,7 +82,6 @@ export class AuthService {
       userData.password,
       origin,
       userData.account_type,
-      userData.bvn
     );
 
     return {

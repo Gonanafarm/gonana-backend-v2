@@ -56,7 +56,6 @@ export class UserService extends GenericService<UserDocument> {
     password: string,
     origin: string,
     account_type: string,
-    bvn: string,
     //imageFile: Express.Multer.File,
   ) {
     // const image = await this.cloudinaryService.uploadImage(imageFile);
@@ -68,10 +67,7 @@ export class UserService extends GenericService<UserDocument> {
     if (numberExists) {
       throw NumberAlreadyUsedException();
     }
-    const bvnExists = await this.userModel.findOne({bvn: bvn});
-    if (bvnExists) {
-      throw BvnAlreadyUsedException();
-    }
+
     const user = await this.userModel.create({
       email: email.toLowerCase(),
       first_name,
@@ -81,7 +77,6 @@ export class UserService extends GenericService<UserDocument> {
       password: await hashPassword(password),
       activationToken: uuid(),
       activationExpires: Date.now() + config.auth.activationExpireInMs,
-      bvn,
       //   image,
     });
 
