@@ -30,7 +30,9 @@ export class TransactionController {
   @Post("/create-virtual-account")
   virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
     //@ts-ignore
-    return this.userService.virtualAccount("Gonana", bvn);
+    const user_id = req.user?.id;
+
+    return this.userService.virtualAccount("Gonana", bvn, user_id);
   }
   @Get("/resolve-account-number")
   getBanks(@Query() body: ResolveAccountNumber) {

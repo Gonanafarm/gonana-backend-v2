@@ -389,9 +389,8 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async virtualAccount(name: string, bvn: string) {
+  async virtualAccount(name: string, bvn: string, id: string) {
     const base_url = process.env.MINTYN_BASE_URL;
-    const id = process.env.MERCHANT_ID;
     try {
       const token = await this.generateToken();
       if (!token) {
@@ -405,10 +404,13 @@ export class UserService extends GenericService<UserDocument> {
         customerFirstName: name,
         customerBVN: bvn,
       };
-      const user = await this.userModel.findOne({bvn: bvn});
+      const user = await this.userModel.findById(id);
       if (!user) {
-        throw new NotFoundException(`User Not Found`);
+        throw new NotFoundException(`User Not Found, Login and try again`);
       }
+      user.bvn = bvn;
+      await user.save();
+      
       const accountUrl = `${base_url}/api/v1/merchant/virtual-account/reserved-account`;
       const createAccount = await axios.post(accountUrl, data, {
         headers: accountHeaders,
@@ -512,9 +514,9 @@ export class UserService extends GenericService<UserDocument> {
         return;
       }
 
-      //@ts-ignore
+//@ts-ignore
       const balance = parseInt(user.balance) + parseInt(transactionObject.amountSettled);
-      //@ts-ignore
+//@ts-ignore
       user.balance = parseInt(balance);
       await user.save();
 

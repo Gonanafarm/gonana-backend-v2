@@ -259,7 +259,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         user.virtual_account_number === "" ||
         user.virtual_account_number === undefined
       ) {
-        await this.userService.virtualAccount(user.first_name, user.bvn);
+        await this.userService.virtualAccount("Gonana", user.bvn, user.id);
       }
       const cartItemMap = new Map(
         cartItems.products.map(item => [item.id, item]),
