@@ -462,8 +462,13 @@ export class UserService extends GenericService<UserDocument> {
       return {success: false, message: "Email not sent"};
     }
     const session_id = data.payload.sessionId;
-    user.session_id.push(data.payload.sessionId);
-    await user.save();
+    const transactionObject = {
+      session_id: session_id,
+      type: "CREDIT",
+      amountSent: data.payload.transactionAmount,
+      amountSettled: data.payload.amountSettled,
+      time: data.payload.transactionTime,
+    };
     const email = user.email;
     try {
       this.userMailer.transactionVerification(
@@ -471,8 +476,9 @@ export class UserService extends GenericService<UserDocument> {
         data.eventType,
         data.payload.transactionAmount,
       );
+
       setTimeout(() => {
-        this.confirmTransaction(session_id, email);
+        this.confirmTransaction(session_id, email, transactionObject);
       }, 60000);
       return {success: true, message: `Notification sent to ${email}`};
     } catch (error: any) {
@@ -480,9 +486,11 @@ export class UserService extends GenericService<UserDocument> {
       return {success: false, error: error.message};
     }
   }
-  async confirmTransaction(session_id: string, email: string) {
-    console.log(session_id, email);
-
+  async confirmTransaction(
+    session_id: string,
+    email: string,
+    transactionObject: Record<string, any>,
+  ) {
     try {
       const token = await this.generateToken();
       const Headers = {
@@ -493,16 +501,34 @@ export class UserService extends GenericService<UserDocument> {
       const url = `${base_url}/api/v1/merchant/virtual-account/verify-transaction?sessionId=${session_id}`;
       const res = await axios.get(url, {headers: Headers});
       if (res.data.data.settlementStatus !== "SETTLED") {
+        console.log(res.data.data);
+
         console.log(
           `Transaction with sessionId:${session_id} is still pending`,
         );
-        return
+        return;
       }
-      const transactionAmount = res.data.data.transactionAmount;
+      const user = await this.userModel.findOne({email: email});
+      if (!user) {
+        console.log("User not found");
+        return;
+      }
+
+      //@ts-ignore
+      const balance =parseInt(user.balance) + parseInt(transactionObject.amountSettled);
+      //@ts-ignore
+      user.balance = parseInt(balance);
+      await user.save();
+
+      user.transactions.push(transactionObject);
+      await user.save();
+      const transactionAmount = transactionObject.amountSettled;
       this.userMailer.transactionSucess(email, transactionAmount);
+
       return true;
     } catch (error) {
       console.error(error);
+      return;
     }
   }
   async getBanks() {
@@ -611,5 +637,19 @@ export class UserService extends GenericService<UserDocument> {
       console.log(error);
       return {success: false, error: error.message};
     }
+  }
+  async getUserBalance(id: string) {
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new NotFoundException("User not found, Login and Try again.");
+    }
+    return {success: true, balance: user.balance};
+  }
+  async getUserTransactions(id: string) {
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new NotFoundException("User not found, Login and Try again.");
+    }
+    return {success: true, transactions: user.transactions};
   }
 }

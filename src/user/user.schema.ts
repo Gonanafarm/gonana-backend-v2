@@ -115,7 +115,7 @@ export class User {
   address: Array<Record<string, any>>;
 
   @Prop({type: mongoose.SchemaTypes.Array})
-  session_id: string[];
+  transactions: Array<Record<string, any>>;
 
   @Prop({type: mongoose.SchemaTypes.Array})
   account_details: Array<Record<string, any>>

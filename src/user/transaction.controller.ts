@@ -62,4 +62,16 @@ export class TransactionController {
   verifyTransaction(@Body() body: any) {
     return this.userService.verifyTransaction(body);
   }
+  @Get("/user-balance")
+  getUserBalance(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.getUserBalance(user_id);
+  }
+  @Get("/user-transactions")
+  getUserTransactions(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.getUserTransactions(user_id);
+  }
 }
