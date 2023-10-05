@@ -118,7 +118,7 @@ export class User {
   transactions: Array<Record<string, any>>;
 
   @Prop({type: mongoose.SchemaTypes.Array})
-  account_details: Array<Record<string, any>>
+  account_details: Array<Record<string, any>>;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -141,7 +141,7 @@ UserSchema.methods.getPublicData = function () {
     email_activated,
     virtual_account_number,
     virtual_account_bank_name,
-    address
+    address,
   } = this;
   return {
     id,
@@ -157,7 +157,7 @@ UserSchema.methods.getPublicData = function () {
     email_activated,
     virtual_account_number,
     virtual_account_bank_name,
-    address
+    address,
   };
 };
 

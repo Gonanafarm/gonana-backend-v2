@@ -34,12 +34,15 @@ import {catchError, firstValueFrom} from "rxjs";
 import {Request, Response} from "express";
 import axios from "axios";
 import {showObjectProperties} from "./logistics.service";
+import {TransactionDocument} from "./transaction.schema";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
     //@ts-ignore
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel("Transactions")
+    private readonly transactionModel: Model<TransactionDocument>,
     @InjectModel("Otp") private readonly otpModel: Model<OtpDocument>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
@@ -410,7 +413,7 @@ export class UserService extends GenericService<UserDocument> {
       }
       user.bvn = bvn;
       await user.save();
-      
+
       const accountUrl = `${base_url}/api/v1/merchant/virtual-account/reserved-account`;
       const createAccount = await axios.post(accountUrl, data, {
         headers: accountHeaders,
@@ -462,13 +465,7 @@ export class UserService extends GenericService<UserDocument> {
       return {success: false, message: "Email not sent"};
     }
     const session_id = data.payload.sessionId;
-    const transactionObject = {
-      session_id: session_id,
-      type: "CREDIT",
-      amountSent: data.payload.transactionAmount,
-      amountSettled: data.payload.amountSettled,
-      time: data.payload.transactionTime,
-    };
+
     const email = user.email;
     try {
       this.userMailer.transactionVerification(
@@ -478,7 +475,7 @@ export class UserService extends GenericService<UserDocument> {
       );
 
       setTimeout(() => {
-        this.confirmTransaction(session_id, email, transactionObject);
+        this.confirmTransaction(session_id, email);
       }, 60000);
       return {success: true, message: `Notification sent to ${email}`};
     } catch (error: any) {
@@ -486,11 +483,7 @@ export class UserService extends GenericService<UserDocument> {
       return {success: false, error: error.message};
     }
   }
-  async confirmTransaction(
-    session_id: string,
-    email: string,
-    transactionObject: Record<string, any>,
-  ) {
+  async confirmTransaction(session_id: string, email: string) {
     try {
       const token = await this.generateToken();
       const Headers = {
@@ -508,21 +501,41 @@ export class UserService extends GenericService<UserDocument> {
         );
         return;
       }
+
       const user = await this.userModel.findOne({email: email});
       if (!user) {
         console.log("User not found");
         return;
       }
 
-//@ts-ignore
-      const balance = parseInt(user.balance) + parseInt(transactionObject.amountSettled);
-//@ts-ignore
+      const transactionObject = {
+        userId: user.id,
+        Session_id: session_id,
+        Type: "CREDIT",
+        AmountSent: res.data.data.transactionAmount,
+        AmountSettled: res.data.data.amountSettled,
+        Time: res.data.data.transactionTime,
+      };
+      //@ts-ignore
+      const balance = parseInt(user.balance) + parseInt(transactionObject.AmountSettled);
+      //@ts-ignore
       user.balance = parseInt(balance);
       await user.save();
 
-      user.transactions.push(transactionObject);
-      await user.save();
-      const transactionAmount = transactionObject.amountSettled;
+      const transactions = await this.transactionModel.findOne({
+        userId: user.id,
+      });
+
+      if (!transactions) {
+        transactionObject.userId = user.id;
+        const transaction = await this.transactionModel.create(
+          transactionObject,
+        );
+        transaction.transactions.push(transactionObject);
+        await transaction.save();
+      }
+      transactions?.transactions.push(transactionObject);
+      const transactionAmount = transactionObject.AmountSettled;
       this.userMailer.transactionSucess(email, transactionAmount);
 
       return true;
@@ -554,27 +567,35 @@ export class UserService extends GenericService<UserDocument> {
     bank: string,
     user_id: string,
   ) {
-    const res = await this.resolveAccountNumber(account_number, bank);
-    if (res.success === false) {
-      throw new BadRequestException(res.error);
-    }
-    const account_details = res.data.data;
-    console.log(account_details);
+    try {
+      const res = await this.resolveAccountNumber(account_number, bank);
 
-    const user = await this.userModel.findById(user_id);
-    if (!user) {
-      throw new UnauthorizedException("Login and try again");
-    }
-    const isDuplicate = user.account_details.some(existingAccount => {
-      return existingAccount.accountNumber === account_details.accountNumber;
-    });
+      const account_details = res.data.data;
+      console.log(account_details);
 
-    if (isDuplicate) {
-      throw new BadRequestException("Account number already exists");
+      const user = await this.userModel.findById(user_id);
+      if (!user) {
+        throw new UnauthorizedException("Login and try again");
+      }
+      const isDuplicate = user.account_details.some(existingAccount => {
+        return existingAccount.accountNumber === account_details.accountNumber;
+      });
+
+      if (isDuplicate) {
+        throw new BadRequestException("Account number already exists");
+      }
+      user.account_details.push(account_details);
+      await user.save();
+      return {success: true, user: user.account_details};
+    } catch (error: any) {
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
-    user.account_details.push(account_details);
-    await user.save();
-    return {success: true, user: user.account_details};
   }
   async getBankCode(bank_name: string) {
     try {
@@ -614,10 +635,25 @@ export class UserService extends GenericService<UserDocument> {
       const base_url = process.env.MINTYN_BASE_URL;
       const url = `${base_url}/api/v1/merchant/transfer-service/resolve-account?accountNumber=${account_number}&bankCode=${bankCode}`;
       const response = await axios.get(url, {headers: bankHeaders});
+      if (response.data.data === null) {       
+        throw new HttpException(
+          {            
+            success: false,
+            message: response.data.responseMessage,
+          },
+          400,
+        );
+      }
       return {success: true, data: response.data, bankCode: bankCode};
     } catch (error: any) {
-      console.error(error);
-      return {success: false, error: error.message};
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
 
@@ -646,10 +682,12 @@ export class UserService extends GenericService<UserDocument> {
     return {success: true, balance: user.balance};
   }
   async getUserTransactions(id: string) {
-    const user = await this.userModel.findById(id);
-    if (!user) {
-      throw new NotFoundException("User not found, Login and Try again.");
+    const transaction = await this.transactionModel.findOne({userId: id});
+    if (!transaction) {
+      throw new NotFoundException(
+        "transactions not found, Login and Try again.",
+      );
     }
-    return {success: true, transactions: user.transactions};
+    return {success: true, transactions: transaction.transactions};
   }
 }

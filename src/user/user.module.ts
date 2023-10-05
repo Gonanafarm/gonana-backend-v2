@@ -17,6 +17,7 @@ import { PostModule } from "../post/post.module";
 import { GeocodeModule } from "../geocoder/module";
 import { LogisticsController } from "./logistics.controller";
 import { TransactionController } from "./transaction.controller";
+import { TransactionModel } from "./transaction.model";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { TransactionController } from "./transaction.controller";
     GeocodeModule,
     OtpModel,
     UserModel,
+    TransactionModel,
     HttpModule,
     JwtModule.register({
       secret: config.auth.secret,
