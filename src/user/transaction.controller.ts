@@ -57,8 +57,11 @@ export class TransactionController {
   }
 
   @Post("/transfer")
-  transfer(@Body() body: TransferFundsDto) {
-    return this.userService.transferFunds(body);
+  transfer(@Body() body: TransferFundsDto,@Req() req: Request) {
+       //@ts-ignore
+       const user_id = req.user?.id;
+
+    return this.userService.transfer(user_id,body.accountNumber,body.bankName, body.amount, body?.narration);
   }
   @Post("/verify-transaction")
   verifyTransaction(@Body() body: any) {

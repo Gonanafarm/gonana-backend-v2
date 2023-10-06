@@ -94,17 +94,12 @@ export class ResolveAccountNumber {
 export class TransferFundsDto {
   @ApiProperty({})
   @IsString()
-  @Length(12)
-  requestReference: string;
-
-  @ApiProperty({})
-  @IsString()
   @Length(10)
   accountNumber: string;
 
   @ApiProperty({})
   @IsString()
-  bankCode: string;
+  bankName: string;
 
   @ApiProperty({})
   @IsString()
@@ -114,11 +109,7 @@ export class TransferFundsDto {
   @ApiProperty({})
   @IsNumber()
   amount: number;
- 
-  @ApiProperty({})
-  @IsString()
-  nameEnquirySessionId: string;
-}
+ }
 
 export class UpdateAccountStatus {
   @ApiProperty({enum: AccountStatus})

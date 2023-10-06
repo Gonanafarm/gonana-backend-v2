@@ -11,7 +11,7 @@ export const tranSactionSchema = new mongoose.Schema(
       {
         Session_id: {type: "string", required: true},
         Type: {type: "string", required: true, enum: ["CREDIT", "DEBIT"]},
-        AmountSent: {type: "number", required: true},
+        AmountSent: {type: "number"},
         AmountSettled: {type: "number", required: true},
         Time: {type: "string", required: true},
       },

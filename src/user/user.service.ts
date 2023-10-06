@@ -26,16 +26,13 @@ import {
 import {UserMailerService} from "./user.mailer.service";
 import {User, UserDocument} from "./user.schema";
 import {EventEmitter2} from "@nestjs/event-emitter";
+import {Post, PostDocument} from "../post/post.schema";
 import {GenericService} from "../generic/generic.service";
 import {OtpDocument} from "./otp.schema";
 import {CloudinaryService} from "../post/cloudinary.service";
-import {HttpService} from "@nestjs/axios";
-import {catchError, firstValueFrom} from "rxjs";
-import {Request, Response} from "express";
 import axios from "axios";
 import {showObjectProperties} from "./logistics.service";
 import {TransactionDocument} from "./transaction.schema";
-
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
@@ -43,7 +40,9 @@ export class UserService extends GenericService<UserDocument> {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel("Transactions")
     private readonly transactionModel: Model<TransactionDocument>,
+    @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
     @InjectModel("Otp") private readonly otpModel: Model<OtpDocument>,
+
     private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
     private eventEmitter: EventEmitter2,
@@ -100,19 +99,27 @@ export class UserService extends GenericService<UserDocument> {
 
     return user;
   }
-  async deleteUser(
-    email: string,
-    passcode: string,
-  ): Promise<{success: boolean; message: string}> {
-    const verifyPasscode = await this.verifyPasscode(email, passcode);
+  async deleteUser(id: string, passcode: string) {
+    const verifyPasscode = await this.verifyPasscode(id, passcode);
 
     if (!verifyPasscode) {
       return {success: false, message: "Passcode mismatch"};
     }
-    const deletedUser = await this.userModel.deleteOne({email: email});
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new NotFoundException("User does not exist");
+    }
+    const email = user.email;
+    const deletedUser = await this.userModel.deleteOne({_id: id});
     if (!deletedUser) {
       throw DeletionException();
     }
+    const posts = await this.postModel.find({publisher_id:id})
+    const postIds = posts.map((post:any)=>{
+      return post.id
+    })
+
+    await this.postModel.deleteMany({publisher_id: id});
     const deleteOtp = await this.otpModel.deleteOne({email: email});
     if (!deleteOtp) {
       throw DeletionException();
@@ -339,12 +346,11 @@ export class UserService extends GenericService<UserDocument> {
     };
   }
 
-  async verifyPasscode(email: string, passcode: string) {
+  async verifyPasscode(id: string, passcode: string) {
     if (passcode.length !== 4) {
       throw new BadRequestException("Passcode must be 4 characters");
     }
-    const res = await this.findByEmail(email);
-    const user = res.user;
+    const user = await this.userModel.findById(id);
     if (!user) {
       throw new NotFoundException(`User not found, login and try again`);
     }
@@ -516,8 +522,9 @@ export class UserService extends GenericService<UserDocument> {
         AmountSettled: res.data.data.amountSettled,
         Time: res.data.data.transactionTime,
       };
-      //@ts-ignore
-      const balance = parseInt(user.balance) + parseInt(transactionObject.AmountSettled);
+      const balance =
+        //@ts-ignore
+        parseInt(user.balance) + parseInt(transactionObject.AmountSettled);
       //@ts-ignore
       user.balance = parseInt(balance);
       await user.save();
@@ -635,9 +642,9 @@ export class UserService extends GenericService<UserDocument> {
       const base_url = process.env.MINTYN_BASE_URL;
       const url = `${base_url}/api/v1/merchant/transfer-service/resolve-account?accountNumber=${account_number}&bankCode=${bankCode}`;
       const response = await axios.get(url, {headers: bankHeaders});
-      if (response.data.data === null) {       
+      if (response.data.data === null) {
         throw new HttpException(
-          {            
+          {
             success: false,
             message: response.data.responseMessage,
           },
@@ -657,23 +664,6 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async transferFunds(transferFundsDto: any) {
-    try {
-      const token = await this.generateToken();
-      const base_url = process.env.MINTYN_BASE_URL;
-      const url = `${base_url}/api/v1/merchant/transfer-service/transfer`;
-      const response = await axios.post(url, transferFundsDto, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      return response.data;
-    } catch (error: any) {
-      console.log(error);
-      return {success: false, error: error.message};
-    }
-  }
   async getUserBalance(id: string) {
     const user = await this.userModel.findById(id);
     if (!user) {
@@ -689,5 +679,103 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
     return {success: true, transactions: transaction.transactions};
+  }
+  async transfer(
+    user_id: string,
+    accountNumber: string,
+    bankName: string,
+    amount: number,
+    narration?: string,
+  ) {
+    try {
+      const user = await this.userModel.findById(user_id);
+      if (!user) {
+        throw new NotFoundException("user not found. login and try again");
+      }
+      //@ts-ignore
+      const balance = parseInt(user.balance);
+      console.log(balance);
+
+      if (balance < amount) {
+        throw new BadRequestException("Insuffient balance");
+      }
+      const resolve = await this.resolveAccountNumber(accountNumber, bankName);
+      const bankCode = resolve.bankCode;
+      const generateRandomString = () => {
+        const characters =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        let result = "";
+
+        for (let i = 0; i < 12; i++) {
+          const randomIndex = Math.floor(Math.random() * characters.length);
+          result += characters.charAt(randomIndex);
+        }
+
+        return result;
+      };
+      const requestReference = generateRandomString();
+      const nameEnquirySessionId = resolve.data.data.sessionId;
+      const token = await this.generateToken();
+      const Headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      const base_url = process.env.MINTYN_BASE_URL;
+      const url = `${base_url}/api/v1/merchant/transfer-service/transfer`;
+
+      const data: Record<string, any> = {
+        bankCode: bankCode,
+        requestReference: requestReference,
+        amount: amount,
+        accountNumber: accountNumber,
+        nameEnquirySessionId: nameEnquirySessionId,
+      };
+      if (narration !== undefined) {
+        data.narration = narration;
+      }
+      console.log(data);
+
+      const res = await axios.post(url, data, {headers: Headers});
+      if (res.data.data.transactionStatus !== "SUCCESSFUL") {
+        console.log(res.data);
+        throw new HttpException(
+          {
+            success: false,
+            message: res.data.responseMessage,
+          },
+          400,
+        );
+      }
+      const newBalance = balance - parseInt(res.data.data.totalAmount);
+      user.balance = newBalance;
+      console.log(newBalance)
+      await user.save();
+      const transactionObject = {
+        Session_id: res.data.data.reference,
+        userId: user.id,
+        Type: "DEBIT",
+        AmountSettled: res.data.data.totalAmount,
+        Time: res.data.data.transactionDate,
+      };
+      const transaction = await this.transactionModel.findOne({
+        userId: user.id,
+      });
+      if (!transaction) {
+        await this.transactionModel.create(transactionObject);
+        return {success: true, data: res.data};
+      }
+      transaction.transactions.push(transactionObject);
+      await transaction.save();
+      return {success: true, data: res.data};
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
   }
 }
