@@ -114,10 +114,10 @@ export class UserService extends GenericService<UserDocument> {
     if (!deletedUser) {
       throw DeletionException();
     }
-    const posts = await this.postModel.find({publisher_id:id})
-    const postIds = posts.map((post:any)=>{
-      return post.id
-    })
+    const posts = await this.postModel.find({publisher_id: id});
+    const postIds = posts.map((post: any) => {
+      return post.id;
+    });
 
     await this.postModel.deleteMany({publisher_id: id});
     const deleteOtp = await this.otpModel.deleteOne({email: email});
@@ -673,10 +673,8 @@ export class UserService extends GenericService<UserDocument> {
   }
   async getUserTransactions(id: string) {
     const transaction = await this.transactionModel.findOne({userId: id});
-    if (!transaction) {
-      throw new NotFoundException(
-        "transactions not found, Login and Try again.",
-      );
+    if (!transaction ||transaction?.transactions.length < 1 || !transaction.transactions) {
+      return {success: true, message: "transactions not found"};
     }
     return {success: true, transactions: transaction.transactions};
   }
@@ -748,7 +746,7 @@ export class UserService extends GenericService<UserDocument> {
       }
       const newBalance = balance - parseInt(res.data.data.totalAmount);
       user.balance = newBalance;
-      console.log(newBalance)
+      console.log(newBalance);
       await user.save();
       const transactionObject = {
         Session_id: res.data.data.reference,
