@@ -8,6 +8,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Body,
+  HttpCode,
   Patch,
   Query,
 } from "@nestjs/common";
@@ -20,6 +21,7 @@ import {
   UpdateUserDto,
   TransferFundsDto,
   UserPublicData,
+  TransferToUser,
 } from "./user.dto";
 
 @Controller("api/transaction")
@@ -41,6 +43,19 @@ export class TransactionController {
       body.bank,
     );
   }
+
+  @Post("/transfer-to-user")
+  @HttpCode(200)
+  transferToUser(@Body() body: TransferToUser, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.transferToUser(
+      user_id,
+      body.email,
+      body.amount,
+      body.narration,
+    );
+  }
   @Post("/save-account-number")
   saveAccountNumber(@Body() body: ResolveAccountNumber, @Req() req: Request) {
     //@ts-ignore
@@ -57,11 +72,17 @@ export class TransactionController {
   }
 
   @Post("/transfer")
-  transfer(@Body() body: TransferFundsDto,@Req() req: Request) {
-       //@ts-ignore
-       const user_id = req.user?.id;
+  transfer(@Body() body: TransferFundsDto, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
 
-    return this.userService.transfer(user_id,body.accountNumber,body.bankName, body.amount, body?.narration);
+    return this.userService.transfer(
+      user_id,
+      body.accountNumber,
+      body.bankName,
+      body.amount,
+      body?.narration,
+    );
   }
   @Post("/verify-transaction")
   verifyTransaction(@Body() body: any) {

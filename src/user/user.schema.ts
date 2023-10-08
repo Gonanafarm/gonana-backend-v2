@@ -141,6 +141,7 @@ UserSchema.methods.getPublicData = function () {
     email_activated,
     virtual_account_number,
     virtual_account_bank_name,
+    virtual_account_name,
     address,
   } = this;
   return {
@@ -157,6 +158,7 @@ UserSchema.methods.getPublicData = function () {
     email_activated,
     virtual_account_number,
     virtual_account_bank_name,
+    virtual_account_name,
     address,
   };
 };

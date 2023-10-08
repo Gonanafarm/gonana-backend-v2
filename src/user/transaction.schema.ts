@@ -13,6 +13,7 @@ export const tranSactionSchema = new mongoose.Schema(
         Type: {type: "string", required: true, enum: ["CREDIT", "DEBIT"]},
         AmountSent: {type: "number"},
         AmountSettled: {type: "number", required: true},
+        narration:{type: "string"},
         Time: {type: "string", required: true},
       },
     ],

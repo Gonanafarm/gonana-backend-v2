@@ -1,5 +1,5 @@
 import {ApiProperty} from "@nestjs/swagger";
-import {IsEnum, IsNumber, IsOptional, IsString, Length} from "class-validator";
+import {IsEmail, IsEnum, IsNumber, IsOptional, IsString, Length} from "class-validator";
 import {AccountStatus} from "../common/enums";
 
 export class UserPublicData {
@@ -29,6 +29,10 @@ export class UserPublicData {
   address: Array<Record<string, any>>
   @ApiProperty({})
   virtual_account_number:string;
+  @ApiProperty({})
+  virtual_account_bank_name:string;
+  @ApiProperty({})
+  virtual_account_name:string;
 }
 
 export class UpdateUserDto {
@@ -90,6 +94,22 @@ export class ResolveAccountNumber {
   @IsString()
   bank: string;
 }
+
+export class TransferToUser {
+  @ApiProperty({})
+  @IsString()
+  @IsEmail()
+  email: string
+
+  @ApiProperty({})
+  @IsString()
+  @IsOptional()
+  narration: string
+
+  @ApiProperty({})
+  @IsNumber()
+  amount: number
+} 
 
 export class TransferFundsDto {
   @ApiProperty({})

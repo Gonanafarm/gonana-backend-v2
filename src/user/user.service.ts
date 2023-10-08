@@ -673,7 +673,11 @@ export class UserService extends GenericService<UserDocument> {
   }
   async getUserTransactions(id: string) {
     const transaction = await this.transactionModel.findOne({userId: id});
-    if (!transaction ||transaction?.transactions.length < 1 || !transaction.transactions) {
+    if (
+      !transaction ||
+      transaction?.transactions.length < 1 ||
+      !transaction.transactions
+    ) {
       return {success: true, message: "transactions not found"};
     }
     return {success: true, transactions: transaction.transactions};
@@ -748,13 +752,16 @@ export class UserService extends GenericService<UserDocument> {
       user.balance = newBalance;
       console.log(newBalance);
       await user.save();
-      const transactionObject = {
+      const transactionObject: Record<string, any> = {
         Session_id: res.data.data.reference,
         userId: user.id,
         Type: "DEBIT",
         AmountSettled: res.data.data.totalAmount,
         Time: res.data.data.transactionDate,
       };
+      if (narration !== undefined) {
+        transactionObject.narration = narration;
+      }
       const transaction = await this.transactionModel.findOne({
         userId: user.id,
       });
@@ -764,6 +771,37 @@ export class UserService extends GenericService<UserDocument> {
       }
       transaction.transactions.push(transactionObject);
       await transaction.save();
+      return {success: true, data: res.data};
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
+  async transferToUser(
+    user_id: string,
+    email: string,
+    amount: number,
+    narration?: string,
+  ) {
+    try {
+      const user = await this.getByEmail(email);
+      if (!user) {
+        throw new BadRequestException("User Not Found");
+      }
+      const res = await this.transfer(
+        user_id,
+        user.virtual_account_number,
+        user.virtual_account_bank_name,
+        amount,
+        narration,
+      );
       return {success: true, data: res.data};
     } catch (error: any) {
       console.log(error);
