@@ -346,11 +346,11 @@ export class UserService extends GenericService<UserDocument> {
     };
   }
 
-  async verifyPasscode(id: string, passcode: string) {
+  async verifyPasscode(email: string, passcode: string) {
     if (passcode.length !== 4) {
       throw new BadRequestException("Passcode must be 4 characters");
     }
-    const user = await this.userModel.findById(id);
+    const user = await this.userModel.findOne({email:email});
     if (!user) {
       throw new NotFoundException(`User not found, login and try again`);
     }
