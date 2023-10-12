@@ -91,19 +91,25 @@ export class UserMailerService {
     }
   }
 
-  transactionVerification(
+  async transactionVerification(
     email: string,
     eventType: string,
     transactionAmount: number,
-  ) {
+  ){
     try {
-      this.mailerService.sendMail({
+      const sendMailOptions = {
         to: email,
         subject: eventType,
         html: `Your credit transaction with amount ${transactionAmount} is pending`,
-      });
+      };
+
+      // Use async/await to send the email
+      const sentMessageInfo = await this.mailerService.sendMail(sendMailOptions);
+
+      return sentMessageInfo;
     } catch (error) {
       console.error(error);
+      return undefined; // Or handle the error as needed
     }
   }
   transactionSucess(email: string, transactionAmount: number) {

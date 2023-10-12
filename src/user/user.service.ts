@@ -482,7 +482,7 @@ export class UserService extends GenericService<UserDocument> {
 
       setTimeout(() => {
         this.confirmTransaction(session_id, email);
-      }, 60000);
+      }, 300000);
       return {success: true, message: `Notification sent to ${email}`};
     } catch (error: any) {
       console.error(error);
@@ -499,9 +499,9 @@ export class UserService extends GenericService<UserDocument> {
       const base_url = process.env.MINTYN_BASE_URL;
       const url = `${base_url}/api/v1/merchant/virtual-account/verify-transaction?sessionId=${session_id}`;
       const res = await axios.get(url, {headers: Headers});
+
       if (res.data.data.settlementStatus !== "SETTLED") {
         console.log(res.data.data);
-
         console.log(
           `Transaction with sessionId:${session_id} is still pending`,
         );
@@ -522,26 +522,10 @@ export class UserService extends GenericService<UserDocument> {
         AmountSettled: res.data.data.amountSettled,
         Time: res.data.data.transactionTime,
       };
-      const balance =
-        //@ts-ignore
-        parseInt(user.balance) + parseInt(transactionObject.AmountSettled);
-      //@ts-ignore
-      user.balance = parseInt(balance);
-      await user.save();
 
-      const transactions = await this.transactionModel.findOne({
-        userId: user.id,
-      });
+      // Handle updating the user balance and saving the transaction asynchronously
+      await this.updateUserBalanceAndSaveTransaction(user, transactionObject);
 
-      if (!transactions) {
-        transactionObject.userId = user.id;
-        const transaction = await this.transactionModel.create(
-          transactionObject,
-        );
-        transaction.transactions.push(transactionObject);
-        await transaction.save();
-      }
-      transactions?.transactions.push(transactionObject);
       const transactionAmount = transactionObject.AmountSettled;
       this.userMailer.transactionSucess(email, transactionAmount);
 
@@ -551,6 +535,29 @@ export class UserService extends GenericService<UserDocument> {
       return;
     }
   }
+
+  async updateUserBalanceAndSaveTransaction(user: any, transactionObject: any) {
+    const balance =
+      parseInt(user.balance) + parseInt(transactionObject.AmountSettled);
+    user.balance = balance;
+    await user.save();
+
+    const transactions = await this.transactionModel.findOne({userId: user.id});
+
+    if (!transactions) {
+      transactionObject.userId = user.id;
+      const transaction = await this.transactionModel.create(transactionObject);
+      transaction.transactions.push(transactionObject);
+      await transaction.save();
+      return;
+    }
+
+    transactions.transactions.push(transactionObject);
+    await transactions.save();
+
+    return;
+  }
+
   async getBanks() {
     try {
       const token = await this.generateToken();

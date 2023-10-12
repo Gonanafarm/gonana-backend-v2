@@ -5,8 +5,6 @@ import {
   Param,
   UseGuards,
   Post,
-  UseInterceptors,
-  UploadedFile,
   Body,
   HttpCode,
   Patch,
@@ -15,12 +13,9 @@ import {
 import {Request} from "express";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
-import {AuthGuard} from "@nestjs/passport";
 import {
   ResolveAccountNumber,
-  UpdateUserDto,
   TransferFundsDto,
-  UserPublicData,
   TransferToUser,
 } from "./user.dto";
 
