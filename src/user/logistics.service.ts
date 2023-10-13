@@ -223,6 +223,8 @@ export class LogisticsService {
         height: 30,
       };
       const url = `${base_url}/shipping/fetch_rates/${service_code}`;
+      console.log(sender_address_code);
+      
       const data = {
         sender_address_code: sender_address_code,
         reciever_address_code: receiver_address_code,
@@ -242,8 +244,6 @@ export class LogisticsService {
       const response = res.data.data;
       return {success: true, data: response};
     } catch (error: any) {       
-      console.error(error);
-      showObjectProperties(error);
       throw new BadRequestException(error.response.data.message);
     }
   }

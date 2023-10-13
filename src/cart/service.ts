@@ -274,6 +274,21 @@ export class CartItemService extends GenericService<CartItemDocument> {
         }
         return sum;
       }, 0);
+       //@ts-ignore
+      const balance = parseInt(user.balance);
+      const totalCost =
+        totalAmount + parseInt(shippingRates.data.couriers[0].total);
+      if (balance < totalCost) {
+        throw new BadRequestException("Insufficient Funds");
+      }
+      const newBalance = balance - totalCost;
+      user.balance = newBalance;
+      await user.save();
+      // this.logisticsService.createShipment(
+      //   shippingRates.data.request_token,
+      //   shippingRates.data.couriers[0].service_code,
+      //   shippingRates.data.couriers[0].courier_id,
+      // );
       return {
         accountNumber: user.virtual_account_number,
         bankName: user.virtual_account_bank_name,
@@ -288,8 +303,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
         checkout_data: shippingRates.data.checkout_data,
       };
     } catch (error: any) {
-      console.error(error);
-      showObjectProperties(error);
       throw new HttpException(
         {
           success: false,
