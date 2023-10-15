@@ -353,9 +353,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
   ) {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
-      //@ts-ignore
       const totalCost =
-        parseInt(rates.total_shipping_cost) + rates.product_cost;
+      //@ts-ignore
+      parseInt(rates.total_shipping_cost) + rates.product_cost;
       const user = await this.userModel.findById(user_id);
       if (!user) {
         throw new BadRequestException(`User Not found`);
