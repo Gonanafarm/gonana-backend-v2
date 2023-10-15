@@ -32,8 +32,6 @@ import {AuthService} from "./auth.service";
 import {getOriginHeader} from "../common/auth";
 import {
   ApiBearerAuth,
-  ApiHeader,
-  ApiHeaders,
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";

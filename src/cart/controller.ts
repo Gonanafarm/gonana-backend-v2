@@ -91,7 +91,7 @@ export class CartItemController {
     return this.dataService.reomoveCartItem(publisher_id, body);
   }
 
-  @Post("place-order")
+  @Post("get-rates")
   @ApiResponse({
     status: 200,
     description: "Update cart quantity",
@@ -107,6 +107,6 @@ export class CartItemController {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-    return this.dataService.placeOrder(body.orders, publisher_id, body.service_code);
+    return this.dataService.getRates(body.orders, publisher_id, body.service_code);
   }
 }

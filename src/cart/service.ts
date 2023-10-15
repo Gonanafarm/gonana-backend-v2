@@ -16,6 +16,7 @@ import {GenericService} from "../generic/generic.service";
 import {Post, PostDocument} from "../post/post.schema";
 import {User, UserDocument} from "../user/user.schema";
 import {UserService} from "../user/user.service";
+import {UserMailerService} from "../user/user.mailer.service";
 import {
   LogisticsService,
   showObjectProperties,
@@ -33,6 +34,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
     @InjectModel("User") private userModel: Model<UserDocument>,
     private readonly userService: UserService,
     private readonly logisticsService: LogisticsService,
+    private readonly userMailerService: UserMailerService,
   ) {
     super(cartItemsModel);
   }
@@ -43,6 +45,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (!product) {
         throw new NotFoundException("Product not found");
       }
+      console.log(product);
 
       const user_id = product.publisher_id;
 
@@ -53,23 +56,27 @@ export class CartItemService extends GenericService<CartItemDocument> {
           "The Owner of the Product may have deleted their account",
         );
       }
-      const firstname = user.first_name;
-      const lastname = user.last_name;
+      // const firstname = user.first_name;
+      // const lastname = user.last_name;
 
-      const productOwner = `${firstname} ${lastname}`;
+      // const productOwner = `${firstname} ${lastname}`;
       // if (product.quantity < 1) {
       //   return { success: false, message: "Product is out of stock"};
       // }
       const cartModel = await this.cartItemsModel.findOne({
         publisher_id: publisher_id,
       });
+      console.log(cartModel);
 
       if (!cartModel) {
         const cart = await this.cartItemsModel.create({
           publisher_id: publisher_id,
           product_id: [product_id],
-          productOwner: productOwner,
+          //          productOwner: productOwner,
         });
+        console.log("DNE");
+        console.log(cart);
+
         return {success: true, data: cart};
       }
       const productexists = cartModel.product_id.includes(product_id);
@@ -81,7 +88,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
 
       return {
         success: true,
-        productOwner: productOwner,
+        //        productOwner: productOwner,
         message: "Cart item created",
         cart: cartModel,
         product: product,
@@ -96,10 +103,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
     try {
       if (!publisher_id) {
         throw new BadRequestException("Login and try again");
-      }
-      const product = await this.productModel.findById(product_id);
-      if (!product) {
-        throw new NotFoundException(`Product not found`);
       }
 
       const cartItem = await this.cartItemsModel.findOne({
@@ -143,6 +146,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         // String found in the array, remove it
         productArray.splice(index, 1);
         await cartItem.save();
+        console.log("here");
 
         return {
           success: true,
@@ -154,7 +158,13 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
     } catch (error: any) {
       console.error(error);
-      return {success: false, message: error.message};
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
 
@@ -170,28 +180,59 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (productIds.length < 1) {
         throw new NotFoundException(`No items in cart`);
       }
-      const productPromises = productIds.map(async productId => {
+
+      // Filter out invalid productIds that don't return a product
+      const validProductIds = [];
+      for (const productId of productIds) {
+        const product = await this.productModel.findById(productId);
+        if (product) {
+          validProductIds.push(productId);
+        } else {
+          await this.reomoveCartItem(publisher_id, productId);
+        }
+      }
+
+      // Update cartItems with validProductIds
+      cartItems.product_id = validProductIds;
+      await cartItems.save();
+
+      const productPromises = validProductIds.map(async productId => {
         const product = await this.productModel.findById(productId);
         const user_id = product?.publisher_id;
         const user = await this.userModel.findById(user_id);
-        return {
-          id: product?.id,
-          Title: product?.title,
-          Amount: product?.amount,
-          body: product?.body,
-          From: `${user?.first_name} ${user?.last_name}`,
-          image: product?.images,
-        };
+
+        if (product && user)
+          return {
+            id: product?.id,
+            Title: product?.title,
+            Amount: product?.amount,
+            body: product?.body,
+            From: `${user?.first_name} ${user?.last_name}`,
+            image: product?.images,
+          };
       });
+
       const products = await Promise.all(productPromises);
+
       const foundProducts = products.filter(product => !!product);
+      if (foundProducts.length < 1) {
+        return {success: true, message: "No items in cart"};
+      }
+
       return {success: true, products: foundProducts};
     } catch (error: any) {
       console.error(error);
-      return {error: error.message};
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
-  async placeOrder(
+
+  async getRates(
     orderItems: Array<Record<string, any>>,
     user_id: string,
     service_code: string,
@@ -262,7 +303,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         await this.userService.virtualAccount("Gonana", user.bvn, user.id);
       }
       const cartItemMap = new Map(
-        cartItems.products.map(item => [item.id, item]),
+        cartItems.products.map(item => [item?.id, item]),
       );
 
       // Calculate the total amount
@@ -274,16 +315,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         }
         return sum;
       }, 0);
-       //@ts-ignore
-      const balance = parseInt(user.balance);
-      const totalCost =
-        totalAmount + parseInt(shippingRates.data.couriers[0].total);
-      if (balance < totalCost) {
-        throw new BadRequestException("Insufficient Funds");
-      }
-      const newBalance = balance - totalCost;
-      user.balance = newBalance;
-      await user.save();
+
       // this.logisticsService.createShipment(
       //   shippingRates.data.request_token,
       //   shippingRates.data.couriers[0].service_code,
@@ -302,6 +334,52 @@ export class CartItemService extends GenericService<CartItemDocument> {
         total_shipping_cost: shippingRates.data.couriers[0].total,
         checkout_data: shippingRates.data.checkout_data,
       };
+    } catch (error: any) {
+      throw new HttpException(
+        {
+          success: false,
+          status: error.status,
+          message: error.message,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async placeOrder(
+    orderItems: Array<Record<string, any>>,
+    user_id: string,
+    service_code: string,
+  ) {
+    try {
+      const rates = await this.getRates(orderItems, user_id, service_code);
+      //@ts-ignore
+      const totalCost =
+        parseInt(rates.total_shipping_cost) + rates.product_cost;
+      const user = await this.userModel.findById(user_id);
+      if (!user) {
+        throw new BadRequestException(`User Not found`);
+      }
+      //@ts-ignore
+      const balance = parseInt(user.balance);
+      if (balance < totalCost) {
+        throw new BadRequestException(
+          `Insufficient balance fund wallet and try again`,
+        );
+      }
+      const newBalance = balance - totalCost;
+      user.balance = newBalance;
+      await user.save();
+      const shipment = await this.logisticsService.createShipment(
+        rates.shipping_req_token,
+        rates.service_code,
+        rates.courier_id,
+      );
+      this.userMailerService.trackingUrlMail(
+        user.email,
+        shipment.data.data.tracking_url,
+      );
+      return {success: true, data: shipment};
     } catch (error: any) {
       throw new HttpException(
         {

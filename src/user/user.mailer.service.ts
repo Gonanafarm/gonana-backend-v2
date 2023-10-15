@@ -95,7 +95,7 @@ export class UserMailerService {
     email: string,
     eventType: string,
     transactionAmount: number,
-  ){
+  ) {
     try {
       const sendMailOptions = {
         to: email,
@@ -104,7 +104,9 @@ export class UserMailerService {
       };
 
       // Use async/await to send the email
-      const sentMessageInfo = await this.mailerService.sendMail(sendMailOptions);
+      const sentMessageInfo = await this.mailerService.sendMail(
+        sendMailOptions,
+      );
 
       return sentMessageInfo;
     } catch (error) {
@@ -122,6 +124,17 @@ export class UserMailerService {
       console.log("Transaction Successful");
     } catch (error) {
       console.error(error);
+    }
+  }
+  trackingUrlMail(email: string, url: string) {
+    try {
+      this.mailerService.sendMail({
+        to: email,
+        subject: "TRACKING URL",
+        html: `Your tracking url is ${url}`,
+      });
+    } catch (error) {
+      console.log(error);
     }
   }
 }

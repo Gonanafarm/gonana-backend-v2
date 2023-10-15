@@ -10,7 +10,7 @@ import {UserModel} from "../user/user.model";
 import {UserService} from "../user/user.service";
 
 @Module({
-  providers: [CartItemService, PostModule],
+  providers: [CartItemService,PostModule ],
   imports: [
     CartItemModel,
     OrderModule,

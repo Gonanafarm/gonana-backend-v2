@@ -48,7 +48,6 @@ export class SignUpDto {
 
   @ApiProperty({example: "email@email.com", maxLength: 255})
   @IsEmail()
-  @MaxLength(255)
   readonly email!: string;
 
   @ApiProperty({example: "password", minLength: 8})
@@ -60,7 +59,6 @@ export class SignUpDto {
 export class LoginDto {
   @ApiProperty({example: "email@email.com", maxLength: 255})
   @IsEmail()
-  @MaxLength(255)
   readonly email!: string;
 
   @ApiProperty({example: "password", minLength: 8})
@@ -81,7 +79,6 @@ export class AuthenticatedUser {
 export class ForgottenPasswordDto {
   @ApiProperty({example: "email@email.com", maxLength: 255})
   @IsEmail()
-  @MaxLength(255)
   readonly email!: string;
 }
 
@@ -101,7 +98,6 @@ export class OtpDto {
 export class ResetPasswordDto {
   @ApiProperty({example: "email@email.com", maxLength: 255})
   @IsEmail()
-  @MaxLength(255)
   readonly email!: string;
 
   @ApiProperty({example: "password", minLength: 8})

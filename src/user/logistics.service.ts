@@ -91,7 +91,7 @@ export class LogisticsService {
         .filter(
           (courier: any) =>
             courier.package_categories.some(
-              (category: any) => category.id === 24032950,
+              (category: any) => category.id === 24032950 || 2178251,
             ) && courier.status === "operational",
         )
         .map((courier: any) => ({

@@ -1,5 +1,12 @@
 import {ApiProperty} from "@nestjs/swagger";
-import {IsEmail, IsEnum, IsNumber, IsOptional, IsString, Length} from "class-validator";
+import {
+  IsEmail,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Length,
+} from "class-validator";
 import {AccountStatus} from "../common/enums";
 
 export class UserPublicData {
@@ -26,13 +33,13 @@ export class UserPublicData {
   @ApiProperty({})
   phone: string;
   @ApiProperty({})
-  address: Array<Record<string, any>>
+  address: Array<Record<string, any>>;
   @ApiProperty({})
-  virtual_account_number:string;
+  virtual_account_number: string;
   @ApiProperty({})
-  virtual_account_bank_name:string;
+  virtual_account_bank_name: string;
   @ApiProperty({})
-  virtual_account_name:string;
+  virtual_account_name: string;
 }
 
 export class UpdateUserDto {
@@ -70,7 +77,7 @@ export class UpdateUserDto {
   @IsOptional()
   @ApiProperty({})
   @Length(11)
-  bvn:string;
+  bvn: string;
 }
 
 export class UpdateTransferReceipient {
@@ -99,17 +106,17 @@ export class TransferToUser {
   @ApiProperty({})
   @IsString()
   @IsEmail()
-  email: string
+  email: string;
 
   @ApiProperty({})
   @IsString()
   @IsOptional()
-  narration: string
+  narration: string;
 
   @ApiProperty({})
   @IsNumber()
-  amount: number
-} 
+  amount: number;
+}
 
 export class TransferFundsDto {
   @ApiProperty({})
@@ -129,7 +136,7 @@ export class TransferFundsDto {
   @ApiProperty({})
   @IsNumber()
   amount: number;
- }
+}
 
 export class UpdateAccountStatus {
   @ApiProperty({enum: AccountStatus})
@@ -147,7 +154,7 @@ export class ValidatePostAdress {
   @IsString()
   address: string;
   @IsString()
-  productId: string
+  productId: string;
 }
 
 export interface ShipmentData {

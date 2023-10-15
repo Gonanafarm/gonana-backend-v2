@@ -36,7 +36,7 @@ import { CartItemModule } from "../cart/module";
   ],
   controllers: [UserController, ProfileController, LogisticsController, TransactionController],
   providers: [UserMailerService, UserService, UserEventHanders, CloudinaryService, LogisticsService],
-  exports: [UserService, UserModel, LogisticsService],
+  exports: [UserService, UserModel, LogisticsService, UserMailerService],
 })
 export class UserModule {}
 
