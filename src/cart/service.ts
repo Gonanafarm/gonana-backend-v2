@@ -321,6 +321,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
       //   shippingRates.data.couriers[0].service_code,
       //   shippingRates.data.couriers[0].courier_id,
       // );
+      console.log(shippingRates.data);
+      
       return {
         accountNumber: user.virtual_account_number,
         bankName: user.virtual_account_bank_name,
@@ -375,9 +377,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
         rates.service_code,
         rates.courier_id,
       );
+      
       this.userMailerService.trackingUrlMail(
         user.email,
-        shipment.data.data.tracking_url,
+        shipment.data.tracking_url,
       );
       return {success: true, data: shipment};
     } catch (error: any) {
