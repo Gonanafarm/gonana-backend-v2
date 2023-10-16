@@ -13,9 +13,10 @@ import {
 import {ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {CartItemService} from "./service";
 import {CartItem, CartItem as CartItemModel} from "./schema";
+import { Request } from "express";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
-import {AddToCartDto, UpdateCartItemDto} from "./dto";
+import {AddToCartDto, PlaceOrderDto, UpdateCartItemDto} from "./dto";
 import {Order} from "../order/order.schema";
 import {log} from "console";
 
@@ -98,7 +99,7 @@ export class CartItemController {
     isArray: true,
     type: Order,
   })
-  async placeOrder(
+  async getRates(
     @Req() req: any,
     @Body()
     body: AddToCartDto,
@@ -108,5 +109,12 @@ export class CartItemController {
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
     return this.dataService.getRates(body.orders, publisher_id, body.service_code);
+  }
+
+  @Post("place-order")
+  async placeOrder(@Body() body:PlaceOrderDto, @Req() req: Request){
+    //@ts-ignore
+    const user_id = req.user?.id
+    return this.dataService.placeOrder(body.orders, user_id,body.service_code)
   }
 }

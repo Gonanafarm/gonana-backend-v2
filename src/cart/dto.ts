@@ -24,3 +24,10 @@ export class AddToCartDto{
   @IsString()
   service_code: string;
 }
+
+export class PlaceOrderDto{
+  @IsArray()
+  orders: Array<Record<string, any>>;
+  @IsString()
+  service_code: string;
+}
