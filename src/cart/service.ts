@@ -56,10 +56,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
           "The Owner of the Product may have deleted their account",
         );
       }
-      // const firstname = user.first_name;
-      // const lastname = user.last_name;
-
-      // const productOwner = `${firstname} ${lastname}`;
       // if (product.quantity < 1) {
       //   return { success: false, message: "Product is out of stock"};
       // }
@@ -72,11 +68,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const cart = await this.cartItemsModel.create({
           publisher_id: publisher_id,
           product_id: [product_id],
-          //          productOwner: productOwner,
         });
-        console.log("DNE");
-        console.log(cart);
-
         return {success: true, data: cart};
       }
       const productexists = cartModel.product_id.includes(product_id);
@@ -88,14 +80,19 @@ export class CartItemService extends GenericService<CartItemDocument> {
 
       return {
         success: true,
-        //        productOwner: productOwner,
         message: "Cart item created",
         cart: cartModel,
         product: product,
       };
     } catch (error: any) {
       console.error(error);
-      return {message: error.message};
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
 
@@ -292,7 +289,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       );
 
       if (!user.bvn || user.bvn === "") {
-        return {success: false, message: "Must have a BVN"};
+        throw new BadRequestException("User must have a Virtual Account");
       }
 
       if (
@@ -322,7 +319,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       //   shippingRates.data.couriers[0].courier_id,
       // );
       console.log(shippingRates.data);
-      
+
       return {
         accountNumber: user.virtual_account_number,
         bankName: user.virtual_account_bank_name,
@@ -356,8 +353,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
       const totalCost =
-      //@ts-ignore
-      parseInt(rates.total_shipping_cost) + rates.product_cost;
+        //@ts-ignore
+        parseInt(rates.total_shipping_cost) + rates.product_cost;
       const user = await this.userModel.findById(user_id);
       if (!user) {
         throw new BadRequestException(`User Not found`);
@@ -377,7 +374,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         rates.service_code,
         rates.courier_id,
       );
-      
+
       this.userMailerService.trackingUrlMail(
         user.email,
         shipment.data.tracking_url,

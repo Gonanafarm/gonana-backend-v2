@@ -1,5 +1,10 @@
 /* eslint-disable no-useless-catch */
-import {Controller, Injectable, NotFoundException} from "@nestjs/common";
+import {
+  Controller,
+  Injectable,
+  NotFoundException,
+  HttpException,
+} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 import {PostSchema, Post, PostDocument} from "./post.schema";
@@ -9,8 +14,8 @@ import {DiscountDocument} from "./discount.schema";
 import * as mongoose from "mongoose";
 import {Types} from "mongoose";
 import {UserDocument, User} from "../user/user.schema";
-import { GeocodeService } from "../geocoder/service";
-import { LogisticsService } from "../user/logistics.service";
+import {GeocodeService} from "../geocoder/service";
+import {LogisticsService} from "../user/logistics.service";
 import {
   DeletionException,
   ResourceNotFoundException,
@@ -29,7 +34,7 @@ export class PostService extends GenericService<PostDocument> {
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
     @InjectModel("Discounts") private discountModel: Model<DiscountDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private logisticsService:LogisticsService,
+    private logisticsService: LogisticsService,
     private geocoderService: GeocodeService,
     private eventEmmiter: EventEmitter2,
   ) {
@@ -40,7 +45,7 @@ export class PostService extends GenericService<PostDocument> {
     try {
       const product = await this.productModel.findById(id);
       if (!product) {
-        return {success: false, message: "Product not found"};
+        throw new NotFoundException("Product Not found");
       }
 
       if (price < product.amount) {
@@ -58,7 +63,13 @@ export class PostService extends GenericService<PostDocument> {
       return updatedProduct;
     } catch (error: any) {
       console.error(error);
-      throw new Error("Error updating price");
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
 
@@ -87,7 +98,7 @@ export class PostService extends GenericService<PostDocument> {
   async discountedProducts() {
     const products = await this.discountModel.find();
     if (products.length < 1) {
-      return {message: "No products found"};
+      throw new NotFoundException("Products Not Found");
     }
     const ids = products.map(product => product.productid);
     const discountedProductsPromises = ids.map(async id => {
@@ -111,10 +122,9 @@ export class PostService extends GenericService<PostDocument> {
       }
       const products = await this.productModel.find(query);
       if (products.length < 1) {
-        return {
-          success: false,
-          message: "No posts with these parameters were found",
-        };
+        throw new NotFoundException(
+          "No posts with these parameters were found",
+        );
       }
       return {
         success: true,
@@ -122,7 +132,13 @@ export class PostService extends GenericService<PostDocument> {
       };
     } catch (error: any) {
       console.error(error);
-      throw new Error(`${error.message}`);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
   async get(type: string) {
@@ -131,13 +147,10 @@ export class PostService extends GenericService<PostDocument> {
       if (type !== undefined) {
         query.type = type;
       }
-            
+
       const products = await this.productModel.find(query);
       if (products.length < 1) {
-        return {
-          success: false,
-          message: "No posts with these parameters were found",
-        };
+        throw new NotFoundException("Products Not Found");
       }
       const productPromises = products.map(async (product: any) => {
         const id = product.publisher_id;
@@ -154,7 +167,13 @@ export class PostService extends GenericService<PostDocument> {
       return {success: true, data: productsWithOwners};
     } catch (error: any) {
       console.error(error);
-      throw new Error(`${error.message}`);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
   async getUsersProducts(id: string, type?: string) {
@@ -167,10 +186,7 @@ export class PostService extends GenericService<PostDocument> {
 
       const products = await this.productModel.find(query);
       if (products.length < 1) {
-        return {
-          success: false,
-          message: "No posts with these parameters were found",
-        };
+        throw new NotFoundException("Products Not Found");
       }
       const productPromises = products.map(async (product: any) => {
         const id = product.publisher_id;
@@ -187,9 +203,13 @@ export class PostService extends GenericService<PostDocument> {
       return {success: true, data: productsWithOwners};
     } catch (error: any) {
       console.error(error);
-      return {success: false, error: error.message};
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
-  
-
 }

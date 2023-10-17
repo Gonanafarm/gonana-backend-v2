@@ -100,34 +100,45 @@ export class UserService extends GenericService<UserDocument> {
     return user;
   }
   async deleteUser(id: string, passcode: string) {
-    const verifyPasscode = await this.verifyPasscode(id, passcode);
+    try {
+      const verifyPasscode = await this.verifyPasscode(id, passcode);
 
-    if (!verifyPasscode) {
-      return {success: false, message: "Passcode mismatch"};
-    }
-    const user = await this.userModel.findById(id);
-    if (!user) {
-      throw new NotFoundException("User does not exist");
-    }
-    const email = user.email;
-    const deletedUser = await this.userModel.deleteOne({_id: id});
-    if (!deletedUser) {
-      throw DeletionException();
-    }
-    const posts = await this.postModel.find({publisher_id: id});
-    const postIds = posts.map((post: any) => {
-      return post.id;
-    });
+      if (!verifyPasscode) {
+        throw new BadRequestException("Invalid Passcode");
+      }
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new NotFoundException("User does not exist");
+      }
+      const email = user.email;
+      const deletedUser = await this.userModel.deleteOne({_id: id});
+      if (!deletedUser) {
+        throw DeletionException();
+      }
+      const posts = await this.postModel.find({publisher_id: id});
+      const postIds = posts.map((post: any) => {
+        return post.id;
+      });
 
-    await this.postModel.deleteMany({publisher_id: id});
-    const deleteOtp = await this.otpModel.deleteOne({email: email});
-    if (!deleteOtp) {
-      throw DeletionException();
+      await this.postModel.deleteMany({publisher_id: id});
+      const deleteOtp = await this.otpModel.deleteOne({email: email});
+      if (!deleteOtp) {
+        throw DeletionException();
+      }
+      return {
+        success: true,
+        message: "User deleted successfully",
+      };
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
-    return {
-      success: true,
-      message: "User deleted successfully",
-    };
   }
 
   async resendActivation(id: string, origin: any): Promise<any> {
@@ -272,9 +283,15 @@ export class UserService extends GenericService<UserDocument> {
         success: true,
         message: "Email Verified",
       };
-    } catch (error) {
-      console.error("An error occurred:", error);
-      throw new Error("Error while verifying OTP");
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
 
@@ -293,10 +310,15 @@ export class UserService extends GenericService<UserDocument> {
       await this.otpModel.create({otp: otp, email: email});
       this.userMailer.sendOTP(email, otp);
       return {success: true, message: "otp mail sent"};
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      throw new BadRequestException(
-        "Email Not provided or something. If you're seeing this you really fucked up",
+      throw new HttpException(
+        {
+          success: false,
+          message:
+            "This is Impossible, You should never see this, What are you doing?",
+        },
+        error.status,
       );
     }
   }
@@ -323,8 +345,14 @@ export class UserService extends GenericService<UserDocument> {
       const updatedUser = await this.updateItem(id, details);
       return updatedUser;
     } catch (error: any) {
-      console.log(error);
-      throw new Error(`${error.message}`);
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status || 400,
+      );
     }
   }
   async updatePasscode(id: string, passcode: string) {
@@ -350,7 +378,7 @@ export class UserService extends GenericService<UserDocument> {
     if (passcode.length !== 4) {
       throw new BadRequestException("Passcode must be 4 characters");
     }
-    const user = await this.userModel.findOne({email:email});
+    const user = await this.userModel.findOne({email: email});
     if (!user) {
       throw new NotFoundException(`User not found, login and try again`);
     }
@@ -390,11 +418,20 @@ export class UserService extends GenericService<UserDocument> {
 
       const response = await axios.get(tokenUrl, {headers: tokenHeaders});
 
+      if (!response.data.data.token) {
+        throw new InternalServerErrorException(response.data.message);
+      }
       const token = response.data.data.token;
       return token;
     } catch (error: any) {
       console.error(error);
-      return {success: false, error: error.message};
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
 
@@ -403,7 +440,7 @@ export class UserService extends GenericService<UserDocument> {
     try {
       const token = await this.generateToken();
       if (!token) {
-        return {success: false, message: "Failed to get token"};
+        throw new InternalServerErrorException("Failed To Get Token");
       }
       const accountHeaders = {
         Authorization: `Bearer ${token}`,
@@ -626,12 +663,18 @@ export class UserService extends GenericService<UserDocument> {
         (bank: any) => bank.name.toLowerCase() === bank_name.toLowerCase(),
       );
       if (!bank) {
-        return {success: false, message: `Bank not found`};
+        throw new NotFoundException("Bank Not Found");
       }
       return bank.code;
     } catch (error: any) {
       console.error(error);
-      return {success: false, error: error.message};
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
 

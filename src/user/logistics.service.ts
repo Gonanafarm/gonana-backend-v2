@@ -81,7 +81,7 @@ export class LogisticsService {
       const res = await axios.get(url, {headers: Headers});
 
       if (res.data.status !== "success") {
-        return {success: false, message: "Request failed"};
+        throw new InternalServerErrorException("Get Couriers Request Failed");
       }
 
       const couriers = res.data.data;
@@ -103,7 +103,13 @@ export class LogisticsService {
       return {success: true, couriers: filteredCouriers};
     } catch (error: any) {
       console.error(error);
-      return {success: false, message: error.message};
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
   async validatePostAddress(
@@ -192,7 +198,7 @@ export class LogisticsService {
       console.error(error);
       const statusCode = error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
       throw new HttpException(
-        {status: statusCode, error: error.message},
+        {success: false, status: statusCode, error: error.message},
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -216,15 +222,13 @@ export class LogisticsService {
       };
 
       const pickup_date = getTomorrowDate();
-      
+
       const package_dimensions = {
         length: 30,
         width: 30,
         height: 30,
       };
       const url = `${base_url}/shipping/fetch_rates/${service_code}`;
-      console.log(sender_address_code);
-      
       const data = {
         sender_address_code: sender_address_code,
         reciever_address_code: receiver_address_code,
@@ -240,11 +244,18 @@ export class LogisticsService {
           "get shipping rates request failed",
         );
       }
-      
+
       const response = res.data.data;
       return {success: true, data: response};
-    } catch (error: any) {       
-      throw new BadRequestException(error.response.data.message);
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.message,
+        },
+        error.status,
+      );
     }
   }
 
@@ -254,24 +265,35 @@ export class LogisticsService {
     courier_id: string,
     insurance_code?: string,
   ) {
-    const url = `${base_url}/shipping/labels`;
-    const data: ShipmentData = {
-      request_token: request_token,
-      service_code: service_code,
-      courier_id: courier_id,
-    };
-    if (insurance_code !== undefined) {
-      data.insurance_code = insurance_code;
-    }
+    try {
+      const url = `${base_url}/shipping/labels`;
+      const data: ShipmentData = {
+        request_token: request_token,
+        service_code: service_code,
+        courier_id: courier_id,
+      };
+      if (insurance_code !== undefined) {
+        data.insurance_code = insurance_code;
+      }
 
-    const res = await axios.post(url, data, {headers: Headers});
-    if (res.data.status !== "success") {
-      throw new InternalServerErrorException("ShipBubble Request Failed");
+      const res = await axios.post(url, data, {headers: Headers});
+      if (res.data.status !== "success") {
+        throw new InternalServerErrorException("ShipBubble Request Failed");
+      }
+      return {
+        success: true,
+        message: res.data.message,
+        data: res.data.data,
+      };
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
-    return {
-      success: true,
-      message: res.data.message,
-      data: res.data.data,
-    };
   }
 }

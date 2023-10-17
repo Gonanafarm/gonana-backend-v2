@@ -25,11 +25,6 @@ export class CartItem {
   @Prop({type: mongoose.SchemaTypes.Number, default: 1})
   quantity: number;
 
-  @ApiProperty()
-  @IsString()
-  @Prop({type: mongoose.SchemaTypes.String})
-  productOwner: string;
-
 }
 
 export const CartItemSchema = SchemaFactory.createForClass(CartItem);
