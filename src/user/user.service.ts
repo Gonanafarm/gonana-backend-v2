@@ -435,7 +435,7 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async virtualAccount(name: string, bvn: string, id: string) {
+  async virtualAccount(bvn: string, id: string) {
     const base_url = process.env.MINTYN_BASE_URL;
     try {
       const token = await this.generateToken();
@@ -446,14 +446,15 @@ export class UserService extends GenericService<UserDocument> {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       };
-      const data = {
-        customerFirstName: name,
-        customerBVN: bvn,
-      };
       const user = await this.userModel.findById(id);
       if (!user) {
         throw new NotFoundException(`User Not Found, Login and try again`);
       }
+      const data = {
+        customerFirstName: `${user.first_name}${user.last_name}`,
+        customerBVN: bvn,
+      };
+
       user.bvn = bvn;
       await user.save();
 

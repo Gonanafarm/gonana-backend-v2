@@ -29,7 +29,7 @@ export class TransactionController {
     //@ts-ignore
     const user_id = req.user?.id;
 
-    return this.userService.virtualAccount("Gonana", bvn, user_id);
+    return this.userService.virtualAccount( bvn, user_id);
   }
   @Get("/resolve-account-number")
   getBanks(@Query() body: ResolveAccountNumber) {
