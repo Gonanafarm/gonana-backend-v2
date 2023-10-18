@@ -182,10 +182,11 @@ export class LogisticsService {
       if (res.data.status !== "success") {
         throw new HttpException(
           {
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            error: res.data.message,
+            success:false,
+            status: HttpStatus.BAD_REQUEST,
+            message: res.data.message,
           },
-          HttpStatus.INTERNAL_SERVER_ERROR,
+          HttpStatus.BAD_REQUEST,
         );
       }
       const formatted_address = res.data.data.formatted_address;
@@ -198,7 +199,7 @@ export class LogisticsService {
       console.error(error);
       const statusCode = error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
       throw new HttpException(
-        {success: false, status: statusCode, error: error.message},
+        {success: false, status: statusCode, message: error.message},
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -290,7 +291,7 @@ export class LogisticsService {
       throw new HttpException(
         {
           success: false,
-          message: error.message,
+          message: error.response.data.message,
         },
         error.status,
       );

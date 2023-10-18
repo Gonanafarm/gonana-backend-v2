@@ -359,16 +359,16 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (!user) {
         throw new BadRequestException(`User Not found`);
       }
-      //@ts-ignore
-      const balance = parseInt(user.balance);
-      if (balance < totalCost) {
-        throw new BadRequestException(
-          `Insufficient balance fund wallet and try again`,
-        );
-      }
-      const newBalance = balance - totalCost;
-      user.balance = newBalance;
-      await user.save();
+      // //@ts-ignore
+      // const balance = parseInt(user.balance);
+      // if (balance < totalCost) {
+      //   throw new BadRequestException(
+      //     `Insufficient balance fund wallet and try again`,
+      //   );
+      // }
+      // const newBalance = balance - totalCost;
+      // user.balance = newBalance;
+      // await user.save();
       const shipment = await this.logisticsService.createShipment(
         rates.shipping_req_token,
         rates.service_code,
@@ -379,6 +379,13 @@ export class CartItemService extends GenericService<CartItemDocument> {
         user.email,
         shipment.data.tracking_url,
       );
+
+      const product_id = orderItems[0].id;
+      console.log("here");
+      console.log(product_id);
+      
+      
+      await this.reomoveCartItem(user_id, product_id);
       return {success: true, data: shipment};
     } catch (error: any) {
       throw new HttpException(

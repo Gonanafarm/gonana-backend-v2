@@ -133,6 +133,8 @@ export class UserMailerService {
         subject: "TRACKING URL",
         html: `Your tracking url is ${url}`,
       });
+      console.log("tracking url mail sent");
+      
     } catch (error) {
       console.log(error);
     }
