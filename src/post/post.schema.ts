@@ -101,6 +101,10 @@ export class Post {
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Array})
   address: Array<Record<string, any>>;
+
+  @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  self_shipping: boolean;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

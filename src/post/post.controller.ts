@@ -104,7 +104,7 @@ export class PostController {
     publisher_id = req.user?.sub ?? "";
     //@ts-ignore
     const name = `${req.user?.first_name} ${req.user?.last_name}`;
- 
+
     //@ts-ignore
     const phone = req.user?.phone;
 
@@ -118,7 +118,8 @@ export class PostController {
       email,
       phone,
     );
-    const address = [validatedAdress.data]
+    const address = [validatedAdress.data];
+    const self_shipping = JSON.parse(body.self_shipping);
 
     let payload = {
       ...body,
@@ -132,7 +133,8 @@ export class PostController {
       quantity,
       amount,
       weight,
-      address
+      address,
+      self_shipping,
     };
     const createPost = await this.dataService.create(publisher_id, payload);
     return createPost;

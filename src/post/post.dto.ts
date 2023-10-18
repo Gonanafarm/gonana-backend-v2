@@ -14,6 +14,7 @@ import {
   ValidateNested,
   IsEnum,
   ArrayMaxSize,
+  IsBoolean,
 } from "class-validator";
 import {isNull} from "lodash";
 
@@ -101,6 +102,9 @@ export class PublishPostDto {
   @IsString({})
   address: string;
   
+  @ApiProperty({})
+  @IsString()
+  self_shipping: string;
 }
 
 export class UpdatePostDto {
