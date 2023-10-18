@@ -104,6 +104,7 @@ export class PublishPostDto {
   
   @ApiProperty({})
   @IsString()
+  @IsOptional()
   self_shipping: string;
 }
 

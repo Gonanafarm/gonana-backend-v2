@@ -119,7 +119,10 @@ export class PostController {
       phone,
     );
     const address = [validatedAdress.data];
-    const self_shipping = JSON.parse(body.self_shipping);
+    let self_shipping = body.self_shipping;
+    if (body.self_shipping !== undefined) {
+      self_shipping = JSON.parse(body.self_shipping);
+    }
 
     let payload = {
       ...body,
