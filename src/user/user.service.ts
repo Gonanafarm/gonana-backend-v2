@@ -451,7 +451,7 @@ export class UserService extends GenericService<UserDocument> {
         throw new NotFoundException(`User Not Found, Login and try again`);
       }
       const data = {
-        customerFirstName: `${user.first_name}${user.last_name}`,
+        customerFirstName: `${user.first_name} ${user.last_name}`,
         customerBVN: bvn,
       };
 
