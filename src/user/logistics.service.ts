@@ -197,12 +197,15 @@ export class LogisticsService {
       };
     } catch (error: any) {
       console.error(error);
-      const statusCode = error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
+      showObjectProperties(error.response)
+
       throw new HttpException(
-        {success: false, status: statusCode, message: error.message},
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+        {
+          success: false,
+          message: error.response.data.message,
+        },
+        error.response.status,
+      );    }
   }
 
   async getShippingRates(
