@@ -96,7 +96,7 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String, default: ""})
   passcode: string;
 
-  @Prop({type: mongoose.SchemaTypes.Number, default: 0})
+  @Prop({type: mongoose.SchemaTypes.String, default: 0})
   balance: number;
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})

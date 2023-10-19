@@ -182,7 +182,7 @@ export class LogisticsService {
       if (res.data.status !== "success") {
         throw new HttpException(
           {
-            success:false,
+            success: false,
             status: HttpStatus.BAD_REQUEST,
             message: res.data.message,
           },
@@ -197,15 +197,14 @@ export class LogisticsService {
       };
     } catch (error: any) {
       console.error(error);
-      showObjectProperties(error.response)
-
       throw new HttpException(
         {
           success: false,
           message: error.response.data.message,
         },
         error.response.status,
-      );    }
+      );
+    }
   }
 
   async getShippingRates(
