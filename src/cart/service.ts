@@ -359,16 +359,30 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (!user) {
         throw new BadRequestException(`User Not found`);
       }
-      // //@ts-ignore
-      // const balance = parseInt(user.balance);
-      // if (balance < totalCost) {
-      //   throw new BadRequestException(
-      //     `Insufficient balance fund wallet and try again`,
-      //   );
-      // }
-      // const newBalance = balance - totalCost;
-      // user.balance = newBalance;
-      // await user.save();
+      //@ts-ignore
+      const balance = parseInt(user.balance);
+      if (balance < totalCost) {
+        throw new BadRequestException(
+          `Insufficient balance fund wallet and try again`,
+        );
+      }
+      const newBalance = balance - totalCost;
+      user.balance = newBalance;
+      await user.save();
+      const productId = orderItems[0].id
+      const product = await this.productModel.findById(productId)
+      if(!product){
+        throw new NotFoundException("Product not Found")
+      }
+      if (product.self_shipping === true){
+        const farmerId = product.publisher_id
+        const farmer = await this.userModel.findById(farmerId);
+        if(!farmer){
+          throw new NotFoundException("User may have deleted their account");
+        }
+      this.userMailerService.selfShipmentMail(farmer.email, product, user)
+      return {success: true, message: "Order placed successfully"}
+      }
       const shipment = await this.logisticsService.createShipment(
         rates.shipping_req_token,
         rates.service_code,

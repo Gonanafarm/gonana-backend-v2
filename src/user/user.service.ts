@@ -333,10 +333,18 @@ export class UserService extends GenericService<UserDocument> {
           {$set: {profile_photo: image.secure_url}},
         );
         console.log("success");
+        return {success: true, data: user.getPublicData()};
       }
-    } catch (e) {
+      throw new NotFoundException("User Not Found");
+    } catch (e: any) {
       console.error(e);
-      throw new Error("Error while updating image");
+      throw new HttpException(
+        {
+          sucess: false,
+          message: e.message,
+        },
+        e.status || 400,
+      );
     }
   }
 
