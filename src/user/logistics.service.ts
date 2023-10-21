@@ -138,13 +138,7 @@ export class LogisticsService {
       const data = {name: name, email: email, phone: phone, address: address};
       const res = await axios.post(url, data, {headers: Headers});
       if (res.data.status !== "success") {
-        throw new HttpException(
-          {
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            error: res.data.message,
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw new BadRequestException(res.data.message);
       }
       const response = res.data.data;
       const addressExists = product.address.find(
@@ -161,11 +155,9 @@ export class LogisticsService {
 
       return {success: true, data: response};
     } catch (error: any) {
-      console.error(error);
-      const statusCode = error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
       throw new HttpException(
-        {status: statusCode, error: error.message},
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        {status: error.response.status, message: error.response.data.message},
+        error.response.status,
       );
     }
   }
