@@ -16,7 +16,10 @@ import {GenericService} from "../generic/generic.service";
 import {Post, PostDocument} from "../post/post.schema";
 import {User, UserDocument} from "../user/user.schema";
 import {UserService} from "../user/user.service";
-import {UserMailerService} from "../user/user.mailer.service";
+import {
+  UserMailerService,
+  convertArrayToString,
+} from "../user/user.mailer.service";
 import {
   LogisticsService,
   showObjectProperties,
@@ -82,7 +85,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
         success: true,
         message: "Cart item created",
         cart: cartModel,
-        product: product,
       };
     } catch (error: any) {
       console.error(error);
@@ -230,7 +232,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
   }
 
   async getRates(
-    orderItems: Array<Record<string, any>>,
+    orderItems: Array<{id: string; units: number}>,
     user_id: string,
     service_code: string,
   ) {
@@ -240,68 +242,116 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
 
       const cartItems = await this.getCartItems(user_id);
-
       if (!cartItems.products) {
-        throw new NotFoundException(`No cart items found`);
+        throw new NotFoundException(`No items in cart found`);
       }
-      const prodId1 = orderItems[0].id;
-      const product1 = await this.productModel.findById(prodId1);
-      if (!product1) {
-        throw new NotFoundException(`No product found`);
+      const cartItemIds = cartItems.products.map(product => {
+        return product?.id;
+      });
+      const missingOrderItemIds = orderItems
+        .filter(orderItem => !cartItemIds.includes(orderItem.id))
+        .map(orderItem => orderItem.id);
+
+      if (missingOrderItemIds.length > 0) {
+        // Handle the missing order item IDs, you can throw an exception or handle them as needed
+        const strings = convertArrayToString(missingOrderItemIds);
+
+        throw new BadRequestException(
+          `Items with these ids are not in cart ${strings}`,
+        );
       }
 
-      const itemsToShipPromises = cartItems.products.map(async (item: any) => {
+      const product = await this.productModel.findById(orderItems[0].id);
+      if (!product) {
+        throw new NotFoundException("Product Not Found");
+      }
+      // Check if there's only one item left and it's self-shipping
+      if (orderItems.length === 1 && product?.self_shipping === true) {
+        return {success: true, product_cost: product.amount};
+      }
+
+      const itemsToShip = [];
+      for (const item of orderItems) {
+        const product = await this.productModel.findById(item.id);
+        if (product?.self_shipping === false) {
+          itemsToShip.push(item);
+        }
+      }
+      const itemsToShipPromises = itemsToShip.map(async (item: any) => {
         const productId = item.id;
         const product = await this.productModel.findById(productId);
-        return {
+        const user = await this.userModel.findById(user_id);
+        if (!user) {
+          throw new NotFoundException("User Not Logged in");
+        }
+        // Check if the product has self_shipping set to true and skip it
+        if (!product) {
+          return null;
+        }
+        if (product && product.self_shipping === true) {
+          return null;
+        }
+
+        const packageItem = {
           name: product?.title,
           description: product?.body,
           unit_weight: product?.weight,
           unit_amount: product?.amount,
           quantity: product?.quantity,
         };
+        const sender_address_code = product.address[0].code || undefined;
+
+        if (sender_address_code === undefined) {
+          throw new BadRequestException(
+            "product does not have a valid address",
+          );
+        }
+        const receiver_address_code = user.address[0].code || undefined;
+
+        if (receiver_address_code === undefined) {
+          throw new BadRequestException("user does not have a valid address");
+        }
+        const shippingRates = await this.logisticsService.getShippingRates(
+          service_code,
+          sender_address_code,
+          receiver_address_code,
+          packageItem,
+        );
+        const courier = shippingRates.data.fastest_courier;
+        const request_token = shippingRates.data.request_token;
+        const shipping_cost = shippingRates.data.fastest_courier.total;
+        const courier_ids = shippingRates.data.fastest_courier.courier_id;
+        const service_codes = shippingRates.data.fastest_courier.service_code;
+        return {
+          packageItem,
+          courier,
+          request_token,
+          shipping_cost,
+          service_codes,
+          courier_ids,
+        };
       });
 
-      const packageItems = await Promise.all(itemsToShipPromises);
-      const user = await this.userModel.findById(user_id);
-      if (!user) {
-        throw new NotFoundException("User Not Logged in");
-      }
-      console.log("here");
-
-      const sender_address_code = product1.address[0].code || undefined;
-      console.log(sender_address_code);
-
-      if (sender_address_code === undefined) {
-        throw new BadRequestException("product does not have a valid address");
-      }
-      const receiver_address_code = user.address[0].code || undefined;
-
-      if (receiver_address_code === undefined) {
-        throw new BadRequestException("user does not have a valid address");
-      }
-
-      const shippingRates = await this.logisticsService.getShippingRates(
-        service_code,
-        sender_address_code,
-        receiver_address_code,
-        packageItems,
+      // Filter out any skipped products
+      const filteredItemsToShipPromises = itemsToShipPromises.filter(
+        item => item !== null,
       );
 
-      if (!user.bvn || user.bvn === "") {
-        throw new BadRequestException("User must have a Virtual Account");
-      }
-
-      if (
-        !user.virtual_account_number ||
-        user.virtual_account_number === "" ||
-        user.virtual_account_number === undefined
-      ) {
-        await this.userService.virtualAccount(user.bvn, user.id);
-      }
+      const couriers = await Promise.all(filteredItemsToShipPromises);
       const cartItemMap = new Map(
-        cartItems.products.map(item => [item?.id, item]),
+        cartItems.products?.map(item => [item?.id, item]),
       );
+      const request_tokens = couriers.map(item => item?.request_token);
+
+      const courier_id = couriers.map(item => item?.courier_ids);
+
+      const service_codes = couriers.map(item => item?.service_codes);
+
+      const shipping_cost = couriers.map(item => item?.shipping_cost);
+      const sumArrayNumbers = (numbers: number[]): number => {
+        return numbers.reduce((total, num) => total + num, 0);
+      };
+      const total_shipping_cost = sumArrayNumbers(shipping_cost);
 
       // Calculate the total amount
       const totalAmount = orderItems.reduce((sum, orderItem) => {
@@ -313,25 +363,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
         return sum;
       }, 0);
 
-      // this.logisticsService.createShipment(
-      //   shippingRates.data.request_token,
-      //   shippingRates.data.couriers[0].service_code,
-      //   shippingRates.data.couriers[0].courier_id,
-      // );
-      console.log(shippingRates.data);
-
       return {
-        accountNumber: user.virtual_account_number,
-        bankName: user.virtual_account_bank_name,
-        accountName: user.virtual_account_name,
         product_cost: totalAmount,
-        shipping_req_token: shippingRates.data.request_token,
-        courier_id: shippingRates.data.couriers[0].courier_id,
-        courier_name: shippingRates.data.couriers[0].courier_name,
-        courier_image: shippingRates.data.couriers[0].courier_image,
-        service_code: shippingRates.data.couriers[0].service_code,
-        total_shipping_cost: shippingRates.data.couriers[0].total,
-        checkout_data: shippingRates.data.checkout_data,
+        shipping_req_token: request_tokens,
+        service_code: service_codes,
+        total_shipping_cost: total_shipping_cost,
+        courier_id: courier_id,
       };
     } catch (error: any) {
       throw new HttpException(
@@ -340,21 +377,20 @@ export class CartItemService extends GenericService<CartItemDocument> {
           status: error.status,
           message: error.message,
         },
-        HttpStatus.BAD_REQUEST,
+        error.status,
       );
     }
   }
 
   async placeOrder(
-    orderItems: Array<Record<string, any>>,
+    orderItems: Array<{id: string; units: number}>,
     user_id: string,
     service_code: string,
   ) {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
-      const totalCost =
-        //@ts-ignore
-        parseInt(rates.total_shipping_cost) + rates.product_cost;
+      //@ts-ignore
+      const totalCost = rates.total_shipping_cost + rates.product_cost;
       const user = await this.userModel.findById(user_id);
       if (!user) {
         throw new BadRequestException(`User Not found`);
@@ -369,38 +405,76 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const newBalance = balance - totalCost;
       user.balance = newBalance;
       await user.save();
-      const productId = orderItems[0].id
-      const product = await this.productModel.findById(productId)
-      if(!product){
-        throw new NotFoundException("Product not Found")
-      }
-      if (product.self_shipping === true){
-        const farmerId = product.publisher_id
-        const farmer = await this.userModel.findById(farmerId);
-        if(!farmer){
-          throw new NotFoundException("User may have deleted their account");
+      const shipping_req_token = rates.shipping_req_token || [];
+      const service_codes = rates.service_code || [];
+
+      const courier_ids = rates.courier_id || [];
+      const itemsToShip = [];
+      const itemsNotToShip = [];
+      for (const item of orderItems) {
+        const product = await this.productModel.findById(item.id);
+        if (product?.self_shipping === false) {
+          itemsToShip.push(item);
+        } else {
+          itemsNotToShip.push(item);
         }
-      this.userMailerService.selfShipmentMail(farmer.email, product, user)
-      return {success: true, message: "Order placed successfully"}
       }
-      const shipment = await this.logisticsService.createShipment(
-        rates.shipping_req_token,
-        rates.service_code,
-        rates.courier_id,
-      );
+      console.log(itemsToShip);
 
-      this.userMailerService.trackingUrlMail(
-        user.email,
-        shipment.data.tracking_url,
-      );
+      if (itemsToShip.length > 0) {
+        // Create a mapping of itemId to index in the itemsToShip array
+        const itemIdToIndexMap = new Map();
+        itemsToShip.forEach((item, index) => {
+          itemIdToIndexMap.set(item.id, index);
+        });
 
-      const product_id = orderItems[0].id;
-      console.log("here");
-      console.log(product_id);
-      
-      
-      await this.reomoveCartItem(user_id, product_id);
-      return {success: true, data: shipment};
+        const orderItemsPromise = itemsToShip.map(async item => {
+          console.log(item.id);
+          const index = itemIdToIndexMap.get(item.id);
+          if (index !== undefined) {
+            const req_token = shipping_req_token[index];
+            const code = service_codes[index];
+            const courier_id = courier_ids[index];
+            const shipment = await this.logisticsService.createShipment(
+              req_token,
+              code,
+              courier_id,
+            );
+            this.userMailerService.trackingUrlMail(
+              user.email,
+              shipment.data.tracking_url,
+            );
+
+            return shipment.data;
+          } else {
+            return null;
+          }
+        });
+
+        const resolvedShipments = await Promise.all(orderItemsPromise);
+        console.log(resolvedShipments);
+      }
+
+      if (itemsNotToShip.length > 0) {
+        itemsNotToShip.map(async item => {
+          const product = await this.productModel.findById(item.id);
+          if (!product) {
+            throw new NotFoundException("Product not found");
+          }
+          const farmerId = product.publisher_id;
+          const farmer = await this.userModel.findById(farmerId);
+          if (!farmer) {
+            throw new NotFoundException("User may have deleted their account");
+          }
+
+          this.userMailerService.selfShipmentMail(farmer.email, product, user);
+        });
+      }
+
+      return {
+        success: true,
+        message: "Orders Placed Successfully",
+      };
     } catch (error: any) {
       throw new HttpException(
         {

@@ -19,7 +19,7 @@ export class UpdateCartItemDto {
 export class AddToCartDto{
   @ApiProperty({})
   @IsArray()
-  orders:  Array<Record<string, any>>;
+  orders:  Array<{id:string, units:number}>;
   @ApiProperty({})
   @IsString()
   service_code: string;
@@ -27,7 +27,7 @@ export class AddToCartDto{
 
 export class PlaceOrderDto{
   @IsArray()
-  orders: Array<Record<string, any>>;
+  orders: Array<{id:string, units:number}>;
   @IsString()
   service_code: string;
 }

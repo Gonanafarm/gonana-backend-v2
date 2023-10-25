@@ -3,7 +3,7 @@ import {MailerService} from "@nest-modules/mailer";
 import {User} from "./user.schema";
 import {Post} from "../post/post.schema";
 
-const convertArrayToString = (array:Array<any>) => {
+export const convertArrayToString = (array:Array<any>) => {
   if (Array.isArray(array)) {
     if (array.length === 1) {
       return array[0];

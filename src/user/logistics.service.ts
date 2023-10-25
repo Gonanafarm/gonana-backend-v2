@@ -122,11 +122,14 @@ export class LogisticsService {
       if (!product) {
         throw new NotFoundException(`Product not found`);
       }
+      if(product.self_shipping === true){
+        throw new BadRequestException(`Owner of product has opted for self shipping`)
+      }
       const publisher_id = product.publisher_id;
 
       const user = await this.userModel.findById(publisher_id);
       if (!user) {
-        throw new NotFoundException(`User not found`);
+        throw new NotFoundException(`Owner of product may have deleted their account`);
       }
       if (user_id !== publisher_id) {
         throw new ForbiddenException("You did not create this post");
@@ -224,15 +227,17 @@ export class LogisticsService {
         height: 30,
       };
       const url = `${base_url}/shipping/fetch_rates/${service_code}`;
+      
       const data = {
         sender_address_code: sender_address_code,
         reciever_address_code: receiver_address_code,
         category_id: 24032950,
-        package_items: package_items,
+        package_items: [package_items],
         package_dimension: package_dimensions,
         delivery_instructions: delivery_instructions,
         pickup_date: pickup_date,
       };
+
       const res = await axios.post(url, data, {headers: Headers});
       if (res.data.status !== "success") {
         throw new InternalServerErrorException(
@@ -249,7 +254,7 @@ export class LogisticsService {
           success: false,
           message: error.response.data.message,
         },
-        error.status,
+        error.response.status,
       );
     }
   }
@@ -259,7 +264,11 @@ export class LogisticsService {
     service_code: string,
     courier_id: string,
     insurance_code?: string,
-  ) {
+  ) {    
+    console.log(request_token);
+    console.log(service_code);
+    console.log(courier_id);
+    
     try {
       const url = `${base_url}/shipping/labels`;
       const data: ShipmentData = {
@@ -281,7 +290,6 @@ export class LogisticsService {
         data: res.data.data,
       };
     } catch (error: any) {
-      console.error(error);
       throw new HttpException(
         {
           success: false,
