@@ -267,7 +267,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
       // Check if there's only one item left and it's self-shipping
       if (orderItems.length === 1 && product?.self_shipping === true) {
-        return {success: true, product_cost: product.amount};
+        const amount = product.amount * orderItems[0].units;
+        return {success: true, product_cost: amount};
       }
 
       const itemsToShip = [];
@@ -440,7 +441,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               code,
               courier_id,
             );
-            this.userMailerService.trackingUrlMail(
+            this.userMailerService.orderSuccessMail(
               user.email,
               shipment.data.tracking_url,
             );
@@ -467,7 +468,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
             throw new NotFoundException("User may have deleted their account");
           }
 
-          this.userMailerService.selfShipmentMail(farmer.email, product, user);
+          this.userMailerService.selfShipmentMail(
+            farmer.email,
+            product,
+            user,
+            item.units,
+          );
         });
       }
 

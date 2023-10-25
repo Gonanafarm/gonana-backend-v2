@@ -140,11 +140,11 @@ export class UserMailerService {
       console.error(error);
     }
   }
-  trackingUrlMail(email: string, url: string) {
+  orderSuccessMail(email: string, url: string) {
     try {
       this.mailerService.sendMail({
         to: email,
-        subject: "TRACKING URL",
+        subject: "ORDER PLACED SUCCESSFULLY ",
         html: `Your tracking url is ${url}`,
       });
       console.log("tracking url mail sent");
@@ -152,7 +152,7 @@ export class UserMailerService {
       console.log(error);
     }
   }
-  selfShipmentMail(farmerEmail: string, product: Post, user: User) {
+  selfShipmentMail(farmerEmail: string, product: Post, user: User, quantity:number) {
     try {
       const productImages = product.images.map((imageUrl, index) => `
         <img src="${imageUrl}" alt="Product Image ${index + 1}" style="max-width: 100%;">
@@ -161,14 +161,16 @@ export class UserMailerService {
       this.mailerService.sendMail({
         to: farmerEmail,
         subject: "YOUR PRODUCTS HAVE BEEN ORDERED",
-        html: `Product details: 
+        html: `
+        You are getting this mail because you opted to ship this product yourself<br>
+        Product details: <br>
           Title: ${product.title}<br>
-          Quantity: 1<br>
+          Quantity: ${quantity}<br>
           Price: ${product.amount}<br>
           Images: 
           <br>
           ${productImages}
-          <br>Customers Details:
+          <br>Customers Details:<br>
           Name: ${user.first_name} ${user.last_name}<br>
           Number: ${user.phone}<br>
           Address: ${user.address[0].address}
