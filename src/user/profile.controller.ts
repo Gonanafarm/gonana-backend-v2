@@ -58,7 +58,7 @@ export class ProfileController {
     const email = req?.user?.email;
     return this.userService.verifyPasscode(email, passcode);
   }
-  @Post("/reset-passcode")
+  @Get("/reset-passcode")
   @HttpCode(200)
   resetPasscode(@Req() req: Request) {
     //@ts-ignore
