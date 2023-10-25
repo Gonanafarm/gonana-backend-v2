@@ -222,9 +222,9 @@ export class LogisticsService {
       const pickup_date = getTomorrowDate();
 
       const package_dimensions = {
-        length: 30,
-        width: 30,
-        height: 30,
+        length: 20,
+        width: 20,
+        height: 20,
       };
       const url = `${base_url}/shipping/fetch_rates/${service_code}`;
       

@@ -157,6 +157,15 @@ export class ValidatePostAdress {
   productId: string;
 }
 
+export class VerifyPasscodeOtpDto {
+  @IsString()
+  @Length(4)
+  otp: string;
+  @IsString()
+  @Length(4)
+  passcode: string;
+}
+
 export interface ShipmentData {
   request_token: string;
   service_code: string;

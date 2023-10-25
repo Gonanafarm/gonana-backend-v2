@@ -8,14 +8,20 @@ import {
   Get,
   UseInterceptors,
   UploadedFile,
-  HttpCode,forwardRef,Inject
+  HttpCode,
+  forwardRef,
+  Inject,
 } from "@nestjs/common";
 import {Request} from "express";
 import {ApiBearerAuth, ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {User} from "./user.schema";
-import {UpdateTransferReceipient, UpdateUserDto} from "./user.dto";
+import {
+  UpdateTransferReceipient,
+  UpdateUserDto,
+  VerifyPasscodeOtpDto,
+} from "./user.dto";
 import {FileInterceptor} from "@nestjs/platform-express";
 import {LogisticsService} from "./logistics.service";
 
@@ -52,12 +58,23 @@ export class ProfileController {
     const email = req?.user?.email;
     return this.userService.verifyPasscode(email, passcode);
   }
+  @Post("/reset-passcode")
+  @HttpCode(200)
+  resetPasscode(@Req() req: Request) {
+    //@ts-ignore
+    const id = req?.user?.id;
+    return this.userService.resetPasscode(id);
+  }
+
+  @Post("/verify-passcode-otp")
+  @HttpCode(200)
+  verifyPasscodeOtp(@Body() body: VerifyPasscodeOtpDto) {
+    return this.userService.verifyPasscodeOtp(body.otp, body.passcode);
+  }
   @Get("/user-data")
   getUserData(@Req() req: Request) {
     //@ts-ignore
     const id = req?.user?.id;
     return this.userService.getUserData(id);
   }
-
-
 }

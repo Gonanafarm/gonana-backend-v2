@@ -3,12 +3,12 @@ import {MailerService} from "@nest-modules/mailer";
 import {User} from "./user.schema";
 import {Post} from "../post/post.schema";
 
-export const convertArrayToString = (array:Array<any>) => {
+export const convertArrayToString = (array: Array<any>) => {
   if (Array.isArray(array)) {
     if (array.length === 1) {
       return array[0];
     } else {
-      return array.join(', ');
+      return array.join(", ");
     }
   } else {
     return "Input is not an array.";
@@ -121,11 +121,10 @@ export class UserMailerService {
       const sentMessageInfo = await this.mailerService.sendMail(
         sendMailOptions,
       );
-
       return sentMessageInfo;
     } catch (error) {
       console.error(error);
-      return undefined; // Or handle the error as needed
+      return undefined;
     }
   }
   transactionSucess(email: string, transactionAmount: number) {
@@ -140,24 +139,105 @@ export class UserMailerService {
       console.error(error);
     }
   }
-  orderSuccessMail(email: string, url: string) {
+  notSelfShipOrderSuccessMail(
+    user: User,
+    url: string,
+    product: Post,
+    quantity: number,
+    totalCost: number,
+  ) {
     try {
+      const productImages = product.images
+        .map(
+          (imageUrl, index) => `
+        <img src="${imageUrl}" alt="Product Image ${
+            index + 1
+          }" style="max-width: 100%;">
+      `,
+        )
+        .join("<br>");
+
       this.mailerService.sendMail({
-        to: email,
-        subject: "ORDER PLACED SUCCESSFULLY ",
-        html: `Your tracking url is ${url}`,
+        to: user.email,
+        subject: "ORDER PLACED SUCCESSFULLY",
+        html: `Your tracking url is ${url}<br>
+        Product details: <br>
+        Title: ${product.title}<br>
+        Quantity: ${quantity}<br>
+        Price: ${product.amount}<br>
+        Images: 
+        <br>
+        ${productImages}
+        <br>
+        Total Cost: ${totalCost}<br>
+        Customers Details:<br>
+        Name: ${user.first_name} ${user.last_name}<br>
+        Number: ${user.phone}<br>
+        Address: ${user.address[0].address}
+`,
       });
       console.log("tracking url mail sent");
     } catch (error) {
       console.log(error);
     }
   }
-  selfShipmentMail(farmerEmail: string, product: Post, user: User, quantity:number) {
+  selfShipOrderSuccessMail(
+    user: User,
+    product: Post,
+    quantity: number,
+    totalCost: number,
+  ) {
     try {
-      const productImages = product.images.map((imageUrl, index) => `
-        <img src="${imageUrl}" alt="Product Image ${index + 1}" style="max-width: 100%;">
-      `).join('<br>');
-  
+      const productImages = product.images
+        .map(
+          (imageUrl, index) => `
+        <img src="${imageUrl}" alt="Product Image ${
+            index + 1
+          }" style="max-width: 100%;">
+      `,
+        )
+        .join("<br>");
+
+      this.mailerService.sendMail({
+        to: user.email,
+        subject: "ORDER PLACED SUCCESSFULLY",
+        html: `Product details: <br>
+        Title: ${product.title}<br>
+        Quantity: ${quantity}<br>
+        Price: ${product.amount}<br>
+        Images: 
+        <br>
+        ${productImages}
+        <br>
+        Total Cost: ${totalCost}
+        Customers Details:<br>
+        Name: ${user.first_name} ${user.last_name}<br>
+        Number: ${user.phone}<br>
+        Address: ${user.address[0].address}
+`,
+      });
+      console.log("tracking url mail sent");
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  selfShipmentMail(
+    farmerEmail: string,
+    product: Post,
+    user: User,
+    quantity: number,
+  ) {
+    try {
+      const productImages = product.images
+        .map(
+          (imageUrl, index) => `
+        <img src="${imageUrl}" alt="Product Image ${
+            index + 1
+          }" style="max-width: 100%;">
+      `,
+        )
+        .join("<br>");
+
       this.mailerService.sendMail({
         to: farmerEmail,
         subject: "YOUR PRODUCTS HAVE BEEN ORDERED",
@@ -170,7 +250,8 @@ export class UserMailerService {
           Images: 
           <br>
           ${productImages}
-          <br>Customers Details:<br>
+          <br>
+          Customers Details:<br>
           Name: ${user.first_name} ${user.last_name}<br>
           Number: ${user.phone}<br>
           Address: ${user.address[0].address}
@@ -181,8 +262,4 @@ export class UserMailerService {
       console.log(error);
     }
   }
-  
-  
-  
-  
 }

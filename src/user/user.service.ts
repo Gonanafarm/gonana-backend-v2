@@ -259,6 +259,10 @@ export class UserService extends GenericService<UserDocument> {
 
   async createOtpModel(email: string, otp: string): Promise<OtpDocument> {
     try {
+      const otpExists = await this.otpModel.findOne({email: email});
+      if(otpExists){
+        await this.otpModel.deleteOne({email:email})
+      }
       const newOtp = await this.otpModel.create({email, otp});
       return newOtp;
     } catch (e: unknown) {
@@ -372,6 +376,9 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       throw new NotFoundException("User not found, login and try again");
     }
+    if (user.passcode.length > 1){
+      throw new BadRequestException(`You already have a passcode`)
+    }
     await this.userModel.updateOne(
       {email: user.email},
       {$set: {passcode: details}},
@@ -399,6 +406,58 @@ export class UserService extends GenericService<UserDocument> {
       success: true,
       message: "Passcode verified",
     };
+  }
+
+  async resetPasscode(id: string) {
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new BadRequestException(`Login and try again`);
+      }
+      if (user.passcode.length < 1) {
+        throw new BadRequestException(`You haven't created a passcode before`);
+      }
+      const otp = this.generateOtp();
+      await this.createOtpModel(user.email, otp);
+      this.userMailer.sendOTP(user.email, otp);
+      return {success: true, message: `Reset otp sent to ${user.email}`};
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
+  async verifyPasscodeOtp(otp: string, passcode: string) {
+    try {
+      const otpModel = await this.otpModel.findOne({otp: otp});
+      if (!otpModel) {
+        throw new BadRequestException(`Invalid otp`);
+      }
+      const user = await this.userModel.findOne({email: otpModel.email});
+      if (!user) {
+        throw new BadRequestException(`User not Found`);
+      }
+      const passCodeHash = await hashPassword(passcode)
+      user.passcode = passCodeHash;
+      await user.save();
+      await this.otpModel.deleteOne({email:otpModel.email})
+      return {success: true, message: `Passcode Reset Successfully`};
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
   }
 
   async getUserData(id: string) {

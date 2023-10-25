@@ -298,8 +298,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
           description: product?.body,
           unit_weight: product?.weight,
           unit_amount: product?.amount,
-          quantity: product?.quantity,
+          quantity: item.units,
         };
+        console.log(packageItem.quantity);
+        
         const sender_address_code = product.address[0].code || undefined;
 
         if (sender_address_code === undefined) {
@@ -431,6 +433,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
 
         const orderItemsPromise = itemsToShip.map(async item => {
           console.log(item.id);
+          const product = await this.productModel.findById(item.id);
+          if (!product) throw new NotFoundException("Product not found");
           const index = itemIdToIndexMap.get(item.id);
           if (index !== undefined) {
             const req_token = shipping_req_token[index];
@@ -441,9 +445,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
               code,
               courier_id,
             );
-            this.userMailerService.orderSuccessMail(
-              user.email,
+            this.userMailerService.notSelfShipOrderSuccessMail(
+              user,
               shipment.data.tracking_url,
+              product,
+              item.units,
+              totalCost
             );
 
             return shipment.data;
@@ -473,6 +480,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
             product,
             user,
             item.units,
+          );
+          this.userMailerService.selfShipOrderSuccessMail(
+            user,
+            product,
+            item.units,
+            totalCost
           );
         });
       }
