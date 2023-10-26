@@ -147,6 +147,10 @@ export class UserMailerService {
     totalCost: number,
   ) {
     try {
+      const userLength = user.address.length;
+      const userIndex = userLength - 1;
+      const receiver_address = user.address[userIndex].address;
+
       const productImages = product.images
         .map(
           (imageUrl, index) => `
@@ -173,7 +177,7 @@ export class UserMailerService {
         Customers Details:<br>
         Name: ${user.first_name} ${user.last_name}<br>
         Number: ${user.phone}<br>
-        Address: ${user.address[0].address}
+        Address: ${receiver_address}
 `,
       });
       console.log("tracking url mail sent");
@@ -188,6 +192,9 @@ export class UserMailerService {
     totalCost: number,
   ) {
     try {
+      const userLength = user.address.length;
+      const userIndex = userLength - 1;
+      const receiver_address = user.address[userIndex].address;
       const productImages = product.images
         .map(
           (imageUrl, index) => `
@@ -213,7 +220,7 @@ export class UserMailerService {
         Customers Details:<br>
         Name: ${user.first_name} ${user.last_name}<br>
         Number: ${user.phone}<br>
-        Address: ${user.address[0].address}
+        Address: ${receiver_address}
 `,
       });
       console.log("tracking url mail sent");
@@ -228,6 +235,9 @@ export class UserMailerService {
     quantity: number,
   ) {
     try {
+      const userLength = user.address.length;
+      const userIndex = userLength - 1;
+      const receiver_address = user.address[userIndex].address;
       const productImages = product.images
         .map(
           (imageUrl, index) => `
@@ -254,7 +264,7 @@ export class UserMailerService {
           Customers Details:<br>
           Name: ${user.first_name} ${user.last_name}<br>
           Number: ${user.phone}<br>
-          Address: ${user.address[0].address}
+          Address: ${receiver_address}
         `,
       });
       console.log("Shipment mail sent");

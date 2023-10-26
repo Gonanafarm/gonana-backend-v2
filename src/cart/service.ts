@@ -301,15 +301,20 @@ export class CartItemService extends GenericService<CartItemDocument> {
           quantity: item.units,
         };
         console.log(packageItem.quantity);
+
         
-        const sender_address_code = product.address[0].code || undefined;
+        const productLength = product.address.length
+        const productIndex = productLength -1
+        const sender_address_code = product.address[productIndex].code || undefined;
 
         if (sender_address_code === undefined) {
           throw new BadRequestException(
             "product does not have a valid address",
           );
         }
-        const receiver_address_code = user.address[0].code || undefined;
+        const userLength = user.address.length
+        const userIndex = userLength - 1;
+        const receiver_address_code = user.address[userIndex].code || undefined;
 
         if (receiver_address_code === undefined) {
           throw new BadRequestException("user does not have a valid address");
