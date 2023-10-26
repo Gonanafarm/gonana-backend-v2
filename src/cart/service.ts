@@ -452,6 +452,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               item.units,
               totalCost
             );
+            await this.reomoveCartItem(user_id, item.id)
 
             return shipment.data;
           } else {
@@ -487,6 +488,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
             item.units,
             totalCost
           );
+          await this.reomoveCartItem(user_id, item.id)
         });
       }
 
