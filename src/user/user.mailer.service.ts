@@ -272,4 +272,47 @@ export class UserMailerService {
       console.log(error);
     }
   }
+  notSelfShipmentMail(
+    farmerEmail: string,
+    product: Post,
+    user: User,
+    quantity: number,
+  ) {
+    try {
+      const userLength = user.address.length;
+      const userIndex = userLength - 1;
+      const receiver_address = user.address[userIndex].address;
+      const productImages = product.images
+        .map(
+          (imageUrl, index) => `
+        <img src="${imageUrl}" alt="Product Image ${
+            index + 1
+          }" style="max-width: 100%;">
+      `,
+        )
+        .join("<br>");
+
+      this.mailerService.sendMail({
+        to: farmerEmail,
+        subject: "YOUR PRODUCTS HAVE BEEN ORDERED",
+        html: `
+        Product details: <br>
+          Title: ${product.title}<br>
+          Quantity: ${quantity}<br>
+          Price: ${product.amount}<br>
+          Images: 
+          <br>
+          ${productImages}
+          <br>
+          Customers Details:<br>
+          Name: ${user.first_name} ${user.last_name}<br>
+          Number: ${user.phone}<br>
+          Address: ${receiver_address}
+        `,
+      });
+      console.log("Shipment mail sent");
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }

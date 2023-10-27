@@ -457,6 +457,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
               item.units,
               totalCost
             );
+          const farmerId = product.publisher_id
+          const farmer = await this.userModel.findById(farmerId)
+          if (!farmer) return
+            this.userMailerService.notSelfShipmentMail(farmer.email, product, user, item.units)
             await this.reomoveCartItem(user_id, item.id)
 
             return shipment.data;
