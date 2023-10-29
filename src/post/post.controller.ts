@@ -106,6 +106,10 @@ export class PostController {
     if (body.self_shipping !== undefined) {
       self_shipping = JSON.parse(body.self_shipping);
     }
+    const address = {
+      address: body.address,
+      code: 0
+    }
 
     let payload = {
       ...body,
@@ -119,6 +123,7 @@ export class PostController {
       quantity,
       amount,
       weight,
+      address,
       self_shipping,
     };
     const createPost = await this.dataService.create(publisher_id, payload);
