@@ -123,7 +123,17 @@ export class LogisticsService {
         throw new NotFoundException(`Product not found`);
       }
       if(product.self_shipping === true){
-        throw new BadRequestException(`Owner of product has opted for self shipping`)
+        const addressString ={
+          address: address,
+          code: 0
+        }
+         product.address.push(addressString);
+         await product.save();
+         return{
+          success: true,
+          message: "Address validated successfully"
+         }
+
       }
       const publisher_id = product.publisher_id;
 
@@ -140,6 +150,8 @@ export class LogisticsService {
       const url = `${base_url}/shipping/address/validate`;
       const data = {name: name, email: email, phone: phone, address: address};
       const res = await axios.post(url, data, {headers: Headers});
+      console.log(res);
+      
       if (res.data.status !== "success") {
         throw new BadRequestException(res.data.message);
       }
@@ -158,6 +170,8 @@ export class LogisticsService {
 
       return {success: true, data: response};
     } catch (error: any) {
+      console.log(error);
+      
       throw new HttpException(
         {status: error.response.status, message: error.response.data.message},
         error.response.status,

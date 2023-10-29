@@ -100,7 +100,7 @@ export class Post {
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Array})
-  address: Array<Record<string, any>>;
+  address: Array<{address: string, code: number}>;
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
