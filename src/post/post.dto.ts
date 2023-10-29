@@ -100,6 +100,7 @@ export class PublishPostDto {
 
   @ApiProperty({})
   @IsString({})
+  @IsOptional()
   address: string;
   
   @ApiProperty({})

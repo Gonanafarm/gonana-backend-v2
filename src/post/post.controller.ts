@@ -102,23 +102,6 @@ export class PostController {
     let publisher_id = "";
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-    //@ts-ignore
-    const name = `${req.user?.first_name} ${req.user?.last_name}`;
-
-    //@ts-ignore
-    const phone = req.user?.phone;
-
-    //@ts-ignore
-    const email = req.user?.email;
-
-    const unformatted_address = body.address;
-    const validatedAdress = await this.logisticsService.validateAddress(
-      unformatted_address,
-      name,
-      email,
-      phone,
-    );
-    const address = [validatedAdress.data];
     let self_shipping = body.self_shipping;
     if (body.self_shipping !== undefined) {
       self_shipping = JSON.parse(body.self_shipping);
@@ -136,7 +119,6 @@ export class PostController {
       quantity,
       amount,
       weight,
-      address,
       self_shipping,
     };
     const createPost = await this.dataService.create(publisher_id, payload);
