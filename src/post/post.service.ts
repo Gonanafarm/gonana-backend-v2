@@ -109,6 +109,9 @@ export class PostService extends GenericService<PostDocument> {
     const filteredDiscountedProducts = discountedProducts.filter(
       product => product !== undefined,
     );
+    if(filteredDiscountedProducts.length < 1){
+      throw new NotFoundException("There are no products with discounts")
+    }
 
     return {success: true, data: filteredDiscountedProducts};
   }
