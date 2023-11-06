@@ -17,6 +17,7 @@ import {
 import {ApiResponse, ApiTags, ApiHeader} from "@nestjs/swagger";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {
+  GetPostsDto,
   GetUserDto,
   PostType,
   PublishPostDto,
@@ -52,8 +53,8 @@ export class PostController {
     isArray: true,
     type: PostModel,
   })
-  get(@Req() req: Request, @Query("type") type: string) {
-    return this.dataService.get(type);
+  get(@Req() req: Request, @Query() body: GetPostsDto) {
+    return this.dataService.get(body.type, body.limit, body.page);
   }
   @Get("any-user-products")
   async getAnyUserProduct(@Query() body: GetUserDto) {
@@ -108,8 +109,8 @@ export class PostController {
     }
     const address = {
       address: body.address,
-      code: 0
-    }
+      code: 0,
+    };
 
     let payload = {
       ...body,

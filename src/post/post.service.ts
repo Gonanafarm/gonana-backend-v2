@@ -109,8 +109,8 @@ export class PostService extends GenericService<PostDocument> {
     const filteredDiscountedProducts = discountedProducts.filter(
       product => product !== undefined,
     );
-    if(filteredDiscountedProducts.length < 1){
-      throw new NotFoundException("There are no products with discounts")
+    if (filteredDiscountedProducts.length < 1) {
+      throw new NotFoundException("There are no products with discounts");
     }
 
     return {success: true, data: filteredDiscountedProducts};
@@ -144,14 +144,30 @@ export class PostService extends GenericService<PostDocument> {
       );
     }
   }
-  async get(type: string) {
+  async get(type: string, limit?: string, page?: string) {
     try {
       const query: Record<string, unknown> = {};
       if (type !== undefined) {
         query.type = type;
       }
+      const productsPerPage = 10;
+      let limitToNumber;
+      let pagToNumber;
+      if (limit) {
+        limitToNumber = parseInt(limit);
+      }
+      if (page) {
+        pagToNumber = parseInt(page);
+      }
+      const lim =
+        limitToNumber === undefined || limitToNumber < 1 ? 10 : limitToNumber;
+      const pag = pagToNumber || 0;
 
-      const products = await this.productModel.find(query);
+      const products = await this.productModel
+        .find(query)
+        .sort({_id: -1}) // Lifo order
+        .skip(pag * productsPerPage)
+        .limit(lim);
       if (products.length < 1) {
         throw new NotFoundException("Products Not Found");
       }
@@ -215,5 +231,4 @@ export class PostService extends GenericService<PostDocument> {
       );
     }
   }
-  
 }

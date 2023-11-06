@@ -109,6 +109,20 @@ export class PublishPostDto {
   self_shipping: string;
 }
 
+export class GetPostsDto {
+  @IsString()
+  @IsOptional()
+  page: string;
+
+  @IsString()
+  @IsOptional()
+  type: string;
+
+  @IsString()
+  @IsOptional()
+  limit: string;
+}
+
 export class UpdatePostDto {
   @ApiProperty({})
   @IsString()
