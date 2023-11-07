@@ -150,7 +150,7 @@ export class PostService extends GenericService<PostDocument> {
       if (type !== undefined) {
         query.type = type;
       }
-      const productsPerPage = 10;
+      const productsPerPage = 15;
       let limitToNumber;
       let pagToNumber;
       if (limit) {
@@ -158,19 +158,25 @@ export class PostService extends GenericService<PostDocument> {
       }
       if (page) {
         pagToNumber = parseInt(page);
+        // Adjust the page number to start from 1
+        pagToNumber = Math.max(1, pagToNumber);
+      } else {
+        // If page is not provided, set it to 1 by default
+        pagToNumber = 1;
       }
       const lim =
-        limitToNumber === undefined || limitToNumber < 1 ? 10 : limitToNumber;
-      const pag = pagToNumber || 0;
+        limitToNumber === undefined || limitToNumber < 1 ? 15 : limitToNumber;
+      const skipCount = (pagToNumber - 1) * productsPerPage;
 
       const products = await this.productModel
         .find(query)
         .sort({_id: -1}) // Lifo order
-        .skip(pag * productsPerPage)
+        .skip(skipCount)
         .limit(lim);
       if (products.length < 1) {
         throw new NotFoundException("Products Not Found");
       }
+      console.log(products.length);
       const productPromises = products.map(async (product: any) => {
         const id = product.publisher_id;
         const user = await this.userModel.findById(id);
@@ -195,18 +201,46 @@ export class PostService extends GenericService<PostDocument> {
       );
     }
   }
-  async getUsersProducts(id: string, type?: string) {
+  async getUsersProducts(
+    id: string,
+    type?: string,
+    limit?: string,
+    page?: string,
+  ) {
     try {
       const query: Record<string, unknown> = {};
       if (type !== undefined) {
         query.type = type;
       }
       query.publisher_id = id;
+      const productsPerPage = 5;
+      let limitToNumber;
+      let pagToNumber;
+      if (limit) {
+        limitToNumber = parseInt(limit);
+      }
+      if (page) {
+        pagToNumber = parseInt(page);
+        // Adjust the page number to start from 1
+        pagToNumber = Math.max(1, pagToNumber);
+      } else {
+        // If page is not provided, set it to 1 by default
+        pagToNumber = 1;
+      }
+      const lim =
+        limitToNumber === undefined || limitToNumber < 1 ? 5 : limitToNumber;
+      const skipCount = (pagToNumber - 1) * productsPerPage;
 
-      const products = await this.productModel.find(query);
+      const products = await this.productModel
+        .find(query)
+        .sort({_id: -1}) // Lifo order
+        .skip(skipCount)
+        .limit(lim);
       if (products.length < 1) {
         throw new NotFoundException("Products Not Found");
       }
+      console.log(products.length);
+
       const productPromises = products.map(async (product: any) => {
         const id = product.publisher_id;
         const user = await this.userModel.findById(id);

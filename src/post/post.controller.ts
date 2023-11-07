@@ -60,7 +60,9 @@ export class PostController {
   async getAnyUserProduct(@Query() body: GetUserDto) {
     return await this.dataService.getUsersProducts(
       body.id,
-      body.type || undefined,
+      body.type,
+      body.limit,
+      body.page,
     );
   }
   @Get("/user-products")

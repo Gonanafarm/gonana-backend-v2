@@ -161,4 +161,13 @@ export class GetUserDto {
   @IsString()
   @IsOptional()
   type: string;
+
+  @IsString()
+  @IsOptional()
+  page: string;
+
+  @IsString()
+  @IsOptional()
+  limit: string;
+
 }
