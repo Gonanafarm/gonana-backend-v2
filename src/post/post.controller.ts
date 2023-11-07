@@ -17,9 +17,11 @@ import {
 import {ApiResponse, ApiTags, ApiHeader} from "@nestjs/swagger";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {
+  GetByTitleDto,
   GetDiscountedProductsDto,
   GetPostsDto,
   GetUserDto,
+  GetUserPostsDto,
   PostType,
   PublishPostDto,
   UpdateAmountDto,
@@ -55,7 +57,7 @@ export class PostController {
     type: PostModel,
   })
   get(@Req() req: Request, @Query() body: GetPostsDto) {
-    return this.dataService.get(body.type, body.limit, body.page);
+    return this.dataService.get(body.type, body.title, body.limit, body.page);
   }
   @Get("any-user-products")
   async getAnyUserProduct(@Query() body: GetUserDto) {
@@ -67,7 +69,7 @@ export class PostController {
     );
   }
   @Get("/user-products")
-  async getUserProducts(@Req() req: Request, @Query() body: GetPostsDto) {
+  async getUserProducts(@Req() req: Request, @Query() body: GetUserPostsDto) {
     //@ts-ignore
     const id = req?.user?.id;
     return await this.dataService.getByPublisherId(
@@ -141,12 +143,12 @@ export class PostController {
 
   @Delete(":item")
   async deleteItem(@Param("item") item: string): Promise<any> {
-    return this.dataService.deleteItem(item);
+    return await this.dataService.deleteItem(item);
   }
 
   @Get("discounted-products")
   async discountedProducts(@Query() body: GetDiscountedProductsDto) {
-    return this.dataService.discountedProducts(body.limit, body.page);
+    return await this.dataService.discountedProducts(body.limit, body.page);
   }
 
   @Get(":item")

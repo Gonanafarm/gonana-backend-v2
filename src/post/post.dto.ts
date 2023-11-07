@@ -121,8 +121,25 @@ export class GetPostsDto {
   @IsString()
   @IsOptional()
   limit: string;
+
+  @IsString()
+  @IsOptional()
+  title: string;
 }
 
+export class GetUserPostsDto {
+  @IsString()
+  @IsOptional()
+  page: string;
+
+  @IsString()
+  @IsOptional()
+  type: string;
+
+  @IsString()
+  @IsOptional()
+  limit: string;
+}
 export class UpdatePostDto {
   @ApiProperty({})
   @IsString()
@@ -179,4 +196,22 @@ export class GetDiscountedProductsDto {
   @IsString()
   @IsOptional()
   limit: string;
+}
+
+export class GetByTitleDto {
+  @ApiProperty({})
+  @IsString()
+  @IsOptional()
+  type: string;
+
+  @IsString()
+  @IsOptional()
+  page: string;
+
+  @IsString()
+  @IsOptional()
+  limit: string;
+
+  @IsString()
+  title: string;
 }

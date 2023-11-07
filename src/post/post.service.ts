@@ -124,7 +124,7 @@ export class PostService extends GenericService<PostDocument> {
       throw new NotFoundException("No Doscounted Products");
     }
     console.log(products.length);
-    
+
     const ids = products.map(product => product.productid);
     const discountedProductsPromises = ids.map(async id => {
       const product = await this.productModel.findOne({_id: id});
@@ -195,12 +195,13 @@ export class PostService extends GenericService<PostDocument> {
       );
     }
   }
-  async get(type: string, limit?: string, page?: string) {
+  async get(type: string, title?: string, limit?: string, page?: string) {
     try {
       const query: Record<string, unknown> = {};
       if (type !== undefined) {
         query.type = type;
       }
+      if (title !== undefined) query.title = new RegExp(title, 'i');
       const productsPerPage = 15;
       let limitToNumber;
       let pagToNumber;
@@ -316,4 +317,5 @@ export class PostService extends GenericService<PostDocument> {
       );
     }
   }
+
 }
