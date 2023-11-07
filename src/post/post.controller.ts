@@ -17,6 +17,7 @@ import {
 import {ApiResponse, ApiTags, ApiHeader} from "@nestjs/swagger";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {
+  GetDiscountedProductsDto,
   GetPostsDto,
   GetUserDto,
   PostType,
@@ -66,10 +67,15 @@ export class PostController {
     );
   }
   @Get("/user-products")
-  async getUserProducts(@Req() req: Request, @Query("type") type?: string) {
+  async getUserProducts(@Req() req: Request, @Query() body: GetPostsDto) {
     //@ts-ignore
     const id = req?.user?.id;
-    return await this.dataService.getByPublisherId(id, type);
+    return await this.dataService.getByPublisherId(
+      id,
+      body.type,
+      body.limit,
+      body.page,
+    );
   }
 
   @Post("")
@@ -139,8 +145,8 @@ export class PostController {
   }
 
   @Get("discounted-products")
-  async discountedProducts() {
-    return this.dataService.discountedProducts();
+  async discountedProducts(@Query() body: GetDiscountedProductsDto) {
+    return this.dataService.discountedProducts(body.limit, body.page);
   }
 
   @Get(":item")

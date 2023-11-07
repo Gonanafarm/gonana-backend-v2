@@ -102,7 +102,7 @@ export class PublishPostDto {
   @IsString({})
   @IsOptional()
   address: string;
-  
+
   @ApiProperty({})
   @IsString()
   @IsOptional()
@@ -169,5 +169,14 @@ export class GetUserDto {
   @IsString()
   @IsOptional()
   limit: string;
+}
 
+export class GetDiscountedProductsDto {
+  @IsString()
+  @IsOptional()
+  page: string;
+
+  @IsString()
+  @IsOptional()
+  limit: string;
 }

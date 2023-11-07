@@ -101,6 +101,8 @@ export class UserMailerService {
         html: `Your OTP is ${OTP}. It expires in 10 Minutes`,
       });
     } catch (error) {
+      console.log(error);
+      
       console.error(`Error sending OTP email to ${email}:`, error);
     }
   }

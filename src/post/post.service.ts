@@ -95,11 +95,36 @@ export class PostService extends GenericService<PostDocument> {
     return true;
   }
 
-  async discountedProducts() {
-    const products = await this.discountModel.find();
-    if (products.length < 1) {
-      throw new NotFoundException("Products Not Found");
+  async discountedProducts(limit?: string, page?: string) {
+    const productsPerPage = 15;
+    let limitToNumber;
+    let pagToNumber;
+    if (limit) {
+      limitToNumber = parseInt(limit);
     }
+    if (page) {
+      pagToNumber = parseInt(page);
+      // Adjust the page number to start from 1
+      pagToNumber = Math.max(1, pagToNumber);
+    } else {
+      // If page is not provided, set it to 1 by default
+      pagToNumber = 1;
+    }
+    const lim =
+      limitToNumber === undefined || limitToNumber < 1 ? 15 : limitToNumber;
+    const skipCount = (pagToNumber - 1) * productsPerPage;
+
+    const products = await this.discountModel
+      .find()
+      .sort({_id: -1}) // Lifo order
+      .skip(skipCount)
+      .limit(lim);
+
+    if (products.length < 1) {
+      throw new NotFoundException("No Doscounted Products");
+    }
+    console.log(products.length);
+    
     const ids = products.map(product => product.productid);
     const discountedProductsPromises = ids.map(async id => {
       const product = await this.productModel.findOne({_id: id});
@@ -116,19 +141,45 @@ export class PostService extends GenericService<PostDocument> {
     return {success: true, data: filteredDiscountedProducts};
   }
 
-  async getByPublisherId(id: string, type?: string) {
+  async getByPublisherId(
+    id: string,
+    type?: string,
+    limit?: string,
+    page?: string,
+  ) {
     try {
       const query: Record<string, unknown> = {publisher_id: id};
 
       if (type !== undefined) {
         query.type = type;
       }
-      const products = await this.productModel.find(query);
-      if (products.length < 1) {
-        throw new NotFoundException(
-          "No posts with these parameters were found",
-        );
+      const productsPerPage = 15;
+      let limitToNumber;
+      let pagToNumber;
+      if (limit) {
+        limitToNumber = parseInt(limit);
       }
+      if (page) {
+        pagToNumber = parseInt(page);
+        // Adjust the page number to start from 1
+        pagToNumber = Math.max(1, pagToNumber);
+      } else {
+        // If page is not provided, set it to 1 by default
+        pagToNumber = 1;
+      }
+      const lim =
+        limitToNumber === undefined || limitToNumber < 1 ? 15 : limitToNumber;
+      const skipCount = (pagToNumber - 1) * productsPerPage;
+
+      const products = await this.productModel
+        .find(query)
+        .sort({_id: -1}) // Lifo order
+        .skip(skipCount)
+        .limit(lim);
+      if (products.length < 1) {
+        throw new NotFoundException("Products Not Found");
+      }
+      console.log(products.length);
       return {
         success: true,
         data: products,
