@@ -14,6 +14,7 @@ import {Request} from "express";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {
+  GetUserTransactonsDto,
   ResolveAccountNumber,
   TransferFundsDto,
   TransferToUser,
@@ -90,9 +91,9 @@ export class TransactionController {
     return this.userService.getUserBalance(user_id);
   }
   @Get("/user-transactions")
-  getUserTransactions(@Req() req: Request) {
+  getUserTransactions(@Req() req: Request, @Query() body:GetUserTransactonsDto) {
     //@ts-ignore
     const user_id = req.user?.id;
-    return this.userService.getUserTransactions(user_id);
+    return this.userService.getUserTransactions(user_id, body.page, body.limit);
   }
 }

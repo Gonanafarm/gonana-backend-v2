@@ -260,8 +260,8 @@ export class UserService extends GenericService<UserDocument> {
   async createOtpModel(email: string, otp: string): Promise<OtpDocument> {
     try {
       const otpExists = await this.otpModel.findOne({email: email});
-      if(otpExists){
-        await this.otpModel.deleteOne({email:email})
+      if (otpExists) {
+        await this.otpModel.deleteOne({email: email});
       }
       const newOtp = await this.otpModel.create({email, otp});
       return newOtp;
@@ -376,8 +376,8 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       throw new NotFoundException("User not found, login and try again");
     }
-    if (user.passcode.length > 1){
-      throw new BadRequestException(`You already have a passcode`)
+    if (user.passcode.length > 1) {
+      throw new BadRequestException(`You already have a passcode`);
     }
     await this.userModel.updateOne(
       {email: user.email},
@@ -443,10 +443,10 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new BadRequestException(`User not Found`);
       }
-      const passCodeHash = await hashPassword(passcode)
+      const passCodeHash = await hashPassword(passcode);
       user.passcode = passCodeHash;
       await user.save();
-      await this.otpModel.deleteOne({email:otpModel.email})
+      await this.otpModel.deleteOne({email: otpModel.email});
       return {success: true, message: `Passcode Reset Successfully`};
     } catch (error: any) {
       console.error(error);
@@ -789,17 +789,41 @@ export class UserService extends GenericService<UserDocument> {
     }
     return {success: true, balance: user.balance};
   }
-  async getUserTransactions(id: string) {
-    const transaction = await this.transactionModel.findOne({userId: id});
-    if (
-      !transaction ||
-      transaction?.transactions.length < 1 ||
-      !transaction.transactions
-    ) {
-      return {success: true, message: "transactions not found"};
+  async getUserTransactions(id: string, page?: string, limit?: string) {
+    const transactionsPerPage = 10; // Set your desired page size here
+
+    let numberPage;
+    // If page is not provided or less than 1, default to 1
+    if (page) {
+      numberPage = parseInt(page, 10);
     }
-    return {success: true, transactions: transaction.transactions};
+    const pageNumber = numberPage && numberPage > 0 ? numberPage : 1;
+
+    // Calculate the number of documents to skip
+    const skips = transactionsPerPage * (pageNumber - 1);
+    let numberLimit;
+    if (limit) {
+      numberLimit = parseInt(limit, 10);
+    }
+    // Use the aggregate pipeline to skip, limit, and unwind the results
+    const transaction = await this.transactionModel.aggregate([
+      {$match: {userId: id}},
+      {$unwind: "$transactions"},
+      {$skip: skips},
+      {
+        $limit: numberLimit
+          ? Math.min(transactionsPerPage, numberLimit)
+          : transactionsPerPage,
+      },
+    ]);
+
+    if (!transaction || transaction.length === 0) {
+      return {success: true, message: "Transactions not found"};
+    }
+
+    return {success: true, transactions: transaction};
   }
+
   async transfer(
     user_id: string,
     accountNumber: string,
@@ -856,7 +880,9 @@ export class UserService extends GenericService<UserDocument> {
       console.log(data);
 
       const res = await axios.post(url, data, {headers: Headers});
-      if (res.data.data.transactionStatus !== "SUCCESSFUL") {
+      console.log(res.data);
+      
+      if (!(res.data.data.transactionStatus)) {
         console.log(res.data);
         throw new HttpException(
           {
@@ -887,8 +913,12 @@ export class UserService extends GenericService<UserDocument> {
         await this.transactionModel.create(transactionObject);
         return {success: true, data: res.data};
       }
-      transaction.transactions.push(transactionObject);
+      transaction.transactions.push(transactionObject);      
       await transaction.save();
+      console.log(transactionObject);
+      
+      console.log(transaction);
+
       return {success: true, data: res.data};
     } catch (error: any) {
       console.log(error);

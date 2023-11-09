@@ -80,6 +80,16 @@ export class UpdateUserDto {
   bvn: string;
 }
 
+export class GetUserTransactonsDto {
+  @IsString()
+  @IsOptional()
+  limit: string;
+
+  @IsString()
+  @IsOptional()
+  page: string;
+}
+
 export class UpdateTransferReceipient {
   @ApiProperty({})
   @IsString()
