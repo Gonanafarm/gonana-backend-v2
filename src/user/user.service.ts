@@ -878,11 +878,12 @@ export class UserService extends GenericService<UserDocument> {
         data.narration = narration;
       }
       console.log(data);
-
+      console.log("here");
+      
       const res = await axios.post(url, data, {headers: Headers});
       console.log(res.data);
-      
-      if (!(res.data.data.transactionStatus)) {
+
+      if (res.data.responseCode === "02") {        
         console.log(res.data);
         throw new HttpException(
           {
@@ -913,10 +914,10 @@ export class UserService extends GenericService<UserDocument> {
         await this.transactionModel.create(transactionObject);
         return {success: true, data: res.data};
       }
-      transaction.transactions.push(transactionObject);      
+      transaction.transactions.push(transactionObject);
       await transaction.save();
       console.log(transactionObject);
-      
+
       console.log(transaction);
 
       return {success: true, data: res.data};
