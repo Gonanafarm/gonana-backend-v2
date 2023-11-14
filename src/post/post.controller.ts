@@ -174,6 +174,23 @@ export class PostController {
     return await this.dataService.updateItem(item, body);
   }
 
+  @Post("like")
+  async like(@Body("postId") body: any, @Req() req: Request) {
+    //@ts-ignore
+    const userId = req?.user?.id;
+    return await this.dataService.like(body, userId);
+  }
+
+  @Post("unlike")
+  async disLike(@Body("postId") body: any, @Req() req: Request) {
+    //@ts-ignore
+    const userId = req?.user?.id;
+    return await this.dataService.unlike(userId, body);
+  }
+  @Get("likes/:id")
+  async likes(@Param("id") postId: any) {
+    return await this.dataService.getUsersThatLikedPost(postId);
+  }
   @Patch("update-amount")
   async updateAmount(@Body() body: UpdateAmountDto) {
     return await this.dataService.updatePrice(body.id, body.amount);

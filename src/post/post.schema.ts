@@ -105,6 +105,14 @@ export class Post {
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
   self_shipping: boolean;
+
+  @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.Array})
+  likes: string[];
+
+  @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.Array})
+  comments: object[];
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

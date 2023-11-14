@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
   HttpException,
+  BadRequestException,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
@@ -201,7 +202,7 @@ export class PostService extends GenericService<PostDocument> {
       if (type !== undefined) {
         query.type = type;
       }
-      if (title !== undefined) query.title = new RegExp(title, 'i');
+      if (title !== undefined) query.title = new RegExp(title, "i");
       const productsPerPage = 15;
       let limitToNumber;
       let pagToNumber;
@@ -317,5 +318,116 @@ export class PostService extends GenericService<PostDocument> {
       );
     }
   }
+  async like(postId: string, userId: string) {
+    try {
+      const post = await this.productModel.findById(postId);
+      if (!post) throw new NotFoundException("Post not found");
+      const user = await this.userModel.findById(userId);
+      if (!user) throw new NotFoundException("User not found");
+      const likesArray = post.likes;
 
+      if (likesArray.includes(user.id)) {
+        throw new BadRequestException("You have already liked this post");
+      }
+      post.likes.push(userId);
+      await post.save();
+      user.likedPosts.push(postId);
+      await user.save();
+      const likesCount = likesArray.length;
+      return {
+        success: true,
+        message: `${user.first_name} liked this post`,
+        likesCount: likesCount,
+      };
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+  async unlike(userId: string, postId: string) {
+    try {
+      const post = await this.productModel.findById(postId);
+      if (!post) throw new NotFoundException("Post not found");
+      const user = await this.userModel.findById(userId);
+      if (!user) throw new NotFoundException("User not found");
+      const likesArray = post.likes;
+      if (!likesArray.includes(user.id)) {
+        throw new BadRequestException("User has not liked this post");
+      }
+      const index = likesArray.indexOf(user.id);
+      likesArray.splice(index, 1);
+      await post.save();
+      const userIndex = user.likedPosts.indexOf(postId);
+      user.likedPosts.splice(userIndex, 1);
+      await user.save();
+      const likesCount = likesArray.length;
+
+      return {
+        success: true,
+        message: "You have disliked this post",
+        likesCount: likesCount,
+      };
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
+  async likesCount(postId: string) {
+    try {
+      const post = await this.productModel.findById(postId);
+      if (!post) throw new NotFoundException("Post not found");
+      const likes = post.likes.length;
+      return {success: true, likesCount: likes};
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
+  async getUsersThatLikedPost(postId: string) {
+    try {
+      const post = await this.productModel.findById(postId);
+      if (!post) throw new NotFoundException("Post not found");
+      const likesArray = post.likes;
+      if (likesArray.length < 1) {
+        throw new NotFoundException("No users have liked this post");
+      }
+      const likesPromises = likesArray.map(async id => {
+        const user = await this.userModel.findById(id);
+        return user?.getPublicData()
+      });
+
+      const usersThatLikedPost = await Promise.all(likesPromises);
+
+      return {success: true, data: usersThatLikedPost};
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
 }
