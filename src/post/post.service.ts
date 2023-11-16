@@ -12,8 +12,6 @@ import {PostSchema, Post, PostDocument} from "./post.schema";
 import {GenericService} from "../generic/generic.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {DiscountDocument} from "./discount.schema";
-import * as mongoose from "mongoose";
-import {Types} from "mongoose";
 import {UserDocument, User} from "../user/user.schema";
 import {GeocodeService} from "../geocoder/service";
 import {LogisticsService} from "../user/logistics.service";
@@ -325,7 +323,6 @@ export class PostService extends GenericService<PostDocument> {
       const user = await this.userModel.findById(userId);
       if (!user) throw new NotFoundException("User not found");
       const likesArray = post.likes;
-
       if (likesArray.includes(user.id)) {
         throw new BadRequestException("You have already liked this post");
       }
@@ -334,6 +331,12 @@ export class PostService extends GenericService<PostDocument> {
       user.likedPosts.push(postId);
       await user.save();
       const likesCount = likesArray.length;
+      this.eventEmmiter.emit("Like", {
+        userId: userId,
+        postId: postId,
+        likes: likesCount,
+      });
+
       return {
         success: true,
         message: `${user.first_name} liked this post`,
@@ -367,7 +370,11 @@ export class PostService extends GenericService<PostDocument> {
       user.likedPosts.splice(userIndex, 1);
       await user.save();
       const likesCount = likesArray.length;
-
+      this.eventEmmiter.emit("Unlike", {
+        userId: userId,
+        postId: postId,
+        likes: likesCount,
+      });
       return {
         success: true,
         message: "You have disliked this post",
@@ -413,7 +420,7 @@ export class PostService extends GenericService<PostDocument> {
       }
       const likesPromises = likesArray.map(async id => {
         const user = await this.userModel.findById(id);
-        return user?.getPublicData()
+        return user?.getPublicData();
       });
 
       const usersThatLikedPost = await Promise.all(likesPromises);
@@ -429,5 +436,9 @@ export class PostService extends GenericService<PostDocument> {
         error.status,
       );
     }
+  }
+
+  async comment(postId: string, comment: string, userId: string) {
+    const post = await this.productModel.findById(postId);
   }
 }
