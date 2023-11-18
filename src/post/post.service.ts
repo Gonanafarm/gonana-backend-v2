@@ -440,5 +440,25 @@ export class PostService extends GenericService<PostDocument> {
 
   async comment(postId: string, comment: string, userId: string) {
     const post = await this.productModel.findById(postId);
+    if (!post) throw new NotFoundException("Post not found");
+
+    if (comment.length < 2) throw new BadRequestException(`Comment too short`);
+    const data = {
+      userId: userId,
+      comment: comment,
+    };
+    post.comments.push(data);
+    await post.save();
+    return {success: true, message: `commented ${comment}`};
+  }
+
+  async rating(postId: string, rating: number) {
+    const post = await this.productModel.findById(postId);
+    if (!post) throw new NotFoundException("Post not found");
+    const postRating = post.rating;
+    const newRating = Math.ceil((rating + postRating) / 2);
+    post.rating = newRating;
+    await post.save();
+    return {success: true, postRating: post.rating};
   }
 }

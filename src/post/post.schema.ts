@@ -113,6 +113,10 @@ export class Post {
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Array})
   comments: object[];
+ 
+  @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.Number, default: 0})
+  rating: number;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
