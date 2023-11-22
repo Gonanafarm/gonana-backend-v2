@@ -99,26 +99,27 @@ export class UserService extends GenericService<UserDocument> {
 
     return user;
   }
-  async deleteUser(id: string, passcode: string) {
+  async deleteUser(email: string, passcode: string) {
     try {
-      const verifyPasscode = await this.verifyPasscode(id, passcode);
+      const verifyPasscode = await this.verifyPasscode(email, passcode);
 
       if (!verifyPasscode) {
         throw new BadRequestException("Invalid Passcode");
       }
-      const user = await this.userModel.findById(id);
+      const user = await this.findByEmail(email);
       if (!user) {
         throw new NotFoundException("User does not exist");
       }
-      const email = user.email;
-      const deletedUser = await this.userModel.deleteOne({_id: id});
+      const deletedUser = await this.userModel.deleteOne({email: email});
       if (!deletedUser) {
         throw DeletionException();
       }
+      const id = user.user.id
       const posts = await this.postModel.find({publisher_id: id});
       const postIds = posts.map((post: any) => {
         return post.id;
       });
+      
 
       await this.postModel.deleteMany({publisher_id: id});
       const deleteOtp = await this.otpModel.deleteOne({email: email});
