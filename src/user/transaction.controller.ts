@@ -30,7 +30,7 @@ export class TransactionController {
     //@ts-ignore
     const user_id = req.user?.id;
 
-    return this.userService.virtualAccount( bvn, user_id);
+    return this.userService.virtualAccount(bvn, user_id);
   }
   @Get("/resolve-account-number")
   getBanks(@Query() body: ResolveAccountNumber) {
@@ -91,7 +91,10 @@ export class TransactionController {
     return this.userService.getUserBalance(user_id);
   }
   @Get("/user-transactions")
-  getUserTransactions(@Req() req: Request, @Query() body:GetUserTransactonsDto) {
+  getUserTransactions(
+    @Req() req: Request,
+    @Query() body: GetUserTransactonsDto,
+  ) {
     //@ts-ignore
     const user_id = req.user?.id;
     return this.userService.getUserTransactions(user_id, body.page, body.limit);

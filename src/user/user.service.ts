@@ -558,6 +558,8 @@ export class UserService extends GenericService<UserDocument> {
 
       return createAccount.data;
     } catch (error: any) {
+      console.log(error);
+      
       throw new HttpException(
         {
           success: false,
