@@ -518,6 +518,9 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException(`User Not Found, Login and try again`);
       }
+      if (bvn.length !== 11){
+        throw new BadRequestException("Bvn should be 11 digits")
+      }
       const data = {
         customerFirstName: `${user.first_name} ${user.last_name}`,
         customerBVN: bvn,
