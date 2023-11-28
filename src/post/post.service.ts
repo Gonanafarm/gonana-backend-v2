@@ -449,7 +449,17 @@ export class PostService extends GenericService<PostDocument> {
     };
     post.comments.push(data);
     await post.save();
-    return {success: true, message: `commented ${comment}`};
+    return {success: true, message: `commented: ${comment}`};
+  }
+
+  async getPostComments(postId:string){
+    const post = await this.productModel.findById(postId);
+    if(!post) throw new NotFoundException(`Post with id ${postId} not found`);
+    const comments = post.comments;
+    if(comments.length < 1){
+      throw new NotFoundException(`No comments on this post`)
+    }
+    return{success: true, comments: comments}
   }
 
   async rating(postId: string, rating: number) {

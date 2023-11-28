@@ -156,7 +156,12 @@ export class UpdatePostDto {
   @IsOptional()
   status: string;
 }
-
+export class CommentDto {
+  @IsString()
+  comment: string;
+  @IsString()
+  postId: string;
+}
 export class UpdateAmountDto {
   @ApiProperty({required: true})
   @IsString()

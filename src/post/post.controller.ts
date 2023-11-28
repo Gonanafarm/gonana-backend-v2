@@ -17,6 +17,7 @@ import {
 import {ApiResponse, ApiTags, ApiHeader} from "@nestjs/swagger";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {
+  CommentDto,
   GetByTitleDto,
   GetDiscountedProductsDto,
   GetPostsDto,
@@ -180,7 +181,16 @@ export class PostController {
     const userId = req?.user?.id;
     return await this.dataService.like(body, userId);
   }
-
+  @Post("comment")
+  async comment(@Body() data: CommentDto, @Req() req: Request) {
+    //@ts-ignore
+    const id = req?.user?.id;
+    return await this.dataService.comment(data.postId, data.comment, id);
+  }
+  @Get("post-comments/:id")
+  async getPostComments(@Param("id") id: string) {
+    return await this.dataService.getPostComments(id);
+  }
   @Post("unlike")
   async disLike(@Body("postId") body: any, @Req() req: Request) {
     //@ts-ignore
