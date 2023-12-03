@@ -441,10 +441,13 @@ export class PostService extends GenericService<PostDocument> {
   async comment(postId: string, comment: string, userId: string) {
     const post = await this.productModel.findById(postId);
     if (!post) throw new NotFoundException("Post not found");
+    const user = await this.userModel.findById(userId);
+    if (!user)
+      throw new NotFoundException("User not found Login and Try again");
 
     if (comment.length < 2) throw new BadRequestException(`Comment too short`);
     const data = {
-      userId: userId,
+      username: `${user.first_name} ${user.last_name}`,
       comment: comment,
     };
     post.comments.push(data);
@@ -452,14 +455,14 @@ export class PostService extends GenericService<PostDocument> {
     return {success: true, message: `commented: ${comment}`};
   }
 
-  async getPostComments(postId:string){
+  async getPostComments(postId: string) {
     const post = await this.productModel.findById(postId);
-    if(!post) throw new NotFoundException(`Post with id ${postId} not found`);
+    if (!post) throw new NotFoundException(`Post with id ${postId} not found`);
     const comments = post.comments;
-    if(comments.length < 1){
-      throw new NotFoundException(`No comments on this post`)
+    if (comments.length < 1) {
+      throw new NotFoundException(`No comments on this post`);
     }
-    return{success: true, comments: comments}
+    return {success: true, comments: comments};
   }
 
   async rating(postId: string, rating: number) {
