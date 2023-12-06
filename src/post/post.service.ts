@@ -449,6 +449,7 @@ export class PostService extends GenericService<PostDocument> {
     const data = {
       username: `${user.first_name} ${user.last_name}`,
       comment: comment,
+      image: `${user.profile_photo}`
     };
     post.comments.push(data);
     await post.save();
