@@ -451,6 +451,7 @@ export class PostService extends GenericService<PostDocument> {
       comment: comment,
       image: `${user.profile_photo}`
     };
+    //fix
     post.comments.push(data);
     await post.save();
     return {success: true, message: `commented: ${comment}`};
