@@ -100,7 +100,7 @@ export class Post {
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Array})
-  address: Array<{address: string, code: number}>;
+  address: Array<{address: string; code: number}>;
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
@@ -108,12 +108,12 @@ export class Post {
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Array})
-  likes: string[];
+  likes: Array<{id: string; name: string; photo: string}>;
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Array})
   comments: object[];
- 
+
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Number, default: 0})
   rating: number;

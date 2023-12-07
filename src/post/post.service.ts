@@ -323,19 +323,25 @@ export class PostService extends GenericService<PostDocument> {
       const user = await this.userModel.findById(userId);
       if (!user) throw new NotFoundException("User not found");
       const likesArray = post.likes;
-      if (likesArray.includes(user.id)) {
+
+      if (likesArray.some(obj => obj.id === user.id)) {
         throw new BadRequestException("You have already liked this post");
       }
-      post.likes.push(userId);
+      const userData = {
+        id: user.id,
+        name: `${user.first_name} ${user.last_name}`,
+        photo: user.profile_photo
+      }
+      post.likes.push(userData);
       await post.save();
       user.likedPosts.push(postId);
       await user.save();
       const likesCount = likesArray.length;
-      this.eventEmmiter.emit("Like", {
-        userId: userId,
-        postId: postId,
-        likes: likesCount,
-      });
+      // this.eventEmmiter.emit("Like", {
+      //   userId: userId,
+      //   postId: postId,
+      //   likes: likesCount,
+      // });
 
       return {
         success: true,
@@ -360,21 +366,28 @@ export class PostService extends GenericService<PostDocument> {
       const user = await this.userModel.findById(userId);
       if (!user) throw new NotFoundException("User not found");
       const likesArray = post.likes;
-      if (!likesArray.includes(user.id)) {
+      if (!likesArray.some(obj => obj.id === user.id)) {
         throw new BadRequestException("User has not liked this post");
       }
-      const index = likesArray.indexOf(user.id);
-      likesArray.splice(index, 1);
-      await post.save();
+      const userIndex1 = likesArray.findIndex(obj => obj.id === user.id);
+
+      if (userIndex1 !== -1) {
+        // User has liked this post, so remove them from the array
+        likesArray.splice(userIndex1, 1);
+        await post.save();
+      } else {
+        throw new BadRequestException("User has not liked this post");
+      }
+    
       const userIndex = user.likedPosts.indexOf(postId);
       user.likedPosts.splice(userIndex, 1);
       await user.save();
       const likesCount = likesArray.length;
-      this.eventEmmiter.emit("Unlike", {
-        userId: userId,
-        postId: postId,
-        likes: likesCount,
-      });
+      // this.eventEmmiter.emit("Unlike", {
+      //   userId: userId,
+      //   postId: postId,
+      //   likes: likesCount,
+      // });
       return {
         success: true,
         message: "You have disliked this post",
@@ -418,14 +431,8 @@ export class PostService extends GenericService<PostDocument> {
       if (likesArray.length < 1) {
         throw new NotFoundException("No users have liked this post");
       }
-      const likesPromises = likesArray.map(async id => {
-        const user = await this.userModel.findById(id);
-        return user?.getPublicData();
-      });
 
-      const usersThatLikedPost = await Promise.all(likesPromises);
-
-      return {success: true, data: usersThatLikedPost};
+      return {success: true, data: likesArray};
     } catch (error: any) {
       console.error(error);
       throw new HttpException(
@@ -449,7 +456,7 @@ export class PostService extends GenericService<PostDocument> {
     const data = {
       username: `${user.first_name} ${user.last_name}`,
       comment: comment,
-      image: `${user.profile_photo}`
+      image: `${user.profile_photo}`,
     };
     //fix
     post.comments.push(data);
