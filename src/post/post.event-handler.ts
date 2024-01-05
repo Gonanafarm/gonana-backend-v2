@@ -6,6 +6,7 @@ import {Post, PostDocument} from "./post.schema";
 import {Model} from "mongoose";
 import {UserDocument, User} from "../user/user.schema";
 import {db} from "../main";
+import axios from "axios";
 import * as admin from "firebase-admin";
 
 @Injectable()
@@ -54,6 +55,15 @@ export class PostEventHandlers {
         });
       }
     }
+  }
+  @OnEvent("PostCreated")
+  async handleCreatePostEvent(payload:any){
+    
+  const data = payload;
+  const res = await axios.post("https://gonana-market.onrender.com/product/list", data);
+  console.log(res.data);
+  
+  
   }
   @OnEvent("Unlike")
   async handleUnlikeEvent(payload: any) {

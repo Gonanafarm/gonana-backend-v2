@@ -302,17 +302,17 @@ export class CartItemService extends GenericService<CartItemDocument> {
         };
         console.log(packageItem.quantity);
 
-        
-        const productLength = product.address.length
-        const productIndex = productLength -1
-        const sender_address_code = product.address[productIndex].code || undefined;
+        const productLength = product.address.length;
+        const productIndex = productLength - 1;
+        const sender_address_code =
+          product.address[productIndex].code || undefined;
 
         if (sender_address_code === undefined) {
           throw new BadRequestException(
             "product does not have a valid address",
           );
         }
-        const userLength = user.address.length
+        const userLength = user.address.length;
         const userIndex = userLength - 1;
         const receiver_address_code = user.address[userIndex].code || undefined;
 
@@ -455,13 +455,18 @@ export class CartItemService extends GenericService<CartItemDocument> {
               shipment.data.tracking_url,
               product,
               item.units,
-              totalCost
+              totalCost,
             );
-          const farmerId = product.publisher_id
-          const farmer = await this.userModel.findById(farmerId)
-          if (!farmer) return
-            this.userMailerService.notSelfShipmentMail(farmer.email, product, user, item.units)
-            await this.reomoveCartItem(user_id, item.id)
+            const farmerId = product.publisher_id;
+            const farmer = await this.userModel.findById(farmerId);
+            if (!farmer) return;
+            this.userMailerService.notSelfShipmentMail(
+              farmer.email,
+              product,
+              user,
+              item.units,
+            );
+            await this.reomoveCartItem(user_id, item.id);
 
             return shipment.data;
           } else {
@@ -495,9 +500,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
             user,
             product,
             item.units,
-            totalCost
+            totalCost,
           );
-          await this.reomoveCartItem(user_id, item.id)
+          await this.reomoveCartItem(user_id, item.id);
         });
       }
 
