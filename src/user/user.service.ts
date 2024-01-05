@@ -578,7 +578,6 @@ export class UserService extends GenericService<UserDocument> {
     const user = await this.userModel.findOne({bvn: data.payload.customerBVN});
     if (!user) {
       console.log("email not sent");
-
       return {success: false, message: "Email not sent"};
     }
     const session_id = data.payload.sessionId;

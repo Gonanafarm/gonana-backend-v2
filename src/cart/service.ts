@@ -25,6 +25,7 @@ import {
   showObjectProperties,
 } from "../user/logistics.service";
 import axios from "axios";
+import {EventEmitter2} from "@nestjs/event-emitter";
 
 @Injectable()
 export class CartItemService extends GenericService<CartItemDocument> {
@@ -38,6 +39,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
     private readonly userService: UserService,
     private readonly logisticsService: LogisticsService,
     private readonly userMailerService: UserMailerService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     super(cartItemsModel);
   }
@@ -467,7 +469,13 @@ export class CartItemService extends GenericService<CartItemDocument> {
               item.units,
             );
             await this.reomoveCartItem(user_id, item.id);
-
+            this.eventEmitter.emit("Products Shipped", {
+              product_id: product.id,
+              buyer_address:
+                "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
+              buyer_id: user_id,
+              amount: product.amount,
+            });
             return shipment.data;
           } else {
             return null;
@@ -489,6 +497,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
           if (!farmer) {
             throw new NotFoundException("User may have deleted their account");
           }
+          this.eventEmitter.emit("Products Not Shipped", {
+            product_id: product.id,
+            buyer_address: "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
+            buyer_id: user_id,
+            amount: product.amount,
+          });
 
           this.userMailerService.selfShipmentMail(
             farmer.email,
@@ -505,7 +519,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
           await this.reomoveCartItem(user_id, item.id);
         });
       }
-
       return {
         success: true,
         message: "Orders Placed Successfully",
