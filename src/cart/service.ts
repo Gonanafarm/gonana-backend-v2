@@ -147,7 +147,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
         // String found in the array, remove it
         productArray.splice(index, 1);
         await cartItem.save();
-        console.log("here");
 
         return {
           success: true,
@@ -474,7 +473,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               buyer_address:
                 "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
               buyer_id: user_id,
-              amount: product.amount,
+              amount: product.amount.toString(),
             });
             return shipment.data;
           } else {
@@ -497,11 +496,13 @@ export class CartItemService extends GenericService<CartItemDocument> {
           if (!farmer) {
             throw new NotFoundException("User may have deleted their account");
           }
+          console.log("Got here");
+          
           this.eventEmitter.emit("Products Not Shipped", {
             product_id: product.id,
             buyer_address: "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
             buyer_id: user_id,
-            amount: product.amount,
+            amount: product.amount.toString(),
           });
 
           this.userMailerService.selfShipmentMail(

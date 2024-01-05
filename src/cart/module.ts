@@ -8,9 +8,10 @@ import {PostModel} from "../post/post.model";
 import {UserModule} from "../user/user.module";
 import {UserModel} from "../user/user.model";
 import {UserService} from "../user/user.service";
+import { CartEventHandler } from "./event-handler";
 
 @Module({
-  providers: [CartItemService,PostModule ],
+  providers: [CartItemService,PostModule, CartEventHandler ],
   imports: [
     CartItemModel,
     OrderModule,

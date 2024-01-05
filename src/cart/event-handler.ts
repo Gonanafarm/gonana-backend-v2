@@ -9,10 +9,13 @@ export class CartEventHandler {
 
   @OnEvent("Products Not Shipped")
   async handleChainEvent(payload: any) {
+    console.log("event triggered");
+console.log(payload);
+    
     const res = await axios.post(
       "https://gonana-market.onrender.com/order",
       payload,
     );
-    console.log(res.data);
   }
+  
 }
