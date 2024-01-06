@@ -16,6 +16,8 @@ console.log(payload);
       "https://gonana-market.onrender.com/order",
       payload,
     );
+    console.log(res.data);
+    
   }
   
 }
