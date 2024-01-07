@@ -57,7 +57,7 @@ export class UserMailerService {
     try {
       this.mailerService.sendMail({
         to: email,
-        subject: "BVN VERIFICATION FAILED",
+        subject: "BVN ALREADY VERIFIED",
         html: text,
       });
     } catch (error: any) {

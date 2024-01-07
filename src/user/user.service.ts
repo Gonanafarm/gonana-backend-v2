@@ -114,12 +114,11 @@ export class UserService extends GenericService<UserDocument> {
       if (!deletedUser) {
         throw DeletionException();
       }
-      const id = user.user.id
+      const id = user.user.id;
       const posts = await this.postModel.find({publisher_id: id});
       const postIds = posts.map((post: any) => {
         return post.id;
       });
-      
 
       await this.postModel.deleteMany({publisher_id: id});
       const deleteOtp = await this.otpModel.deleteOne({email: email});
@@ -518,8 +517,8 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException(`User Not Found, Login and try again`);
       }
-      if (bvn.length !== 11){
-        throw new BadRequestException("Bvn should be 11 digits")
+      if (bvn.length !== 11) {
+        throw new BadRequestException("Bvn should be 11 digits");
       }
       const data = {
         customerFirstName: `${user.first_name} ${user.last_name}`,
@@ -539,7 +538,7 @@ export class UserService extends GenericService<UserDocument> {
         console.log(createAccount.data);
         this.userMailer.sendBvnVerificationFailedMail(
           user.email,
-          createAccount.data.responseMessage,
+          `${createAccount.data.responseMessage}. Login again and check your verification status`,
         );
         throw new HttpException(
           {
@@ -562,7 +561,7 @@ export class UserService extends GenericService<UserDocument> {
       return createAccount.data;
     } catch (error: any) {
       console.log(error);
-      
+
       throw new HttpException(
         {
           success: false,
@@ -884,11 +883,11 @@ export class UserService extends GenericService<UserDocument> {
       }
       console.log(data);
       console.log("here");
-      
+
       const res = await axios.post(url, data, {headers: Headers});
       console.log(res.data);
 
-      if (res.data.responseCode === "02") {        
+      if (res.data.responseCode === "02") {
         console.log(res.data);
         throw new HttpException(
           {
