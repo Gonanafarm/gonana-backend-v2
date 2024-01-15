@@ -147,14 +147,14 @@ UserSchema.methods.getPublicData = function () {
     virtual_account_name,
     address,
   } = this;
-  return {
+  const publicData = {
     id,
     email,
     first_name,
     last_name,
-    account_type,
     profile_photo,
     cover_photo,
+    account_type,
     account_status,
     bio,
     phone,
@@ -164,6 +164,7 @@ UserSchema.methods.getPublicData = function () {
     virtual_account_name,
     address,
   };
+  return publicData
 };
 
 UserSchema.virtual("id").get(function () {
