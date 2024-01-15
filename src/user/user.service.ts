@@ -9,6 +9,7 @@ import {
   UnauthorizedException,
   HttpException,
   HttpStatus,
+  ConflictException,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import config from "../config";
@@ -467,9 +468,12 @@ export class UserService extends GenericService<UserDocument> {
 
   async getByEmail(email: string) {
     const user = await this.userModel.findOne({email: email});
+
     if (!user) {
       throw new NotFoundException("User not found");
     }
+    console.log(user);
+    
     return user.getPublicData();
   }
 
@@ -519,6 +523,10 @@ export class UserService extends GenericService<UserDocument> {
       }
       if (bvn.length !== 11) {
         throw new BadRequestException("Bvn should be 11 digits");
+      }
+      const bvnExists = await this.userModel.findOne({bvn: bvn});
+      if (bvnExists) {
+        throw new ConflictException(`Gonana user with this bvn exists`);
       }
       const data = {
         customerFirstName: `${user.first_name} ${user.last_name}`,
