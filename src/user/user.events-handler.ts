@@ -2,6 +2,7 @@ import {Injectable} from "@nestjs/common";
 import {OnEvent} from "@nestjs/event-emitter";
 import {UserMailerService} from "./user.mailer.service";
 import {UserService} from "./user.service";
+import {providers, Wallet} from "ethers";
 
 @Injectable()
 export class UserEventHanders {
@@ -16,7 +17,15 @@ export class UserEventHanders {
     await this.userService.createOtpModel(payload.user.email, otp);
     this.userMailer.sendOTP(payload.user.email, otp);
     console.log("mail sent");
-    
+
+    const url = "https://mainnet.infura.io/v3/613c483e28cf4d338959ca31e1582b56";
+    const provider = new providers.JsonRpcProvider(url);
+    const wallet = Wallet.createRandom();
+    const address = wallet.address;
+    const balance = await provider.getBalance(address);
+
+    console.log("Wallet Address:", address);
+    console.log("Balance:", balance.toString());
   }
 
   @OnEvent("account.activation.updated")
@@ -60,9 +69,8 @@ export class UserEventHanders {
     // handle and process "OrderCreatedEvent" event
     console.log("account password update trigger");
     console.log(payload);
-    
+
     this.userMailer.sendOTP(payload.email, payload.otp);
-  
   }
 
   @OnEvent("driver.disapproved")
