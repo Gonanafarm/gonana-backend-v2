@@ -415,9 +415,6 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new BadRequestException(`Login and try again`);
       }
-      if (user.passcode.length < 1) {
-        throw new BadRequestException(`You haven't created a passcode before`);
-      }
       const otp = this.generateOtp();
       await this.createOtpModel(user.email, otp);
       this.userMailer.sendOTP(user.email, otp);
@@ -473,7 +470,7 @@ export class UserService extends GenericService<UserDocument> {
       throw new NotFoundException("User not found");
     }
     console.log(user);
-    
+
     return user.getPublicData();
   }
 
@@ -532,6 +529,9 @@ export class UserService extends GenericService<UserDocument> {
         customerFirstName: `${user.first_name} ${user.last_name}`,
         customerBVN: bvn,
       };
+      if (user.bvn.length === 11) {
+        throw new BadRequestException("You have already validated a bvn");
+      }
 
       user.bvn = bvn;
       await user.save();
