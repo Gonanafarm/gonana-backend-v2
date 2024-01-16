@@ -608,6 +608,11 @@ export class UserService extends GenericService<UserDocument> {
   }
   async confirmTransaction(session_id: string, email: string) {
     try {
+      const user = await this.userModel.findOne({email: email});
+      if (!user) {
+        console.log("User not found");
+        return;
+      }
       const token = await this.generateToken();
       const Headers = {
         Authorization: `Bearer ${token}`,
@@ -622,12 +627,30 @@ export class UserService extends GenericService<UserDocument> {
         console.log(
           `Transaction with sessionId:${session_id} is still pending`,
         );
-        return;
-      }
+        const transactionObject = {
+          userId: user.id,
+          Session_id: session_id,
+          Type: "PENDING",
+          AmountSent: res.data.data.transactionAmount,
+          AmountSettled: res.data.data.amountSettled,
+          Time: res.data.data.transactionTime,
+        };
+        const transactions = await this.transactionModel.findOne({
+          userId: user.id,
+        });
 
-      const user = await this.userModel.findOne({email: email});
-      if (!user) {
-        console.log("User not found");
+        if (!transactions) {
+          transactionObject.userId = user.id;
+          const transaction = await this.transactionModel.create(
+            transactionObject,
+          );
+          transaction.transactions.push(transactionObject);
+          await transaction.save();
+          return;
+        }
+
+        transactions.transactions.push(transactionObject);
+        await transactions.save();
         return;
       }
 
