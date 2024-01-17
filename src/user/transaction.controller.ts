@@ -99,4 +99,10 @@ export class TransactionController {
     const user_id = req.user?.id;
     return this.userService.getUserTransactions(user_id, body.page, body.limit);
   }
+  @Get("/crypto-balance")
+  getCryptoWalletBalance(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.getCryptoWalletBalance(user_id);
+  }
 }

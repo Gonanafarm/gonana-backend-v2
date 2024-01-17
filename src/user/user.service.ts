@@ -34,6 +34,7 @@ import {CloudinaryService} from "../post/cloudinary.service";
 import axios from "axios";
 import {showObjectProperties} from "./logistics.service";
 import {TransactionDocument} from "./transaction.schema";
+import {providers, Wallet} from "ethers";
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
@@ -989,6 +990,47 @@ export class UserService extends GenericService<UserDocument> {
       return {success: true, data: res.data};
     } catch (error: any) {
       console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+  async getCryptoWalletBalance(id: string) {
+    try {
+      if (!id) {
+        throw new BadRequestException("Login and Try again");
+      }
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
+      const url =
+        "https://mainnet.infura.io/v3/613c483e28cf4d338959ca31e1582b56";
+      const provider = new providers.JsonRpcProvider(url);
+
+      if (user.wallet_address === undefined) {
+        const wallet = Wallet.createRandom();
+        const address = wallet.address;
+        const balance = await provider.getBalance(address);
+
+        user.wallet = balance.toString();
+        user.wallet_address = address;
+        await user.save();
+        return {
+          success: true,
+          cryptoWalletBalance: user.wallet,
+        };
+      }
+      const address = user.wallet_address;
+      const balance = await provider.getBalance(address);
+      user.wallet = balance.toString();
+      await user.save();
+      return {success: true, cryptoWalletBalance: user.wallet};
+    } catch (error: any) {
       throw new HttpException(
         {
           success: false,
