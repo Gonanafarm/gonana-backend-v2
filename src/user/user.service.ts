@@ -60,6 +60,7 @@ export class UserService extends GenericService<UserDocument> {
     password: string,
     origin: string,
     account_type: string,
+    country: string,
     //imageFile: Express.Multer.File,
   ) {
     // const image = await this.cloudinaryService.uploadImage(imageFile);
@@ -81,6 +82,7 @@ export class UserService extends GenericService<UserDocument> {
       password: await hashPassword(password),
       activationToken: uuid(),
       activationExpires: Date.now() + config.auth.activationExpireInMs,
+      country,
       //   image,
     });
 

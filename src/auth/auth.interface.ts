@@ -10,6 +10,7 @@ import {
   IsMobilePhone,
   Max,
   Length,
+  IsOptional,
 } from "class-validator";
 import {ApiProperty} from "@nestjs/swagger";
 import {UserPublicData} from "../user/user.dto";
@@ -54,6 +55,11 @@ export class SignUpDto {
   @MinLength(8)
   readonly password!: string;
 
+  @ApiProperty({})
+  @IsString()
+  @IsOptional()
+  @IsNotEmpty()
+  readonly country: string;
 }
 
 export class LoginDto {

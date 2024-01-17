@@ -157,6 +157,7 @@ UserSchema.methods.getPublicData = function () {
     address,
     wallet,
     wallet_address,
+    country,
   } = this;
   const publicData = {
     id,
@@ -176,6 +177,7 @@ UserSchema.methods.getPublicData = function () {
     address,
     wallet,
     wallet_address,
+    country,
   };
   return publicData;
 };
