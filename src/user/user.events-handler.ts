@@ -13,6 +13,8 @@ export class UserEventHanders {
   @OnEvent("account.created")
   async handleAccountCreatedEvent(payload: any) {
     console.log("account created");
+    console.log(payload.user);
+
     const otp = this.userService.generateOtp();
     await this.userService.createOtpModel(payload.user.email, otp);
     this.userMailer.sendOTP(payload.user.email, otp);
@@ -23,6 +25,11 @@ export class UserEventHanders {
     const wallet = Wallet.createRandom();
     const address = wallet.address;
     const balance = await provider.getBalance(address);
+
+    const data = await this.userService.findByEmail(payload.user.email);
+    data.user.wallet = balance.toString();
+    data.user.wallet_address = address;
+    await data.user.save();
 
     console.log("Wallet Address:", address);
     console.log("Balance:", balance.toString());

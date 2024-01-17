@@ -122,6 +122,15 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.Array})
   likedPosts: string[];
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  country: string;
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  wallet: string;
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  wallet_address: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -146,6 +155,8 @@ UserSchema.methods.getPublicData = function () {
     virtual_account_bank_name,
     virtual_account_name,
     address,
+    wallet,
+    wallet_address,
   } = this;
   const publicData = {
     id,
@@ -163,8 +174,10 @@ UserSchema.methods.getPublicData = function () {
     virtual_account_bank_name,
     virtual_account_name,
     address,
+    wallet,
+    wallet_address,
   };
-  return publicData
+  return publicData;
 };
 
 UserSchema.virtual("id").get(function () {
