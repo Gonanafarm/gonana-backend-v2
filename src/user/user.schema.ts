@@ -131,6 +131,9 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.String})
   wallet_address: string;
+
+  @Prop({type:mongoose.SchemaTypes.String})
+  privateKey: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

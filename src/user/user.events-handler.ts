@@ -23,10 +23,13 @@ export class UserEventHanders {
     const url = "https://mainnet.infura.io/v3/613c483e28cf4d338959ca31e1582b56";
     const provider = new providers.JsonRpcProvider(url);
     const wallet = Wallet.createRandom();
+    const privateKey = wallet.privateKey;
+
     const address = wallet.address;
     const balance = await provider.getBalance(address);
 
     const data = await this.userService.findByEmail(payload.user.email);
+    data.user.privateKey = privateKey;
     data.user.wallet = balance.toString();
     data.user.wallet_address = address;
     await data.user.save();

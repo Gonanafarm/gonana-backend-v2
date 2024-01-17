@@ -34,7 +34,7 @@ import {CloudinaryService} from "../post/cloudinary.service";
 import axios from "axios";
 import {showObjectProperties} from "./logistics.service";
 import {TransactionDocument} from "./transaction.schema";
-import {providers, Wallet} from "ethers";
+import {providers, Wallet, utils} from "ethers";
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
@@ -1056,9 +1056,42 @@ export class UserService extends GenericService<UserDocument> {
     );
     const oneEth = Math.round(response.data.data.quote.NGN.price);
     console.log(oneEth);
-    
+
     const numEth = parseInt(xEth);
     const ngn = numEth * oneEth;
     return ngn.toString();
+  }
+
+  async sendTransaction(privateKey: string, amount: string, toAddress: string) {
+    const url = "https://mainnet.infura.io/v3/613c483e28cf4d338959ca31e1582b56";
+    const provider = new providers.JsonRpcProvider(url);
+
+    const wallet = new Wallet(privateKey, provider);
+    //const wallet = new ethers.Wallet.fromPhrase(privateKey);
+
+    // Validate the toAddress
+    if (!utils.isAddress(toAddress)) {
+      throw new BadRequestException("Invalid Ethereum address");
+    }
+
+    // Convert amount to Wei (1 Ether = 1e18 Wei)
+    const amountWei = utils.parseEther(amount);
+
+    // Create a transaction
+    const transaction = {
+      to: toAddress,
+      value: amountWei,
+    };
+
+    // Send the transaction
+    const tx = await wallet.sendTransaction(transaction);
+    // Wait for the transaction to be mined
+    await tx.wait();
+
+    console.log(`Successfully transferred ${amount} Ether to ${toAddress}`);
+    return {
+      success: true,
+      message: `Successfully transferred ${amount} Ether to ${toAddress}`,
+    };
   }
 }
