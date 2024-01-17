@@ -1022,16 +1022,18 @@ export class UserService extends GenericService<UserDocument> {
         user.wallet = balance.toString();
         user.wallet_address = address;
         await user.save();
+        const ngn = await this.convertEthToNgn(user.wallet);
         return {
           success: true,
-          cryptoWalletBalance: user.wallet,
+          cryptoWalletBalance: ngn,
         };
       }
       const address = user.wallet_address;
       const balance = await provider.getBalance(address);
       user.wallet = balance.toString();
       await user.save();
-      return {success: true, cryptoWalletBalance: user.wallet};
+      const ngn = await this.convertEthToNgn(user.wallet);
+      return {success: true, cryptoWalletBalance: ngn};
     } catch (error: any) {
       throw new HttpException(
         {
@@ -1041,5 +1043,22 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+  }
+  async convertEthToNgn(xEth: string) {
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=ETH&convert=NGN",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const oneEth = Math.round(response.data.data.quote.NGN.price);
+    console.log(oneEth);
+    
+    const numEth = parseInt(xEth);
+    const ngn = numEth * oneEth;
+    return ngn.toString();
   }
 }

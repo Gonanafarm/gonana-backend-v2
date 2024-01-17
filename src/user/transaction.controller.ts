@@ -105,4 +105,5 @@ export class TransactionController {
     const user_id = req.user?.id;
     return this.userService.getCryptoWalletBalance(user_id);
   }
+
 }
