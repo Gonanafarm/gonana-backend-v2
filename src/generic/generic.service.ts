@@ -21,6 +21,7 @@ export class GenericService<T extends Document> implements ServiceInterface {
         {...updateDoc},
         {new: true},
       );
+      
       if (updated == null || updated == undefined) {
         throw ResourceNotFoundException();
       }

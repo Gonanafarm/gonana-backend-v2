@@ -2,6 +2,7 @@ import {ApiProperty} from "@nestjs/swagger";
 import {
   IsEmail,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -40,6 +41,8 @@ export class UserPublicData {
   virtual_account_bank_name: string;
   @ApiProperty({})
   virtual_account_name: string;
+  @ApiProperty({})
+  country: string;
 }
 
 export class UpdateUserDto {
@@ -78,6 +81,11 @@ export class UpdateUserDto {
   @ApiProperty({})
   @Length(11)
   bvn: string;
+
+  @IsString()
+  @IsOptional()
+  @IsNotEmpty()
+  country: string;
 }
 
 export class GetUserTransactonsDto {
