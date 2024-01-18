@@ -1065,40 +1065,58 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async sendEth(id: string, amount: string, toAddress: string) {
-    const url = "https://mainnet.infura.io/v3/613c483e28cf4d338959ca31e1582b56";
-    const provider = new providers.JsonRpcProvider(url);
+    try {
+      const url =
+        "https://mainnet.infura.io/v3/613c483e28cf4d338959ca31e1582b56";
+      const provider = new providers.JsonRpcProvider(url);
 
-    const user = await this.userModel.findById(id);
-    if (!user) {
-      throw new NotFoundException("User not found");
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
+      const privateKey = user.privateKey;
+      if (privateKey === undefined || privateKey.length < 1) {
+        throw new BadRequestException(
+          "You have not been assigned a private key. To get one check you crypto wallet balance",
+        );
+      }
+
+      const wallet = new Wallet(privateKey, provider);
+
+      // Validate the toAddress
+      if (!utils.isAddress(toAddress)) {
+        throw new BadRequestException("Invalid Ethereum address");
+      }
+
+      // Convert amount to Wei (1 Ether = 1e18 Wei)
+      const amountWei = utils.parseEther(amount);
+
+      // Create a transaction
+      const transaction = {
+        to: toAddress,
+        value: amountWei,
+      };
+
+      // Send the transaction
+      const tx = await wallet.sendTransaction(transaction);
+      // Wait for the transaction to be mined
+      await tx.wait();
+
+      console.log(`Successfully transferred ${amount} Ether to ${toAddress}`);
+      return {
+        success: true,
+        message: `Successfully transferred ${amount} Ether to ${toAddress}`,
+      };
+    } catch (error: any) {
+      console.log(error);
+      showObjectProperties(error.transaction)
+      throw new HttpException(
+        {
+          success: false,
+          message: error.reason,
+        },
+        400,
+      );
     }
-    const privateKey = user.privateKey;
-
-    const wallet = new Wallet(privateKey, provider);
-
-    // Validate the toAddress
-    if (!utils.isAddress(toAddress)) {
-      throw new BadRequestException("Invalid Ethereum address");
-    }
-
-    // Convert amount to Wei (1 Ether = 1e18 Wei)
-    const amountWei = utils.parseEther(amount);
-
-    // Create a transaction
-    const transaction = {
-      to: toAddress,
-      value: amountWei,
-    };
-
-    // Send the transaction
-    const tx = await wallet.sendTransaction(transaction);
-    // Wait for the transaction to be mined
-    await tx.wait();
-
-    console.log(`Successfully transferred ${amount} Ether to ${toAddress}`);
-    return {
-      success: true,
-      message: `Successfully transferred ${amount} Ether to ${toAddress}`,
-    };
   }
 }

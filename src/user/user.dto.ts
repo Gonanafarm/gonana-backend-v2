@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsNumberString,
   IsOptional,
   IsString,
   Length,
@@ -173,6 +174,16 @@ export class ValidatePostAdress {
   address: string;
   @IsString()
   productId: string;
+}
+
+export class TransferEthDto {
+  @IsNumberString()
+  @IsNotEmpty()
+  amount: string;
+
+  @IsString()
+  @IsNotEmpty()
+  address: string;
 }
 
 export class VerifyPasscodeOtpDto {

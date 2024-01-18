@@ -16,6 +16,7 @@ import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {
   GetUserTransactonsDto,
   ResolveAccountNumber,
+  TransferEthDto,
   TransferFundsDto,
   TransferToUser,
 } from "./user.dto";
@@ -106,4 +107,10 @@ export class TransactionController {
     return this.userService.getCryptoWalletBalance(user_id);
   }
 
+  @Post("/send-eth")
+  sendEth(@Req() req: Request, @Body() data: TransferEthDto) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.sendEth(user_id, data.amount, data.address);
+  }
 }
