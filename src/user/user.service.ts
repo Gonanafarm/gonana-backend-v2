@@ -1027,7 +1027,8 @@ export class UserService extends GenericService<UserDocument> {
         const ngn = await this.convertEthToNgn(user.wallet);
         return {
           success: true,
-          cryptoWalletBalance: ngn,
+          cryptoWalletBalanceInNgn: ngn,
+          cryptoWalletBalanceInEth: user.wallet,
         };
       }
       const address = user.wallet_address;
@@ -1035,7 +1036,11 @@ export class UserService extends GenericService<UserDocument> {
       user.wallet = balance.toString();
       await user.save();
       const ngn = await this.convertEthToNgn(user.wallet);
-      return {success: true, cryptoWalletBalance: ngn};
+      return {
+        success: true,
+        cryptoWalletBalanceInNgn: ngn,
+        cryptoWalletBalanceInEth: user.wallet,
+      };
     } catch (error: any) {
       throw new HttpException(
         {
@@ -1109,7 +1114,7 @@ export class UserService extends GenericService<UserDocument> {
       };
     } catch (error: any) {
       console.log(error);
-      showObjectProperties(error.transaction)
+      showObjectProperties(error.transaction);
       throw new HttpException(
         {
           success: false,
