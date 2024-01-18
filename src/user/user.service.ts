@@ -532,7 +532,7 @@ export class UserService extends GenericService<UserDocument> {
         customerFirstName: `${user.first_name} ${user.last_name}`,
         customerBVN: bvn,
       };
-      if (user.bvn.length === 11) {
+      if (user.bvn !== undefined) {
         throw new BadRequestException("You have already validated a bvn");
       }
 
@@ -1018,9 +1018,11 @@ export class UserService extends GenericService<UserDocument> {
         const wallet = Wallet.createRandom();
         const address = wallet.address;
         const balance = await provider.getBalance(address);
+        const privateKey = wallet.privateKey;
 
         user.wallet = balance.toString();
         user.wallet_address = address;
+        user.privateKey = privateKey;
         await user.save();
         const ngn = await this.convertEthToNgn(user.wallet);
         return {
@@ -1062,12 +1064,17 @@ export class UserService extends GenericService<UserDocument> {
     return ngn.toString();
   }
 
-  async sendTransaction(privateKey: string, amount: string, toAddress: string) {
+  async sendEth(id: string, amount: string, toAddress: string) {
     const url = "https://mainnet.infura.io/v3/613c483e28cf4d338959ca31e1582b56";
     const provider = new providers.JsonRpcProvider(url);
 
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    const privateKey = user.privateKey;
+
     const wallet = new Wallet(privateKey, provider);
-    //const wallet = new ethers.Wallet.fromPhrase(privateKey);
 
     // Validate the toAddress
     if (!utils.isAddress(toAddress)) {
