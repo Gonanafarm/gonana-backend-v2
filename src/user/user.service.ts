@@ -525,19 +525,13 @@ export class UserService extends GenericService<UserDocument> {
         throw new BadRequestException("Bvn should be 11 digits");
       }
       const bvnExists = await this.userModel.findOne({bvn: bvn});
-      if (bvnExists) {
+      if (bvnExists && bvnExists.id !== user.id) {
         throw new ConflictException(`Gonana user with this bvn exists`);
       }
       const data = {
         customerFirstName: `${user.first_name} ${user.last_name}`,
         customerBVN: bvn,
       };
-      if (user.bvn !== undefined) {
-        throw new BadRequestException("You have already validated a bvn");
-      }
-
-      user.bvn = bvn;
-      await user.save();
 
       const accountUrl = `${base_url}/api/v1/merchant/virtual-account/reserved-account`;
       const createAccount = await axios.post(accountUrl, data, {
@@ -559,6 +553,8 @@ export class UserService extends GenericService<UserDocument> {
           400,
         );
       }
+      user.bvn = bvn;
+      await user.save();
 
       user.virtual_account_number = createAccount.data.data.accountNumber;
       await user.save();
@@ -1042,6 +1038,7 @@ export class UserService extends GenericService<UserDocument> {
         cryptoWalletBalanceInEth: user.wallet,
       };
     } catch (error: any) {
+      console.log();
       throw new HttpException(
         {
           success: false,
