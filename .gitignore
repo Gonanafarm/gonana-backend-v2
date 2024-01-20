@@ -2,6 +2,9 @@
 /dist
 /node_modules
 
+privateKey.pem
+publickey.cer
+
 # Logs
 logs
 *.log

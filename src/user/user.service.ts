@@ -1035,7 +1035,8 @@ export class UserService extends GenericService<UserDocument> {
         cryptoWalletBalanceInEth: user.wallet,
       };
     } catch (error: any) {
-      console.log();
+      console.log(error);
+      showObjectProperties(error)
       throw new HttpException(
         {
           success: false,
@@ -1112,7 +1113,7 @@ export class UserService extends GenericService<UserDocument> {
       throw new HttpException(
         {
           success: false,
-          message: error.reason,
+          message: error.reason || error.message,
         },
         400,
       );
