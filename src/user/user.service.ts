@@ -1109,7 +1109,7 @@ export class UserService extends GenericService<UserDocument> {
       };
     } catch (error: any) {
       console.log(error);
-      showObjectProperties(error.transaction);
+      showObjectProperties(error);
       throw new HttpException(
         {
           success: false,
