@@ -60,12 +60,12 @@ export class PostEventHandlers {
   // }
   @OnEvent("PostCreated")
   async handleCreatePostEvent(payload: any) {
-    const data = payload;
-    const res = await axios.post(
-      "https://gonana-market.onrender.com/product/list",
-      data,
-    );
-    console.log(res.data);
+    // const data = payload;
+    // const res = await axios.post(
+    //   "https://gonana-market.onrender.com/product/list",
+    //   data,
+    // );
+    // console.log(res.data);
     const provider = new providers.JsonRpcProvider(
       "https://rpc.ankr.com/blast_testnet_sepolia",
     );
@@ -77,12 +77,16 @@ export class PostEventHandlers {
     );
     const marketplaceAddr = "0x686690ef4a57F11A4980e0053E2D1EdD69782F35";
     const contract = new ethers.Contract(marketplaceAddr, abi, admin);
+    const farmer = (await this.userModel.findById(payload.farmer_id)) as User;
     const list_product = await contract.createProduct(
       payload.product_id,
       payload.amount,
       payload.farmer_id,
-      payload.farmer_id,
+      farmer.wallet_address,
     );
+    console.log(payload);
+    console.log(farmer);
+
     const tx = await list_product.wait();
     console.log(list_product);
     console.log(tx);

@@ -117,4 +117,10 @@ export class CartItemController {
     const user_id = req.user?.id
     return this.dataService.placeOrder(body.orders, user_id,body.service_code)
   }
+  @Post("pay-with-eth")
+  async placeOrderEth(@Body() body:PlaceOrderDto, @Req() req: Request){
+    //@ts-ignore
+    const user_id = req.user?.id
+    return this.dataService.payWithEth(body.orders, user_id,body.service_code)
+  }
 }

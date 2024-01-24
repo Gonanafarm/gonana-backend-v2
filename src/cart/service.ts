@@ -26,7 +26,7 @@ import {
 } from "../user/logistics.service";
 import axios from "axios";
 import {EventEmitter2} from "@nestjs/event-emitter";
-import { InternalServerErrorException } from "@nestjs/common";
+import {InternalServerErrorException} from "@nestjs/common";
 
 @Injectable()
 export class CartItemService extends GenericService<CartItemDocument> {
@@ -148,7 +148,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         // String found in the array, remove it
         productArray.splice(index, 1);
         await cartItem.save();
-
+        console.log("items removed");
         return {
           success: true,
           cartItems: productArray,
@@ -498,7 +498,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
             throw new NotFoundException("User may have deleted their account");
           }
           console.log("Got here");
-          
+
           this.eventEmitter.emit("Products Not Shipped", {
             product_id: product.id,
             buyer_address: "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
@@ -543,10 +543,15 @@ export class CartItemService extends GenericService<CartItemDocument> {
   ) {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
+      console.log(rates);
+      let totalCostInNgn: number;
       if (!rates.total_shipping_cost) {
-        throw new InternalServerErrorException("Get rates request failed");
+        totalCostInNgn = rates.product_cost;
+      } else {
+        totalCostInNgn = rates.total_shipping_cost + rates.product_cost;
       }
-      const totalCostInNgn = rates.total_shipping_cost + rates.product_cost;
+      console.log(totalCostInNgn);
+
       const user = await this.userModel.findById(user_id);
       if (!user) {
         throw new BadRequestException(`User Not found`);
@@ -614,13 +619,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const farmerId = product.publisher_id;
             const farmer = await this.userModel.findById(farmerId);
             if (!farmer) return;
+            await this.reomoveCartItem(user_id, item.id);
             this.userMailerService.notSelfShipmentMail(
               farmer.email,
               product,
               user,
               item.units,
             );
-            await this.reomoveCartItem(user_id, item.id);
+
             const ethAmount = await this.userService.convertNgntoEth(
               product.amount.toString(),
             );
@@ -662,6 +668,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
           const ethAmount = await this.userService.convertNgntoEth(
             product.amount.toString(),
           );
+          await this.reomoveCartItem(user_id, item.id);
           this.eventEmitter.emit("Blast Not Ship Trigger", {
             productId: product.id,
             amount: ethAmount,
@@ -687,7 +694,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
             item.units,
             totalCostInNgn,
           );
-          await this.reomoveCartItem(user_id, item.id);
         });
       }
       return {

@@ -71,8 +71,15 @@ export class LogisticsService {
 
       return {success: true, data: response};
     } catch (error: any) {
-      console.error(error);
-      throw new InternalServerErrorException(`${error.message}`);
+      console.log(error);
+
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.message || error.message,
+        },
+        error.response.status || error.status,
+      );
     }
   }
   async getAvailableCouriers() {
@@ -102,13 +109,13 @@ export class LogisticsService {
 
       return {success: true, couriers: filteredCouriers};
     } catch (error: any) {
-      console.error(error);
+      showObjectProperties(error);
       throw new HttpException(
         {
           success: false,
-          message: error.message,
+          message: error.response.data.message || error.message,
         },
-        error.status,
+        error.response.status || error.status,
       );
     }
   }
@@ -122,24 +129,25 @@ export class LogisticsService {
       if (!product) {
         throw new NotFoundException(`Product not found`);
       }
-      if(product.self_shipping === true){
-        const addressString ={
+      if (product.self_shipping === true) {
+        const addressString = {
           address: address,
-          code: 0
-        }
-         product.address.push(addressString);
-         await product.save();
-         return{
+          code: 0,
+        };
+        product.address.push(addressString);
+        await product.save();
+        return {
           success: true,
-          message: "Address validated successfully"
-         }
-
+          message: "Address validated successfully",
+        };
       }
       const publisher_id = product.publisher_id;
 
       const user = await this.userModel.findById(publisher_id);
       if (!user) {
-        throw new NotFoundException(`Owner of product may have deleted their account`);
+        throw new NotFoundException(
+          `Owner of product may have deleted their account`,
+        );
       }
       if (user_id !== publisher_id) {
         throw new ForbiddenException("You did not create this post");
@@ -151,7 +159,7 @@ export class LogisticsService {
       const data = {name: name, email: email, phone: phone, address: address};
       const res = await axios.post(url, data, {headers: Headers});
       console.log(res);
-      
+
       if (res.data.status !== "success") {
         throw new BadRequestException(res.data.message);
       }
@@ -171,7 +179,7 @@ export class LogisticsService {
       return {success: true, data: response};
     } catch (error: any) {
       console.log(error);
-      
+
       throw new HttpException(
         {status: error.response.status, message: error.response.data.message},
         error.response.status,
@@ -241,7 +249,7 @@ export class LogisticsService {
         height: 20,
       };
       const url = `${base_url}/shipping/fetch_rates/${service_code}`;
-      
+
       const data = {
         sender_address_code: sender_address_code,
         reciever_address_code: receiver_address_code,
@@ -278,11 +286,11 @@ export class LogisticsService {
     service_code: string,
     courier_id: string,
     insurance_code?: string,
-  ) {    
+  ) {
     console.log(request_token);
     console.log(service_code);
     console.log(courier_id);
-    
+
     try {
       const url = `${base_url}/shipping/labels`;
       const data: ShipmentData = {
