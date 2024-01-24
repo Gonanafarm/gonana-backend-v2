@@ -26,6 +26,7 @@ import {
 } from "../user/logistics.service";
 import axios from "axios";
 import {EventEmitter2} from "@nestjs/event-emitter";
+import { InternalServerErrorException } from "@nestjs/common";
 
 @Injectable()
 export class CartItemService extends GenericService<CartItemDocument> {
@@ -516,6 +517,175 @@ export class CartItemService extends GenericService<CartItemDocument> {
             product,
             item.units,
             totalCost,
+          );
+          await this.reomoveCartItem(user_id, item.id);
+        });
+      }
+      return {
+        success: true,
+        message: "Orders Placed Successfully",
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        {
+          success: false,
+          status: error.status,
+          message: error.message,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+  async payWithEth(
+    orderItems: Array<{id: string; units: number}>,
+    user_id: string,
+    service_code: string,
+  ) {
+    try {
+      const rates = await this.getRates(orderItems, user_id, service_code);
+      if (!rates.total_shipping_cost) {
+        throw new InternalServerErrorException("Get rates request failed");
+      }
+      const totalCostInNgn = rates.total_shipping_cost + rates.product_cost;
+      const user = await this.userModel.findById(user_id);
+      if (!user) {
+        throw new BadRequestException(`User Not found`);
+      }
+
+      const ethBalanceInNgn = parseInt(
+        await this.userService.convertEthToNgn(user.wallet),
+      );
+
+      if (ethBalanceInNgn < totalCostInNgn) {
+        throw new BadRequestException(
+          `Insufficient eth balance, fund wallet and try again`,
+        );
+      }
+      const newBalance = ethBalanceInNgn - totalCostInNgn;
+      const newEthBalance = await this.userService.convertNgntoEth(
+        newBalance.toString(),
+      );
+      user.wallet = newEthBalance;
+      await user.save();
+      const shipping_req_token = rates.shipping_req_token || [];
+      const service_codes = rates.service_code || [];
+
+      const courier_ids = rates.courier_id || [];
+      const itemsToShip = [];
+      const itemsNotToShip = [];
+      for (const item of orderItems) {
+        const product = await this.productModel.findById(item.id);
+        if (product?.self_shipping === false) {
+          itemsToShip.push(item);
+        } else {
+          itemsNotToShip.push(item);
+        }
+      }
+      console.log(itemsToShip);
+
+      if (itemsToShip.length > 0) {
+        // Create a mapping of itemId to index in the itemsToShip array
+        const itemIdToIndexMap = new Map();
+        itemsToShip.forEach((item, index) => {
+          itemIdToIndexMap.set(item.id, index);
+        });
+
+        const orderItemsPromise = itemsToShip.map(async item => {
+          console.log(item.id);
+          const product = await this.productModel.findById(item.id);
+          if (!product) throw new NotFoundException("Product not found");
+          const index = itemIdToIndexMap.get(item.id);
+          if (index !== undefined) {
+            const req_token = shipping_req_token[index];
+            const code = service_codes[index];
+            const courier_id = courier_ids[index];
+            const shipment = await this.logisticsService.createShipment(
+              req_token,
+              code,
+              courier_id,
+            );
+            this.userMailerService.notSelfShipOrderSuccessMail(
+              user,
+              shipment.data.tracking_url,
+              product,
+              item.units,
+              totalCostInNgn,
+            );
+            const farmerId = product.publisher_id;
+            const farmer = await this.userModel.findById(farmerId);
+            if (!farmer) return;
+            this.userMailerService.notSelfShipmentMail(
+              farmer.email,
+              product,
+              user,
+              item.units,
+            );
+            await this.reomoveCartItem(user_id, item.id);
+            const ethAmount = await this.userService.convertNgntoEth(
+              product.amount.toString(),
+            );
+            this.eventEmitter.emit("Blast Ship Trigger", {
+              productId: product.id,
+              amount: ethAmount,
+              buyerId: user_id,
+              wallet: user.wallet_address,
+            });
+            this.eventEmitter.emit("Products Shipped", {
+              product_id: product.id,
+              buyer_address:
+                "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
+              buyer_id: user_id,
+              amount: product.amount.toString(),
+            });
+            return shipment.data;
+          } else {
+            return null;
+          }
+        });
+
+        const resolvedShipments = await Promise.all(orderItemsPromise);
+        console.log(resolvedShipments);
+      }
+
+      if (itemsNotToShip.length > 0) {
+        itemsNotToShip.map(async item => {
+          const product = await this.productModel.findById(item.id);
+          if (!product) {
+            throw new NotFoundException("Product not found");
+          }
+          const farmerId = product.publisher_id;
+          const farmer = await this.userModel.findById(farmerId);
+          if (!farmer) {
+            throw new NotFoundException("User may have deleted their account");
+          }
+          console.log("Got here");
+          const ethAmount = await this.userService.convertNgntoEth(
+            product.amount.toString(),
+          );
+          this.eventEmitter.emit("Blast Not Ship Trigger", {
+            productId: product.id,
+            amount: ethAmount,
+            buyerId: user_id,
+            wallet: user.wallet_address,
+          });
+          this.eventEmitter.emit("Products Not Shipped", {
+            product_id: product.id,
+            buyer_address: "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
+            buyer_id: user_id,
+            amount: product.amount.toString(),
+          });
+
+          this.userMailerService.selfShipmentMail(
+            farmer.email,
+            product,
+            user,
+            item.units,
+          );
+          this.userMailerService.selfShipOrderSuccessMail(
+            user,
+            product,
+            item.units,
+            totalCostInNgn,
           );
           await this.reomoveCartItem(user_id, item.id);
         });

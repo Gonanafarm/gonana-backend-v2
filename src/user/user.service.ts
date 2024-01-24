@@ -1064,6 +1064,37 @@ export class UserService extends GenericService<UserDocument> {
     return ngn.toString();
   }
 
+  async convertNgntoEth(xNgn: string) {
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=ETH&convert=NGN",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const eth = parseInt(xNgn) / Math.round(response.data.data.quote.NGN.price);
+    const roundedEth = this.roundToSignificantFigures(eth, 9);
+    return roundedEth.toString();
+  }
+  roundToSignificantFigures(number: number, significantFigures: number) {
+    if (number === 0) {
+      return 0;
+    }
+
+    // Convert the number to decimal notation if it's in scientific notation
+    const decimalNumber = parseFloat(number.toString());
+
+    const exponent = Math.floor(Math.log10(Math.abs(decimalNumber)));
+    const multiplier = Math.pow(10, significantFigures - 1 - exponent);
+
+    const roundedNumber = Math.round(decimalNumber * multiplier) / multiplier;
+
+    // Convert the result to decimal representation
+    return roundedNumber.toFixed(significantFigures);
+  }
+
   async sendEth(id: string, amount: string, toAddress: string) {
     try {
       const url =
