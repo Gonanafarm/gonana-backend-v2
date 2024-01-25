@@ -84,6 +84,7 @@ export class PostEventHandlers {
       payload.farmer_id,
       farmer.wallet_address,
     );
+    
     console.log(payload);
     console.log(farmer);
 

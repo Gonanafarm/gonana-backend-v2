@@ -24,10 +24,9 @@ import {
   LogisticsService,
   showObjectProperties,
 } from "../user/logistics.service";
-import axios from "axios";
 import {EventEmitter2} from "@nestjs/event-emitter";
-import {InternalServerErrorException} from "@nestjs/common";
-
+import {ethers, providers} from "ethers";
+const abi = require("../../abi.json");
 @Injectable()
 export class CartItemService extends GenericService<CartItemDocument> {
   constructor(
@@ -566,6 +565,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
           `Insufficient eth balance, fund wallet and try again`,
         );
       }
+      const provider = new providers.JsonRpcProvider(
+        "https://rpc.ankr.com/blast_testnet_sepolia",
+      );
+
+      const buyerWallet = new ethers.Wallet(user.privateKey, provider);
+      const marketplaceAddr = "0x686690ef4a57F11A4980e0053E2D1EdD69782F35";
+      const contract = new ethers.Contract(marketplaceAddr, abi, buyerWallet);
+
       const newBalance = ethBalanceInNgn - totalCostInNgn;
       const newEthBalance = await this.userService.convertNgntoEth(
         newBalance.toString(),
@@ -609,6 +616,21 @@ export class CartItemService extends GenericService<CartItemDocument> {
               code,
               courier_id,
             );
+            const ethAmount = await this.userService.convertNgntoEth(
+              product.amount.toString(),
+            );
+            const order = await contract.orderProduct(
+              product.id,
+              ethAmount,
+              user_id,
+              {
+                value: ethers.utils.parseEther(ethAmount),
+              },
+            );
+
+            const tx = await order.wait();
+            console.log(order);
+            console.log(tx);
             this.userMailerService.notSelfShipOrderSuccessMail(
               user,
               shipment.data.tracking_url,
@@ -627,15 +649,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
               item.units,
             );
 
-            const ethAmount = await this.userService.convertNgntoEth(
-              product.amount.toString(),
-            );
-            this.eventEmitter.emit("Blast Ship Trigger", {
-              productId: product.id,
-              amount: ethAmount,
-              buyerId: user_id,
-              wallet: user.wallet_address,
-            });
             this.eventEmitter.emit("Products Shipped", {
               product_id: product.id,
               buyer_address:
@@ -654,47 +667,60 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
 
       if (itemsNotToShip.length > 0) {
-        itemsNotToShip.map(async item => {
-          const product = await this.productModel.findById(item.id);
-          if (!product) {
-            throw new NotFoundException("Product not found");
-          }
-          const farmerId = product.publisher_id;
-          const farmer = await this.userModel.findById(farmerId);
-          if (!farmer) {
-            throw new NotFoundException("User may have deleted their account");
-          }
-          console.log("Got here");
-          const ethAmount = await this.userService.convertNgntoEth(
-            product.amount.toString(),
-          );
-          await this.reomoveCartItem(user_id, item.id);
-          this.eventEmitter.emit("Blast Not Ship Trigger", {
-            productId: product.id,
-            amount: ethAmount,
-            buyerId: user_id,
-            wallet: user.wallet_address,
-          });
-          this.eventEmitter.emit("Products Not Shipped", {
-            product_id: product.id,
-            buyer_address: "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
-            buyer_id: user_id,
-            amount: product.amount.toString(),
-          });
+        await Promise.all(
+          itemsNotToShip.map(async item => {
+            const product = await this.productModel.findById(item.id);
+            if (!product) {
+              throw new NotFoundException("Product not found");
+            }
+            const farmerId = product.publisher_id;
+            const farmer = await this.userModel.findById(farmerId);
+            if (!farmer) {
+              throw new NotFoundException(
+                "User may have deleted their account",
+              );
+            }
+            console.log("Got here");
+            const ethAmount = await this.userService.convertNgntoEth(
+              product.amount.toString(),
+            );
+            const order = await contract.orderProduct(
+              product.id,
+              ethAmount,
+              user_id,
+              {
+                value: ethers.utils.parseEther(ethAmount),
+              },
+            );
 
-          this.userMailerService.selfShipmentMail(
-            farmer.email,
-            product,
-            user,
-            item.units,
-          );
-          this.userMailerService.selfShipOrderSuccessMail(
-            user,
-            product,
-            item.units,
-            totalCostInNgn,
-          );
-        });
+            const tx = await order.wait();
+            console.log(order);
+            console.log(tx);
+
+            await this.reomoveCartItem(user_id, item.id);
+
+            this.eventEmitter.emit("Products Not Shipped", {
+              product_id: product.id,
+              buyer_address:
+                "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
+              buyer_id: user_id,
+              amount: product.amount.toString(),
+            });
+
+            this.userMailerService.selfShipmentMail(
+              farmer.email,
+              product,
+              user,
+              item.units,
+            );
+            this.userMailerService.selfShipOrderSuccessMail(
+              user,
+              product,
+              item.units,
+              totalCostInNgn,
+            );
+          }),
+        );
       }
       return {
         success: true,
@@ -705,7 +731,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         {
           success: false,
           status: error.status,
-          message: error.message,
+          message: error.reason || error.message,
         },
         HttpStatus.BAD_REQUEST,
       );
