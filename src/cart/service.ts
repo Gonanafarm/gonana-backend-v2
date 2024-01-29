@@ -340,6 +340,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
           courier_ids,
         };
       });
+      
 
       // Filter out any skipped products
       const filteredItemsToShipPromises = itemsToShipPromises.filter(
