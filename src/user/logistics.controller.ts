@@ -64,4 +64,16 @@ export class LogisticsController {
       user_id,
     );
   }
+
+  @Patch("update-user-address")
+  async updateUserAddress(@Body("address") body: string, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user.id;
+    return this.logisticsService.updateUserAddress(user_id, body);
+  }
+
+  @Patch("update-post-address")
+  async updatePostAddress(@Body() body: any, @Req() req: Request) {
+    return this.logisticsService.updatePostAddress(body.address, body.id);
+  }
 }

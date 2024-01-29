@@ -224,6 +224,70 @@ export class LogisticsService {
     }
   }
 
+  async updateUserAddress(id: string, address: string) {
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
+      const getRandomNumber = () => Math.floor(Math.random() * 10);
+
+      const randomNumber = getRandomNumber();
+
+      const addressObj = {
+        address: address,
+        code: randomNumber,
+      };
+      user.address.push(addressObj);
+      await user.save();
+      return {
+        success: true,
+        data: user.address,
+      };
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
+  async  updatePostAddress(address:string, id: string) {
+    try {
+      const post = await this.productModel.findById(id);
+      if (!post) {
+        throw new NotFoundException("Post not found");
+      }
+      const getRandomNumber = () => Math.floor(Math.random() * 10);
+
+      const randomNumber = getRandomNumber();
+
+      const addressObj = {
+        address: address,
+        code: randomNumber,
+      };
+      post.address.push(addressObj);
+      await post.save();
+      return {
+        success: true,
+        data: post.address,
+      };
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
   async getShippingRates(
     service_code: string,
     sender_address_code: number,
