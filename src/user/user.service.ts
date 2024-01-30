@@ -1098,7 +1098,7 @@ export class UserService extends GenericService<UserDocument> {
   async sendEth(id: string, amount: string, toAddress: string) {
     try {
       const url =
-        "https://mainnet.infura.io/v3/613c483e28cf4d338959ca31e1582b56";
+      "https://rpc.ankr.com/blast_testnet_sepolia";
       const provider = new providers.JsonRpcProvider(url);
 
       const user = await this.userModel.findById(id);

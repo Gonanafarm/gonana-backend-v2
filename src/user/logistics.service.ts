@@ -48,6 +48,8 @@ export class LogisticsService {
     try {
       const url = `${base_url}/shipping/address/validate`;
       const data = {name: name, email: email, phone: phone, address: address};
+      console.log(data);
+      
       const res = await axios.post(url, data, {headers: Headers});
       if (res.data.status !== "success") {
         throw new BadRequestException(`${res.data.message}`);
