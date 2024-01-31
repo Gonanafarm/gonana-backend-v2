@@ -113,4 +113,13 @@ export class TransactionController {
     const user_id = req.user?.id;
     return this.userService.sendEth(user_id, data.amount, data.address);
   }
+
+  @Post("/eth-ngn")
+  ethToNgn(@Body("eth") data: string) {
+    return this.userService.convertEthToNgn(data);
+  }
+  @Post("/ngn-eth")
+  ngnToEth(@Body("ngn") data: string) {
+    return this.userService.convertNgntoEth(data);
+  }
 }

@@ -1059,7 +1059,7 @@ export class UserService extends GenericService<UserDocument> {
     const oneEth = Math.round(response.data.data.quote.NGN.price);
     console.log(oneEth);
 
-    const numEth = parseInt(xEth);
+    const numEth = parseFloat(xEth);
     const ngn = numEth * oneEth;
     return ngn.toString();
   }
