@@ -14,16 +14,14 @@ import {
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
-import {ApiResponse, ApiTags, ApiHeader} from "@nestjs/swagger";
+import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {
   CommentDto,
-  GetByTitleDto,
   GetDiscountedProductsDto,
   GetPostsDto,
   GetUserDto,
   GetUserPostsDto,
-  PostType,
   PublishPostDto,
   UpdateAmountDto,
   UpdatePostDto,
@@ -33,10 +31,8 @@ import {Post as PostModel} from "./post.schema";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {Request} from "express";
-import {Types} from "mongoose";
 import {CloudinaryService} from "./cloudinary.service";
 import {FileInterceptor, FilesInterceptor} from "@nestjs/platform-express";
-import {String} from "lodash";
 import {LogisticsService} from "../user/logistics.service";
 
 @ApiTags("posts-controller")
@@ -105,9 +101,9 @@ export class PostController {
     geo_lat = isNaN(geo_lat) == true ? 0 : geo_lat;
     geo_long = isNaN(geo_long) == true ? 0 : geo_long;
     weight = isNaN(weight) == true ? 0 : weight;
-    let images = await Promise.all(
+    const images = await Promise.all(
       files.map(async file => {
-        let res = await this.cloudinary.uploadImage(file);
+        const res = await this.cloudinary.uploadImage(file);
         return res.eager[0].url;
       }),
     );
@@ -123,7 +119,7 @@ export class PostController {
       code: 0,
     };
 
-    let payload = {
+    const payload = {
       ...body,
       images,
       location: {
@@ -182,7 +178,7 @@ export class PostController {
   }
 
   @Post("like")
-  async like(@Body("postId") body: any, @Req() req: Request) {
+  async like(@Body("postId") body: string, @Req() req: Request) {
     //@ts-ignore
     const userId = req?.user?.id;
     return await this.dataService.like(body, userId);
@@ -198,13 +194,13 @@ export class PostController {
     return await this.dataService.getPostComments(id);
   }
   @Post("unlike")
-  async disLike(@Body("postId") body: any, @Req() req: Request) {
+  async disLike(@Body("postId") body: string, @Req() req: Request) {
     //@ts-ignore
     const userId = req?.user?.id;
     return await this.dataService.unlike(userId, body);
   }
   @Get("likes/:id")
-  async likes(@Param("id") postId: any) {
+  async likes(@Param("id") postId: string) {
     return await this.dataService.getUsersThatLikedPost(postId);
   }
   @Patch("update-amount")
@@ -214,11 +210,8 @@ export class PostController {
 
   @Post("upload-image")
   @UseInterceptors(FileInterceptor("file"))
-  async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() body: any,
-  ) {
-    let res = await this.cloudinary.uploadImage(file);
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    const res = await this.cloudinary.uploadImage(file);
     return res.eager[0].url;
   }
 }

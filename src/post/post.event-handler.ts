@@ -9,7 +9,7 @@ import {db} from "../main";
 import axios from "axios";
 // import * as admin from "firebase-admin";
 const abi = require("../../abi.json");
-import {ethers, providers, Wallet, utils} from "ethers";
+import {ethers, providers} from "ethers";
 
 @Injectable()
 export class PostEventHandlers {
@@ -84,7 +84,7 @@ export class PostEventHandlers {
       payload.farmer_id,
       farmer.wallet_address,
     );
-    
+
     console.log(payload);
     console.log(farmer);
 
