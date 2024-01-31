@@ -9,12 +9,32 @@ export const tranSactionSchema = new mongoose.Schema(
     },
     transactions: [
       {
-        Session_id: {type: "string", required: true},
-        Type: {type: "string", required: true, enum: ["CREDIT", "DEBIT"]},
-        AmountSent: {type: "number"},
-        AmountSettled: {type: "number", required: true},
-        narration:{type: "string"},
-        Time: {type: "string", required: true},
+        Session_id: {
+          type: "string",
+        },
+        Type: {
+          type: "string",
+          required: true,
+          enum: ["CREDIT", "DEBIT", "ORDER DEBIT", "ORDER CREDIT"],
+        },
+        AmountSent: {
+          type: "number",
+        },
+        AmountSettled: {
+          type: "number",
+          required: true,
+        },
+        narration: {
+          type: "string",
+        },
+        Time: {
+          type: "string",
+          required: true,
+          default: () => new Date().toISOString(),
+        },
+        productId: {
+          type: "string",
+        },
       },
     ],
   },

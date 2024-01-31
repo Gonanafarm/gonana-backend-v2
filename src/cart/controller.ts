@@ -6,19 +6,19 @@ import {
   Param,
   Post,
   Put,
-  Query,
+
   Req,
   UseGuards,
 } from "@nestjs/common";
-import {ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
+import { ApiResponse, ApiTags} from "@nestjs/swagger";
 import {CartItemService} from "./service";
-import {CartItem, CartItem as CartItemModel} from "./schema";
+import {CartItem as CartItemModel} from "./schema";
 import { Request } from "express";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {AddToCartDto, PlaceOrderDto, UpdateCartItemDto} from "./dto";
 import {Order} from "../order/order.schema";
-import {log} from "console";
+
 
 @ApiTags("cart-controller")
 @UseGuards(JwtAuthGuard)

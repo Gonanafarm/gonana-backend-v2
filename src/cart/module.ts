@@ -9,6 +9,7 @@ import {UserModule} from "../user/user.module";
 import {UserModel} from "../user/user.model";
 import {UserService} from "../user/user.service";
 import { CartEventHandler } from "./event-handler";
+import { TransactionModel } from "../user/transaction.model";
 
 @Module({
   providers: [CartItemService,PostModule, CartEventHandler ],
@@ -17,6 +18,7 @@ import { CartEventHandler } from "./event-handler";
     OrderModule,
     PostModel,
     UserModel,
+    TransactionModel,
     forwardRef(() => UserModule),
   ],
   exports: [CartItemModel, CartItemService],

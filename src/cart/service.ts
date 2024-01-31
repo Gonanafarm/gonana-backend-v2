@@ -26,6 +26,7 @@ import {
 } from "../user/logistics.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {ethers, providers} from "ethers";
+import {TransactionDocument} from "src/user/transaction.schema";
 const abi = require("../../abi.json");
 @Injectable()
 export class CartItemService extends GenericService<CartItemDocument> {
@@ -36,6 +37,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
     //@ts-ignore
     @InjectModel("User") private userModel: Model<UserDocument>,
+
+    @InjectModel("Transactions")
+    private transactionsModel: Model<TransactionDocument>,
     private readonly userService: UserService,
     private readonly logisticsService: LogisticsService,
     private readonly userMailerService: UserMailerService,
@@ -340,7 +344,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
           courier_ids,
         };
       });
-      
 
       // Filter out any skipped products
       const filteredItemsToShipPromises = itemsToShipPromises.filter(
@@ -400,13 +403,22 @@ export class CartItemService extends GenericService<CartItemDocument> {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
       //@ts-ignore
-      const totalCost = rates.total_shipping_cost + rates.product_cost;
+      let totalCost: number;
+      if (!rates.total_shipping_cost) {
+        totalCost = rates.product_cost;
+      } else {
+        totalCost = rates.total_shipping_cost + rates.product_cost;
+      }
+      console.log(totalCost);
+
       const user = await this.userModel.findById(user_id);
       if (!user) {
         throw new BadRequestException(`User Not found`);
       }
       //@ts-ignore
       const balance = parseInt(user.balance);
+      console.log(balance);
+
       if (balance < totalCost) {
         throw new BadRequestException(
           `Insufficient balance fund wallet and try again`,
@@ -415,6 +427,39 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const newBalance = balance - totalCost;
       user.balance = newBalance;
       await user.save();
+
+      const getIds = (data: Array<{id: string; units: number}>) => {
+        const ids = data.map(item => item.id);
+        return ids.join(", ");
+      };
+      console.log(totalCost);
+
+      const transactions = await this.transactionsModel.findOne({
+        userId: user.id,
+      });
+      if (!transactions) {
+        await this.transactionsModel.create({
+          userId: user.id,
+          transactions: [
+            {
+              Type: "ORDER DEBIT",
+              AmountSent: totalCost.toString(),
+              AmountSettled: totalCost.toString(),
+              productId: getIds(orderItems),
+            },
+          ],
+        });
+      } else {
+        const transactionObject = {
+          Type: "DEBIT",
+          AmountSent: totalCost,
+          AmountSettled: totalCost,
+          productId: getIds(orderItems),
+        };
+        transactions.transactions.push(transactionObject);
+        await transactions.save();
+      }
+
       const shipping_req_token = rates.shipping_req_token || [];
       const service_codes = rates.service_code || [];
 
