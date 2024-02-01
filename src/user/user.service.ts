@@ -487,7 +487,7 @@ export class UserService extends GenericService<UserDocument> {
     }
     console.log(user);
 
-    return user.getPublicData();
+    return this.getUserData(user.id);
   }
 
   async generateToken() {
