@@ -26,7 +26,7 @@ export class AuthService {
   ) {}
   async validateUser(email: string, password: string): Promise<UserDocument> {
     const res = await this.userService.findByEmail(email);
-    const user = res.user
+    const user = res.user;
 
     if (!comparePassword(password, user.password)) {
       throw LoginCredentialsException();
@@ -48,12 +48,13 @@ export class AuthService {
     this.eventEmitter.emit("account.login", user);
 
     console.log(user?.getPublicData(), " On Login user ");
+    const userData = await this.userService.getUserData(user.id)
     return {
       token: this.jwtService.sign(
         {...user?.getPublicData()},
         {subject: `${user?.id}`},
       ),
-      user: user?.getPublicData(),
+      user: userData,
     };
   }
 
@@ -82,9 +83,8 @@ export class AuthService {
       userData.password,
       origin,
       userData.account_type,
-      userData.country
+      userData.country,
     );
-
 
     return {
       token: this.jwtService.sign(

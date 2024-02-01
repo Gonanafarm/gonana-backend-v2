@@ -463,7 +463,20 @@ export class UserService extends GenericService<UserDocument> {
 
   async getUserData(id: string) {
     const user = await this.userModel.findById(id);
-    return user?.getPublicData();
+    const userData = user?.getPublicData();
+
+    if(!user){
+      return null
+    }
+    if (userData) {
+      user.cryptoWalletBalanceInNgn = await this.convertEthToNgn(user.wallet);
+      console.log(user.cryptoWalletBalanceInNgn);
+      console.log("here");
+      
+      // Assuming user model has a method like save() to update the document in the database
+      await user.save();
+  }
+     return userData
   }
 
   async getByEmail(email: string) {
