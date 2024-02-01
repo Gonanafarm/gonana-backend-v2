@@ -34,7 +34,7 @@ import {CloudinaryService} from "../post/cloudinary.service";
 import axios from "axios";
 import {showObjectProperties} from "./logistics.service";
 import {TransactionDocument} from "./transaction.schema";
-import {providers, Wallet, utils} from "ethers";
+import {providers, Wallet, utils, ethers} from "ethers";
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
@@ -1039,7 +1039,8 @@ export class UserService extends GenericService<UserDocument> {
       }
       const address = user.wallet_address;
       const balance = await provider.getBalance(address);
-      user.wallet = balance.toString();
+      const ethBalance = ethers.utils.formatEther(balance);
+      user.wallet = ethBalance.toString();
       await user.save();
       const ngn = await this.convertEthToNgn(user.wallet);
       return {
