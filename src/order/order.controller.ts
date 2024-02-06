@@ -23,7 +23,22 @@ import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 // @ApiHeader({ name: 'Bypass-Tunnel-Reminder', required: true })
 export class OrderController {
   constructor(private readonly dataService: OrderService) {}
+  @Post("")
+  async createOrder(@Req() req: Request, @Body() data: any) {
+    //@ts-ignore
+    const customer_id = req.user.id;
+    return await this.dataService.createOrder(
+      customer_id,
+      data.cartItems,
+      data.payment_method,
+      data.total_amount,
+    );
+  }
 
-
-
+  @Get("")
+  async getOrders(@Req() req: Request){
+    //@ts-ignore
+    const customer_id = req.user.id;
+    return await this.dataService.getOrders(customer_id);
+  }
 }

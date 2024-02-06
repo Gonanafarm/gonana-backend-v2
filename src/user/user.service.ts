@@ -471,7 +471,7 @@ export class UserService extends GenericService<UserDocument> {
     if (userData) {
       user.cryptoWalletBalanceInNgn = await this.convertEthToNgn(user.wallet);
       console.log(user.cryptoWalletBalanceInNgn);
-      console.log("here");
+   
       
       // Assuming user model has a method like save() to update the document in the database
       await user.save();
@@ -922,7 +922,7 @@ export class UserService extends GenericService<UserDocument> {
         data.narration = narration;
       }
       console.log(data);
-      console.log("here");
+    
 
       const res = await axios.post(url, data, {headers: Headers});
       console.log(res.data);

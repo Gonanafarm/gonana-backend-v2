@@ -22,10 +22,11 @@ import {
 } from "./user.dto";
 
 @Controller("api/transaction")
-@UseGuards(JwtAuthGuard)
+
 export class TransactionController {
   constructor(private readonly userService: UserService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post("/create-virtual-account")
   virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
     //@ts-ignore
@@ -33,6 +34,8 @@ export class TransactionController {
 
     return this.userService.virtualAccount(bvn, user_id);
   }
+
+  @UseGuards(JwtAuthGuard)
   @Get("/resolve-account-number")
   getBanks(@Query() body: ResolveAccountNumber) {
     return this.userService.resolveAccountNumber(
@@ -41,6 +44,7 @@ export class TransactionController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post("/transfer-to-user")
   @HttpCode(200)
   transferToUser(@Body() body: TransferToUser, @Req() req: Request) {
@@ -53,6 +57,8 @@ export class TransactionController {
       body.narration,
     );
   }
+
+  @UseGuards(JwtAuthGuard)
   @Post("/save-account-number")
   saveAccountNumber(@Body() body: ResolveAccountNumber, @Req() req: Request) {
     //@ts-ignore
@@ -63,11 +69,14 @@ export class TransactionController {
       user_id,
     );
   }
+
+  @UseGuards(JwtAuthGuard)
   @Get("bank-details")
   getBankDetails() {
     return this.userService.getBanks();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post("/transfer")
   transfer(@Body() body: TransferFundsDto, @Req() req: Request) {
     //@ts-ignore
@@ -81,16 +90,22 @@ export class TransactionController {
       body?.narration,
     );
   }
+
+
   @Post("/verify-transaction")
   verifyTransaction(@Body() body: any) {
     return this.userService.verifyTransaction(body);
   }
+
+  @UseGuards(JwtAuthGuard)
   @Get("/user-balance")
   getUserBalance(@Req() req: Request) {
     //@ts-ignore
     const user_id = req.user?.id;
     return this.userService.getUserBalance(user_id);
   }
+
+  @UseGuards(JwtAuthGuard)
   @Get("/user-transactions")
   getUserTransactions(
     @Req() req: Request,
@@ -100,6 +115,8 @@ export class TransactionController {
     const user_id = req.user?.id;
     return this.userService.getUserTransactions(user_id, body.page, body.limit);
   }
+
+  @UseGuards(JwtAuthGuard)
   @Get("/crypto-balance")
   getCryptoWalletBalance(@Req() req: Request) {
     //@ts-ignore
@@ -107,6 +124,7 @@ export class TransactionController {
     return this.userService.getCryptoWalletBalance(user_id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post("/send-eth")
   sendEth(@Req() req: Request, @Body() data: TransferEthDto) {
     //@ts-ignore
@@ -114,12 +132,21 @@ export class TransactionController {
     return this.userService.sendEth(user_id, data.amount, data.address);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post("/eth-ngn")
   ethToNgn(@Body("eth") data: string) {
     return this.userService.convertEthToNgn(data);
   }
+
+  @UseGuards(JwtAuthGuard)
   @Post("/ngn-eth")
   ngnToEth(@Body("ngn") data: string) {
     return this.userService.convertNgntoEth(data);
+  }
+
+  @Post("/test")
+  test(@Body() data: any){
+   console.log(data);
+   return
   }
 }

@@ -2,7 +2,6 @@
 import {
   BadRequestException,
   ConflictException,
-  Controller,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -14,16 +13,14 @@ import {Model} from "mongoose";
 import {CartItem, CartItemDocument} from "./schema";
 import {GenericService} from "../generic/generic.service";
 import {Post, PostDocument} from "../post/post.schema";
-import {User, UserDocument} from "../user/user.schema";
+import {UserDocument} from "../user/user.schema";
 import {UserService} from "../user/user.service";
+import {OrderService} from "../order/order.service";
 import {
   UserMailerService,
   convertArrayToString,
 } from "../user/user.mailer.service";
-import {
-  LogisticsService,
-  showObjectProperties,
-} from "../user/logistics.service";
+import {LogisticsService} from "../user/logistics.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {ethers, providers} from "ethers";
 import {TransactionDocument} from "src/user/transaction.schema";
@@ -37,13 +34,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
     //@ts-ignore
     @InjectModel("User") private userModel: Model<UserDocument>,
-
+    //@ts-ignore
     @InjectModel("Transactions")
     private transactionsModel: Model<TransactionDocument>,
     private readonly userService: UserService,
     private readonly logisticsService: LogisticsService,
     private readonly userMailerService: UserMailerService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly orderService: OrderService,
   ) {
     super(cartItemsModel);
   }
@@ -109,16 +107,19 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (!publisher_id) {
         throw new BadRequestException("Login and try again");
       }
-
-      const cartItem = await this.cartItemsModel.findOne({
-        publisher_id: publisher_id,
-      });
+  
       const user = await this.userModel.findById(publisher_id);
       const firstname = user?.first_name;
       const lastname = user?.last_name;
-
+  
       const productOwner = `${firstname} ${lastname}`;
-
+  
+      const cartItem = await this.cartItemsModel.findOneAndUpdate(
+        { publisher_id: publisher_id },
+        { $pull: { product_id: product_id } },
+        { new: true }
+      );
+  
       if (!cartItem) {
         await this.cartItemsModel.create({
           publisher_id: publisher_id,
@@ -127,39 +128,17 @@ export class CartItemService extends GenericService<CartItemDocument> {
         });
         throw new NotFoundException("Item is not in cart");
       }
+  
       if (publisher_id !== cartItem.publisher_id) {
         throw new ForbiddenException("You did not add this item to the cart");
       }
-      // if (cartItem.quantity === 1) {
-      //   await cartItem.deleteOne({product_id: product_id});
-      //   return {success: true, message: "removed item from cart"};
-      // }
-      // if (cartItem.quantity > 1) {
-      //   cartItem.quantity -= 1;
-      //   await cartItem.save();
-      //   return {
-      //     meaasge: "Quantity Reduced",
-      //     success: true,
-      //     cartItem: cartItem,
-      //     product: product,
-      //   };
-      // }
-      const productArray = cartItem.product_id;
-
-      const index = productArray.indexOf(product_id);
-      if (index !== -1) {
-        // String found in the array, remove it
-        productArray.splice(index, 1);
-        await cartItem.save();
-        console.log("items removed");
-        return {
-          success: true,
-          cartItems: productArray,
-          message: "Item removed",
-        };
-      } else {
-        throw new NotFoundException("product not in cart");
-      }
+  
+      console.log("items removed");
+      return {
+        success: true,
+        cartItems: cartItem.product_id,
+        message: "Item removed",
+      };
     } catch (error: any) {
       console.error(error);
       throw new HttpException(
@@ -171,6 +150,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       );
     }
   }
+  
 
   async getCartItems(publisher_id: string) {
     try {
@@ -542,7 +522,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
           if (!farmer) {
             throw new NotFoundException("User may have deleted their account");
           }
-          console.log("Got here");
+         
 
           this.eventEmitter.emit("Products Not Shipped", {
             product_id: product.id,
@@ -566,6 +546,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
           await this.reomoveCartItem(user_id, item.id);
         });
       }
+      await this.orderService.createOrder(
+        user_id,
+        orderItems,
+        "WEB2",
+        totalCost,
+      );
       return {
         success: true,
         message: "Orders Placed Successfully",
@@ -726,7 +712,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
                 "User may have deleted their account",
               );
             }
-            console.log("Got here");
+        
             const ethAmount = await this.userService.convertNgntoEth(
               product.amount.toString(),
             );
@@ -768,6 +754,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
           }),
         );
       }
+      await this.orderService.createOrder(
+        user_id,
+        orderItems,
+        "WEB2",
+        totalCostInNgn,
+      );
       return {
         success: true,
         message: "Orders Placed Successfully",
