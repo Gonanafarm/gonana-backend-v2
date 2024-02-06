@@ -30,41 +30,26 @@ export class OrderService {
 
   async createOrder(
     customerId: string,
-    cartItems: Array<{id: string; units: number}>,
+    productId: string,
     payment_method: string,
-    total_amount: number,
+    quantity: number,
   ) {
     const customer = await this.userModel.findById(customerId);
     if (!customer) {
       throw new BadRequestException("User not found");
     }
 
-    const orderItemsPromises = cartItems.map(async item => {
-      const product = await this.productModel.findByIdAndUpdate(
-        item.id,
-        {},
-        {new: true},
-      );
-      if (!product) {
-        return;
-      }
-      return {
-        image: product.images,
-        product_name: product.title,
-        product_id: product.id,
-        quantity: item.units,
-        amount: product.amount,
-      };
-    });
-
-    const orderItems = await Promise.all(orderItemsPromises);
-    console.log(orderItems);
+    const product = await this.productModel.findById(productId);
+    if (!product) return;
 
     const order = await this.orderModel.create({
       customer_id: customer.id,
-      items: orderItems,
-      sum_total: total_amount,
+      product_name: product.title,
+      quantity: quantity,
       payment_method: payment_method,
+      image: product.images,
+      product_id: product.id,
+      amount: product.amount,
     });
     console.log(order);
     return order;
@@ -79,7 +64,9 @@ export class OrderService {
 
       const orders = await this.orderModel.find({
         customerId: customer.id,
-      });
+      }).sort({ created_at: -1 }); // Add this line to sort in LIFO order
+
+
       if (orders.length < 1) {
         throw new BadRequestException("No orders placed");
       }

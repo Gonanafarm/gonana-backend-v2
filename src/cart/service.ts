@@ -107,19 +107,19 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (!publisher_id) {
         throw new BadRequestException("Login and try again");
       }
-  
+
       const user = await this.userModel.findById(publisher_id);
       const firstname = user?.first_name;
       const lastname = user?.last_name;
-  
+
       const productOwner = `${firstname} ${lastname}`;
-  
+
       const cartItem = await this.cartItemsModel.findOneAndUpdate(
-        { publisher_id: publisher_id },
-        { $pull: { product_id: product_id } },
-        { new: true }
+        {publisher_id: publisher_id},
+        {$pull: {product_id: product_id}},
+        {new: true},
       );
-  
+
       if (!cartItem) {
         await this.cartItemsModel.create({
           publisher_id: publisher_id,
@@ -128,11 +128,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
         });
         throw new NotFoundException("Item is not in cart");
       }
-  
+
       if (publisher_id !== cartItem.publisher_id) {
         throw new ForbiddenException("You did not add this item to the cart");
       }
-  
+
       console.log("items removed");
       return {
         success: true,
@@ -150,7 +150,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
       );
     }
   }
-  
 
   async getCartItems(publisher_id: string) {
     try {
@@ -501,6 +500,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
               buyer_id: user_id,
               amount: product.amount.toString(),
             });
+            await this.orderService.createOrder(
+              user_id,
+              item.id,
+              "WEB2",
+              item.units,
+            );
             return shipment.data;
           } else {
             return null;
@@ -522,7 +527,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
           if (!farmer) {
             throw new NotFoundException("User may have deleted their account");
           }
-         
 
           this.eventEmitter.emit("Products Not Shipped", {
             product_id: product.id,
@@ -544,14 +548,15 @@ export class CartItemService extends GenericService<CartItemDocument> {
             totalCost,
           );
           await this.reomoveCartItem(user_id, item.id);
+          await this.orderService.createOrder(
+            user_id,
+            item.id,
+            "WEB2",
+            item.units,
+          );
         });
       }
-      await this.orderService.createOrder(
-        user_id,
-        orderItems,
-        "WEB2",
-        totalCost,
-      );
+
       return {
         success: true,
         message: "Orders Placed Successfully",
@@ -674,6 +679,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const farmer = await this.userModel.findById(farmerId);
             if (!farmer) return;
             await this.reomoveCartItem(user_id, item.id);
+            await this.orderService.createOrder(
+              user_id,
+              item.id,
+              "WEB3",
+              item.units,
+            );
             this.userMailerService.notSelfShipmentMail(
               farmer.email,
               product,
@@ -712,7 +723,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
                 "User may have deleted their account",
               );
             }
-        
+
             const ethAmount = await this.userService.convertNgntoEth(
               product.amount.toString(),
             );
@@ -738,7 +749,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
               buyer_id: user_id,
               amount: product.amount.toString(),
             });
-
+            await this.orderService.createOrder(
+              user_id,
+              item.id,
+              "WEB3",
+              item.units,
+            );
             this.userMailerService.selfShipmentMail(
               farmer.email,
               product,
@@ -754,12 +770,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
           }),
         );
       }
-      await this.orderService.createOrder(
-        user_id,
-        orderItems,
-        "WEB2",
-        totalCostInNgn,
-      );
+
       return {
         success: true,
         message: "Orders Placed Successfully",

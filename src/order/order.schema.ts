@@ -11,67 +11,39 @@ export type OrderDocument = Request & Document;
     updatedAt: "updated_at", // and `updated_at` to store the last updated date
   },
 })
-export class OrderItem {
-  @Prop({type: mongoose.SchemaTypes.Array})
+export class Order {
+  @Prop({type: mongoose.SchemaTypes.Array, required: true})
   @ApiProperty()
   image: string[];
 
   @ApiProperty()
   @IsString()
-  @Prop({type: mongoose.SchemaTypes.String})
+  @Prop({type: mongoose.SchemaTypes.String, required: true})
   product_name: string;
 
   @ApiProperty()
   @IsString()
-  @Prop({type: mongoose.SchemaTypes.String})
+  @Prop({type: mongoose.SchemaTypes.String, required: true})
   product_id: string;
 
   @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.Number})
+  @Prop({type: mongoose.SchemaTypes.Number, required: true})
   quantity: number;
 
   @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.Number})
+  @Prop({type: mongoose.SchemaTypes.Number, required: true})
   amount: number;
-}
 
-const orderItemsAttachmentDoc = SchemaFactory.createForClass(OrderItem);
-
-@Schema({
-  timestamps: {
-    createdAt: "created_at", // Use `created_at` to store the created date
-    updatedAt: "updated_at", // and `updated_at` to store the last updated date
-  },
-})
-export class Order {
-  @Prop({type: mongoose.SchemaTypes.String})
+  @Prop({type: mongoose.SchemaTypes.String, required: true})
   customer_id: string;
 
-  @ApiProperty({type: OrderItem, isArray: true})
+  @ApiProperty()
   @Prop({
-    type: [orderItemsAttachmentDoc],
+    type: mongoose.SchemaTypes.String,
+    enum: ["WEB2", "WEB3"],
+    required: true,
   })
-  items: OrderItem[];
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.Number})
-  sum_total: number;
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String, enum: ["WEB2", "WEB3"]})
   payment_method: string;
-
-  // @ApiProperty()
-  // @Prop({type: mongoose.SchemaTypes.String, default: "pending"})
-  // status: string;
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  created_at: string;
-
-  @ApiProperty()
-  @Prop({type: mongoose.SchemaTypes.String})
-  updated_at: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

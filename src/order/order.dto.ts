@@ -7,7 +7,7 @@ import {
   IsEnum,
   ArrayNotEmpty,
 } from 'class-validator';
-import { OrderItem } from './order.schema';
+
 
 export enum PaymentOptions {
   CASH = 'cash',
