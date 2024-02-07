@@ -19,18 +19,22 @@ import {LogisticsService} from "./logistics.service";
 import {ShipmentData, ValidatePostAdress} from "./user.dto";
 
 @Controller("api/logistics")
-@UseGuards(JwtAuthGuard)
+
 export class LogisticsController {
   constructor(
     private readonly userService: UserService,
     private readonly logisticsService: LogisticsService,
   ) {}
+
+
   @Get("/get-couriers")
+  @UseGuards(JwtAuthGuard)
   async getCouriers() {
     return this.logisticsService.getAvailableCouriers();
   }
 
   @Post("/create-shipment")
+  @UseGuards(JwtAuthGuard)
   async createShipment(@Body() body: ShipmentData) {
     return await this.logisticsService.createShipment(
       body.request_token,
@@ -40,6 +44,7 @@ export class LogisticsController {
     );
   }
   @Post("/validate-user-address")
+  @UseGuards(JwtAuthGuard)
   async validateAddress(@Body("address") body: string, @Req() req: Request) {
     //@ts-ignore
     const email = req.user.email;
@@ -51,6 +56,7 @@ export class LogisticsController {
   }
 
   @Post("/validate-post-address")
+  @UseGuards(JwtAuthGuard)
   async validatePostAddress(
     @Body() body: ValidatePostAdress,
     @Req() req: Request,
@@ -66,6 +72,7 @@ export class LogisticsController {
   }
 
   @Patch("update-user-address")
+  @UseGuards(JwtAuthGuard)
   async updateUserAddress(@Body("address") body: string, @Req() req: Request) {
     //@ts-ignore
     const user_id = req.user.id;
@@ -73,7 +80,14 @@ export class LogisticsController {
   }
 
   @Patch("update-post-address")
-  async updatePostAddress(@Body() body: any, @Req() req: Request) {
+  @UseGuards(JwtAuthGuard)
+  async updatePostAddress(@Body() body: any) {
     return this.logisticsService.updatePostAddress(body.address, body.id);
+  }
+
+  @Post("webhook")
+  async webhook(@Body() payload:any){
+    console.log(payload);
+    return
   }
 }
