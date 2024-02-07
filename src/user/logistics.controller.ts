@@ -88,6 +88,6 @@ export class LogisticsController {
   @Post("webhook")
   async webhook(@Body() payload:any){
     console.log(payload);
-    return
+    return 
   }
 }
