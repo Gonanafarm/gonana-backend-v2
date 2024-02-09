@@ -19,15 +19,22 @@ import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 @ApiTags("order-controller")
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-@Controller("api/catalog/order")
+@Controller("api/catalog/orders")
 // @ApiHeader({ name: 'Bypass-Tunnel-Reminder', required: true })
 export class OrderController {
   constructor(private readonly dataService: OrderService) {}
 
-  // @Get("")
-  // async getOrders(@Req() req: Request) {
-  //   //@ts-ignore
-  //   const customer_id = req.user.id;
-  //   return await this.dataService.getOrders(customer_id);
-  // }
+  @Get("incoming")
+  async getIncomingOrders(@Req() req: Request) {
+    //@ts-ignore
+    const customer_id = req.user.id;
+    return await this.dataService.getIncomingOrders(customer_id);
+  }
+
+  @Get("outgoing")
+  async getOutgoingOrders(@Req() req: Request) {
+    //@ts-ignore
+    const customer_id = req.user.id;
+    return await this.dataService.getOutgoingOrders(customer_id);
+  }
 }

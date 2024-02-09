@@ -36,6 +36,10 @@ export const incomingOrderSchema = new mongoose.Schema(
       required: true,
       default: "INCOMING",
     },
+    status:{
+    type: String,
+    default: "pending"
+    },
     image:{
       type: Array,
       required: true,

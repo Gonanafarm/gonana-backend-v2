@@ -50,6 +50,9 @@ export class Order {
   })
   type: string;
 
+  @Prop({type: mongoose.SchemaTypes.String, required: true, default: "pending"})
+  status: string;
+
   @ApiProperty()
   @Prop({
     type: mongoose.SchemaTypes.String,

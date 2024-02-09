@@ -1,5 +1,10 @@
 /* eslint-disable no-useless-catch */
-import {BadRequestException, Injectable} from "@nestjs/common";
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 import {OrderDocument} from "./outgoing.order.schema";
@@ -83,36 +88,69 @@ export class OrderService {
     return order;
   }
 
-  // async getOrders(customerId: string) {
-  //   try {
-  //     const customer = await this.userModel.findById(customerId);
-  //     if (!customer) {
-  //       throw new BadRequestException("User not found");
-  //     }
+  async getIncomingOrders(customerId: string) {
+    try {
+      const customer = await this.userModel.findById(customerId);
+      if (!customer) {
+        throw new BadRequestException("User not found");
+      }
 
-  //     const orders = await this.orderModel
-  //       .find({
-  //         customerId: customer.id,
-  //       })
-  //       .sort({created_at: -1}); // Add this line to sort in LIFO order
+      const orders = await this.incomingOrderModel
+        .find({
+          customer_id: customer.id,
+        })
+        .sort({created_at: -1}); // Add this line to sort in LIFO order
 
-  //     if (orders.length < 1) {
-  //       throw new BadRequestException("No orders placed");
-  //     }
-  //     return {
-  //       orders: orders,
-  //     };
-  //   } catch (error: any) {
-  //     throw new HttpException(
-  //       {
-  //         success: false,
-  //         status: error.status,
-  //         message: error.message,
-  //       },
-  //       HttpStatus.BAD_REQUEST,
-  //     );
-  //   }
-  // }
+      if (orders.length < 1) {
+        throw new BadRequestException("No incoming orders found");
+      }
+      return {
+        success: true,
+        data: orders,
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        {
+          success: false,
+          status: error.status,
+          message: error.message,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async getOutgoingOrders(customerId: string) {
+    try {
+      const customer = await this.userModel.findById(customerId);
+      if (!customer) {
+        throw new BadRequestException("User not found");
+      }
+
+      const orders = await this.outgoingOrderModel
+        .find({
+          farmer_id: customer.id,
+        })
+        .sort({created_at: -1}); // Add this line to sort in LIFO order
+
+      if (orders.length < 1) {
+        throw new BadRequestException("No outgoing orders found");
+      }
+      return {
+        success: true,
+        data: orders,
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        {
+          success: false,
+          status: error.status,
+          message: error.message,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
   // async handleWebhook(payload: any) {
   //   if (payload.status !== "completed") {
   //     return;
@@ -138,5 +176,5 @@ export class OrderService {
   //       payload.ship_to.phone,
   //     );
   //   }
-  // }
+  //  }
 }
