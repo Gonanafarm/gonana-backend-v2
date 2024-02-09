@@ -68,7 +68,7 @@ export class OrderService {
     const product = await this.productModel.findById(product_id);
     if (!product) return;
 
-    const order = await this.outgoingOrderModel.create({
+    const order = await this.incomingOrderModel.create({
       customer_id: customer.id,
       product_name: product.title,
       quantity: quantity,
