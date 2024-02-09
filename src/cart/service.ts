@@ -524,6 +524,13 @@ export class CartItemService extends GenericService<CartItemDocument> {
               shipment.data.order_id,
               "WEB2",
             );
+            await this.orderService.createIncomingOrder(
+              item.id,
+              user.id,
+              item.units,
+              shipment.data.order_id,
+              "WEB2",
+            )
             console.log(shipment.data.order_id);
             console.log(shipment.data);
             
@@ -578,6 +585,13 @@ export class CartItemService extends GenericService<CartItemDocument> {
             `${abbr}${rn}`,
             "WEB2",
           );
+          await this.orderService.createIncomingOrder(
+            item.id,
+            user.id,
+            item.units,
+            `${abbr}${rn}`,
+            "WEB2",
+          )
         });
       }
 
@@ -710,6 +724,13 @@ export class CartItemService extends GenericService<CartItemDocument> {
               shipment.data.order_id,
               "WEB2",
             );
+            await this.orderService.createIncomingOrder(
+              item.id,
+              user.id,
+              item.units,
+              shipment.data.order_id,
+              "WEB2",
+            )
             this.userMailerService.notSelfShipmentMail(
               farmer.email,
               product,
@@ -785,6 +806,13 @@ export class CartItemService extends GenericService<CartItemDocument> {
               `${abbr}${rn}`,
               "WEB2",
             );
+            await this.orderService.createIncomingOrder(
+              item.id,
+              user.id,
+              item.units,
+              `${abbr}${rn}`,
+              "WEB2",
+            )
             this.userMailerService.selfShipmentMail(
               farmer.email,
               product,

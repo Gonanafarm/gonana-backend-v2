@@ -53,6 +53,36 @@ export class OrderService {
     return order;
   }
 
+  async createIncomingOrder(
+    product_id: string,
+    customer_id: string,
+    quantity: number,
+    shipbubble_id: string,
+    payment_method: "WEB2" | "WEB3",
+  ) {
+    const customer = await this.userModel.findById(customer_id);
+    if (!customer) {
+      throw new BadRequestException("User not found");
+    }
+
+    const product = await this.productModel.findById(product_id);
+    if (!product) return;
+
+    const order = await this.outgoingOrderModel.create({
+      customer_id: customer.id,
+      product_name: product.title,
+      quantity: quantity,
+      payment_method: payment_method,
+      image: product.images,
+      product_id: product.id,
+      product_amount: product.amount,
+      shipbubble_id: shipbubble_id,
+      product_description: product.body,
+    });
+    console.log(order);
+    return order;
+  }
+
   // async getOrders(customerId: string) {
   //   try {
   //     const customer = await this.userModel.findById(customerId);
