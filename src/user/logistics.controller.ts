@@ -19,13 +19,11 @@ import {LogisticsService} from "./logistics.service";
 import {ShipmentData, ValidatePostAdress} from "./user.dto";
 
 @Controller("api/logistics")
-
 export class LogisticsController {
   constructor(
     private readonly userService: UserService,
     private readonly logisticsService: LogisticsService,
   ) {}
-
 
   @Get("/get-couriers")
   @UseGuards(JwtAuthGuard)
@@ -85,9 +83,5 @@ export class LogisticsController {
     return this.logisticsService.updatePostAddress(body.address, body.id);
   }
 
-  @Post("webhook")
-  async webhook(@Body() payload:any){
-    console.log(payload);
-    return 
-  }
+
 }

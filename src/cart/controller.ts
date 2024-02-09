@@ -17,7 +17,7 @@ import { Request } from "express";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {AddToCartDto, PlaceOrderDto, UpdateCartItemDto} from "./dto";
-import {Order} from "../order/order.schema";
+import {Order} from "../order/outgoing.order.schema";
 
 
 @ApiTags("cart-controller")

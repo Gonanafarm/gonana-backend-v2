@@ -102,7 +102,7 @@ export class UserMailerService {
       });
     } catch (error) {
       console.log(error);
-      
+
       console.error(`Error sending OTP email to ${email}:`, error);
     }
   }
@@ -313,6 +313,40 @@ export class UserMailerService {
         `,
       });
       console.log("Shipment mail sent");
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  orderCancelledFarmerMail(
+    farmerEmail: string,
+    customerName: string,
+    customerAddress: string,
+    customerNumber: string,
+  ) {
+    try {
+      this.mailerService.sendMail({
+        to: farmerEmail,
+        subject: "ORDER CANCELLED",
+        from: "gonanadev@gmail.com",
+        text: `Your order to ${customerName} with phone number: ${customerNumber} and address: ${customerAddress} has been cancelled.`,
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  orderCancelledCustomerMail(
+    customerEmail: string,
+    farmerName: string,
+    farmerAddress: string,
+    farmerNumber: string,
+  ) {
+    try {
+      this.mailerService.sendMail({
+        to: customerEmail,
+        subject: "ORDER CANCELLED",
+        from: "gonanadev@gmail.com",
+        text: `Your order tfrom ${farmerName} with phone number ${farmerNumber} and address ${farmerAddress} has been cancelled`,
+      });
     } catch (error) {
       console.log(error);
     }

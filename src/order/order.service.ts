@@ -1,87 +1,112 @@
 /* eslint-disable no-useless-catch */
-import {
-  BadRequestException,
-  Controller,
-  Injectable,
-  NotFoundException,
-  HttpException,
-  HttpStatus,
-} from "@nestjs/common";
+import {BadRequestException, Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
-import {Order, OrderDocument} from "./order.schema";
-import {GenericService} from "../generic/generic.service";
-import {CartItem} from "../cart/schema";
+import {Order, OrderDocument} from "./outgoing.order.schema";
 import {Post, PostDocument} from "../post/post.schema";
 import {User, UserDocument} from "../user/user.schema";
-import axios from "axios";
+import {IncomingOrderDocument} from "./incoming.order.schema";
 
 @Injectable()
 export class OrderService {
   //@ts-ignore
   constructor(
     //@ts-ignore
-    @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
+    @InjectModel("OUTGOING_ORDERS")
+    private outgoingOrderModel: Model<OrderDocument>,
     //@ts-ignore
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
     //@ts-ignore
     @InjectModel("User") private userModel: Model<UserDocument>,
+
+    @InjectModel("INCOMING_ORDERS")
+    private incomingOrderModel: Model<IncomingOrderDocument>,
   ) {}
 
-  async createOrder(
-    customerId: string,
-    productId: string,
-    payment_method: string,
+  async createOutgoingOrder(
+    product_id: string,
+    farmer_id: string,
     quantity: number,
+    shipbubble_id: string,
+    payment_method: "WEB2" | "WEB3",
   ) {
-    const customer = await this.userModel.findById(customerId);
-    if (!customer) {
+    const farmer = await this.userModel.findById(farmer_id);
+    if (!farmer) {
       throw new BadRequestException("User not found");
     }
 
-    const product = await this.productModel.findById(productId);
+    const product = await this.productModel.findById(product_id);
     if (!product) return;
 
-    const order = await this.orderModel.create({
-      customer_id: customer.id,
+    const order = await this.outgoingOrderModel.create({
+      farmer_id: farmer.id,
       product_name: product.title,
       quantity: quantity,
       payment_method: payment_method,
       image: product.images,
       product_id: product.id,
-      amount: product.amount,
+      product_amount: product.amount,
+      shipbubble_id: shipbubble_id,
+      product_description: product.body,
     });
     console.log(order);
     return order;
   }
 
-  async getOrders(customerId: string) {
-    try {
-      const customer = await this.userModel.findById(customerId);
-      if (!customer) {
-        throw new BadRequestException("User not found");
-      }
+  // async getOrders(customerId: string) {
+  //   try {
+  //     const customer = await this.userModel.findById(customerId);
+  //     if (!customer) {
+  //       throw new BadRequestException("User not found");
+  //     }
 
-      const orders = await this.orderModel.find({
-        customerId: customer.id,
-      }).sort({ created_at: -1 }); // Add this line to sort in LIFO order
+  //     const orders = await this.orderModel
+  //       .find({
+  //         customerId: customer.id,
+  //       })
+  //       .sort({created_at: -1}); // Add this line to sort in LIFO order
 
+  //     if (orders.length < 1) {
+  //       throw new BadRequestException("No orders placed");
+  //     }
+  //     return {
+  //       orders: orders,
+  //     };
+  //   } catch (error: any) {
+  //     throw new HttpException(
+  //       {
+  //         success: false,
+  //         status: error.status,
+  //         message: error.message,
+  //       },
+  //       HttpStatus.BAD_REQUEST,
+  //     );
+  //   }
+  // }
+  // async handleWebhook(payload: any) {
+  //   if (payload.status !== "completed") {
+  //     return;
+  //   }
 
-      if (orders.length < 1) {
-        throw new BadRequestException("No orders placed");
-      }
-      return {
-        orders: orders,
-      };
-    } catch (error: any) {
-      throw new HttpException(
-        {
-          success: false,
-          status: error.status,
-          message: error.message,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
+  //   const farmerEmail = payload.ship_from.email;
+  //   //const farmer = (await this.userService.findByEmail(farmerEmail)).user;
+
+  //   const customerEmail = payload.ship_to.email;
+  // //  const customer = (await this.userService.findByEmail(customerEmail)).user;
+
+  //   if (payload.event === "shipment.cancelled") {
+  //     this.userMailerService.orderCancelledCustomerMail(
+  //       customerEmail,
+  //       payload.ship_from.name,
+  //       payload.ship_from.address,
+  //       payload.ship_from.phone,
+  //     );
+  //     this.userMailerService.orderCancelledFarmerMail(
+  //       farmerEmail,
+  //       payload.ship_to.name,
+  //       payload.ship_to.address,
+  //       payload.ship_to.phone,
+  //     );
+  //   }
+  // }
 }

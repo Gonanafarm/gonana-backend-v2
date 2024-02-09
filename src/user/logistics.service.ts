@@ -16,6 +16,7 @@ import {PostModel} from "../post/post.model";
 import {Post, PostDocument} from "../post/post.schema";
 import {GeocodeService} from "../geocoder/service";
 import {ShipmentData} from "./user.dto";
+import {UserMailerService} from "./user.mailer.service";
 
 const key = process.env.SHIPBUBBLE_API_KEY;
 const base_url = process.env.SHIPBUBBLE_BASE_URL;
@@ -35,9 +36,12 @@ export function showObjectProperties(obj: Record<string, any>): void {
 @Injectable()
 export class LogisticsService {
   constructor(
+    //@ts-ignore
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    //@ts-ignore
     @InjectModel(Post.name) private readonly productModel: Model<PostDocument>,
     private geocodeService: GeocodeService,
+    private userMailerService: UserMailerService,
   ) {}
   async validateUserAddress(
     name: string,
@@ -49,7 +53,7 @@ export class LogisticsService {
       const url = `${base_url}/shipping/address/validate`;
       const data = {name: name, email: email, phone: phone, address: address};
       console.log(data);
-      
+
       const res = await axios.post(url, data, {headers: Headers});
       if (res.data.status !== "success") {
         throw new BadRequestException(`${res.data.message}`);
@@ -258,7 +262,7 @@ export class LogisticsService {
     }
   }
 
-  async  updatePostAddress(address:string, id: string) {
+  async updatePostAddress(address: string, id: string) {
     try {
       const post = await this.productModel.findById(id);
       if (!post) {
@@ -387,4 +391,6 @@ export class LogisticsService {
       );
     }
   }
+
+
 }

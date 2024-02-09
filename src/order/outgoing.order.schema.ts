@@ -34,8 +34,22 @@ export class Order {
   @Prop({type: mongoose.SchemaTypes.Number, required: true})
   amount: number;
 
+
   @Prop({type: mongoose.SchemaTypes.String, required: true})
-  customer_id: string;
+  farmer_id: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, required: true})
+  product_description: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, required: true})
+  shipbubble_id: string;
+
+  @Prop({
+    type: mongoose.SchemaTypes.String,
+    required: true,
+    default: "OUTGOING",
+  })
+  type: string;
 
   @ApiProperty()
   @Prop({
@@ -46,14 +60,14 @@ export class Order {
   payment_method: string;
 }
 
-export const OrderSchema = SchemaFactory.createForClass(Order);
+export const OutgoingOrderSchema = SchemaFactory.createForClass(Order);
 
-OrderSchema.virtual("id").get(function () {
+OutgoingOrderSchema.virtual("id").get(function () {
   //@ts-ignore
   return this._id.toHexString();
 });
 
 // Ensure virtual fields are serialised.
-OrderSchema.set("toJSON", {
+OutgoingOrderSchema.set("toJSON", {
   virtuals: true,
 });

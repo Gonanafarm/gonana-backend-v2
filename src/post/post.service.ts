@@ -149,6 +149,7 @@ export class PostService extends GenericService<PostDocument> {
     try {
       const query: Record<string, unknown> = {publisher_id: id};
 
+
       if (type !== undefined) {
         query.type = type;
       }

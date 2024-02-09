@@ -25,6 +25,23 @@ import {EventEmitter2} from "@nestjs/event-emitter";
 import {ethers, providers} from "ethers";
 import {TransactionDocument} from "src/user/transaction.schema";
 const abi = require("../../abi.json");
+
+export const getAbbreviation = (inputString: string): string => {
+  // Convert the input string to uppercase
+  const upperCaseString = inputString.toUpperCase();
+
+  // Extract the initials
+  const initials = upperCaseString
+    .split(" ")
+    .map(word => word.charAt(0))
+    .join("");
+
+  return initials;
+};
+
+export const generateRandomSixDigitNumber = (): number => {
+  return Math.floor(100000 + Math.random() * 900000);
+};
 @Injectable()
 export class CartItemService extends GenericService<CartItemDocument> {
   constructor(
@@ -500,12 +517,15 @@ export class CartItemService extends GenericService<CartItemDocument> {
               buyer_id: user_id,
               amount: product.amount.toString(),
             });
-            await this.orderService.createOrder(
-              user_id,
+            await this.orderService.createOutgoingOrder(
               item.id,
-              "WEB2",
+              farmer.id,
               item.units,
+              shipment.data.order_id,
+              "WEB2",
             );
+            console.log(shipment.data.order_id);
+
             return shipment.data;
           } else {
             return null;
@@ -548,11 +568,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
             totalCost,
           );
           await this.reomoveCartItem(user_id, item.id);
-          await this.orderService.createOrder(
-            user_id,
+          const abbr = getAbbreviation(`${farmer.first_name} ${product.title}`);
+          const rn = generateRandomSixDigitNumber();
+          await this.orderService.createOutgoingOrder(
             item.id,
-            "WEB2",
+            farmer.id,
             item.units,
+            `${abbr}${rn}`,
+            "WEB2",
           );
         });
       }
@@ -679,11 +702,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const farmer = await this.userModel.findById(farmerId);
             if (!farmer) return;
             await this.reomoveCartItem(user_id, item.id);
-            await this.orderService.createOrder(
-              user_id,
+            await this.orderService.createOutgoingOrder(
               item.id,
-              "WEB3",
+              farmer.id,
               item.units,
+              shipment.data.order_id,
+              "WEB2",
             );
             this.userMailerService.notSelfShipmentMail(
               farmer.email,
@@ -749,11 +773,16 @@ export class CartItemService extends GenericService<CartItemDocument> {
               buyer_id: user_id,
               amount: product.amount.toString(),
             });
-            await this.orderService.createOrder(
-              user_id,
+            const abbr = getAbbreviation(
+              `${farmer.first_name} ${product.title}`,
+            );
+            const rn = generateRandomSixDigitNumber();
+            await this.orderService.createOutgoingOrder(
               item.id,
-              "WEB3",
+              farmer.id,
               item.units,
+              `${abbr}${rn}`,
+              "WEB2",
             );
             this.userMailerService.selfShipmentMail(
               farmer.email,
