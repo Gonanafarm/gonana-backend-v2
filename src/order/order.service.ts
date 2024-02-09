@@ -2,9 +2,9 @@
 import {BadRequestException, Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
-import {Order, OrderDocument} from "./outgoing.order.schema";
+import {OrderDocument} from "./outgoing.order.schema";
 import {Post, PostDocument} from "../post/post.schema";
-import {User, UserDocument} from "../user/user.schema";
+import {UserDocument} from "../user/user.schema";
 import {IncomingOrderDocument} from "./incoming.order.schema";
 
 @Injectable()
@@ -18,7 +18,7 @@ export class OrderService {
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
     //@ts-ignore
     @InjectModel("User") private userModel: Model<UserDocument>,
-
+    //@ts-ignore
     @InjectModel("INCOMING_ORDERS")
     private incomingOrderModel: Model<IncomingOrderDocument>,
   ) {}

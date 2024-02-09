@@ -1,6 +1,6 @@
-import {Prop, Schema, raw, SchemaFactory} from "@nestjs/mongoose";
+import {Prop, Schema, SchemaFactory} from "@nestjs/mongoose";
 import {ApiProperty} from "@nestjs/swagger";
-import {IsArray, IsString} from "class-validator";
+import {IsString} from "class-validator";
 import * as mongoose from "mongoose";
 import {Document} from "mongoose";
 export type OrderDocument = Request & Document;
@@ -32,8 +32,7 @@ export class Order {
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Number, required: true})
-  amount: number;
-
+  product_amount: number;
 
   @Prop({type: mongoose.SchemaTypes.String, required: true})
   farmer_id: string;

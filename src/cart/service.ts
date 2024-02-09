@@ -405,7 +405,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       } else {
         totalCost = rates.total_shipping_cost + rates.product_cost;
       }
-      console.log(totalCost);
+   
 
       const user = await this.userModel.findById(user_id);
       if (!user) {
@@ -413,7 +413,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
       //@ts-ignore
       const balance = parseInt(user.balance);
-      console.log(balance);
+    
 
       if (balance < totalCost) {
         throw new BadRequestException(
@@ -428,7 +428,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const ids = data.map(item => item.id);
         return ids.join(", ");
       };
-      console.log(totalCost);
+     
 
       const transactions = await this.transactionsModel.findOne({
         userId: user.id,
@@ -470,7 +470,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
           itemsNotToShip.push(item);
         }
       }
-      console.log(itemsToShip);
+   
 
       if (itemsToShip.length > 0) {
         // Create a mapping of itemId to index in the itemsToShip array
@@ -480,7 +480,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         });
 
         const orderItemsPromise = itemsToShip.map(async item => {
-          console.log(item.id);
+        
           const product = await this.productModel.findById(item.id);
           if (!product) throw new NotFoundException("Product not found");
           const index = itemIdToIndexMap.get(item.id);
@@ -525,7 +525,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
               "WEB2",
             );
             console.log(shipment.data.order_id);
-
+            console.log(shipment.data);
+            
             return shipment.data;
           } else {
             return null;
@@ -533,7 +534,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         });
 
         const resolvedShipments = await Promise.all(orderItemsPromise);
-        console.log(resolvedShipments);
+    
       }
 
       if (itemsNotToShip.length > 0) {
