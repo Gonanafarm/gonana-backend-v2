@@ -43,6 +43,9 @@ export class Order {
   @Prop({type: mongoose.SchemaTypes.String, required: true})
   shipbubble_id: string;
 
+  @Prop({type: mongoose.SchemaTypes.Boolean, required: true})
+  self_shipping: boolean;
+
   @Prop({
     type: mongoose.SchemaTypes.String,
     required: true,

@@ -14,6 +14,7 @@ import {EventEmitter2} from "@nestjs/event-emitter";
 import {DiscountDocument} from "./discount.schema";
 import {UserDocument, User} from "../user/user.schema";
 import {GeocodeService} from "../geocoder/service";
+import { UserService } from "../user/user.service";
 import {LogisticsService} from "../user/logistics.service";
 import {
   DeletionException,
@@ -36,6 +37,7 @@ export class PostService extends GenericService<PostDocument> {
     private logisticsService: LogisticsService,
     private geocoderService: GeocodeService,
     private eventEmmiter: EventEmitter2,
+    private userService: UserService
   ) {
     super(productModel);
   }
@@ -484,4 +486,20 @@ export class PostService extends GenericService<PostDocument> {
     await post.save();
     return {success: true, postRating: post.rating};
   }
+
+  async convertNgntoUsd(xNgn: string) {
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=USD&convert=NGN",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const usd = parseInt(xNgn) / Math.round(response.data.data.quote.NGN.price);
+    const roundedUsd = this.userService.roundToSignificantFigures(usd, 9);
+    return roundedUsd.toString();
+  }
+  
 }

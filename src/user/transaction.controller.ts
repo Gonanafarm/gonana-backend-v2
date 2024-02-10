@@ -22,7 +22,6 @@ import {
 } from "./user.dto";
 
 @Controller("api/transaction")
-
 export class TransactionController {
   constructor(private readonly userService: UserService) {}
 
@@ -91,7 +90,6 @@ export class TransactionController {
     );
   }
 
-
   @Post("/verify-transaction")
   verifyTransaction(@Body() body: any) {
     return this.userService.verifyTransaction(body);
@@ -144,9 +142,9 @@ export class TransactionController {
     return this.userService.convertNgntoEth(data);
   }
 
-  @Post("/test")
-  test(@Body() data: any){
-   console.log(data);
-   return
+  @UseGuards(JwtAuthGuard)
+  @Post("/ngn-usd")
+  ngnToUsd(@Body("ngn") data: string) {
+    return this.userService.convertNgntoUsd(data);
   }
 }

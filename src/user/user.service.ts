@@ -465,18 +465,17 @@ export class UserService extends GenericService<UserDocument> {
     const user = await this.userModel.findById(id);
     const userData = user?.getPublicData();
 
-    if(!user){
-      return null
+    if (!user) {
+      return null;
     }
     if (userData) {
       user.cryptoWalletBalanceInNgn = await this.convertEthToNgn(user.wallet);
       console.log(user.cryptoWalletBalanceInNgn);
-   
-      
+
       // Assuming user model has a method like save() to update the document in the database
       await user.save();
-  }
-     return userData
+    }
+    return userData;
   }
 
   async getByEmail(email: string) {
@@ -922,7 +921,6 @@ export class UserService extends GenericService<UserDocument> {
         data.narration = narration;
       }
       console.log(data);
-    
 
       const res = await axios.post(url, data, {headers: Headers});
       console.log(res.data);
@@ -1016,8 +1014,7 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found");
       }
-      const url =
-      "https://rpc.ankr.com/blast_testnet_sepolia";
+      const url = "https://rpc.ankr.com/blast_testnet_sepolia";
       const provider = new providers.JsonRpcProvider(url);
 
       if (user.wallet_address === undefined) {
@@ -1043,6 +1040,9 @@ export class UserService extends GenericService<UserDocument> {
       user.wallet = ethBalance.toString();
       await user.save();
       const ngn = await this.convertEthToNgn(user.wallet);
+      const usd = await this.convertNgntoUsd(ngn);
+      user.cryptoWalletBalanceInUsd = usd;
+      await user.save();
       return {
         success: true,
         cryptoWalletBalanceInNgn: ngn,
@@ -1050,7 +1050,7 @@ export class UserService extends GenericService<UserDocument> {
       };
     } catch (error: any) {
       console.log(error);
-      showObjectProperties(error)
+      showObjectProperties(error);
       throw new HttpException(
         {
           success: false,
@@ -1108,11 +1108,41 @@ export class UserService extends GenericService<UserDocument> {
     // Convert the result to decimal representation
     return roundedNumber.toFixed(significantFigures);
   }
+  async convertNgntoUsd(xNgn: string) {
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=USD&convert=NGN",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const usd = parseInt(xNgn) / Math.round(response.data.data.quote.NGN.price);
+    console.log(response.data.data.quote.NGN.price);
+
+    const roundedUsd = this.roundToSignificantFigures(usd, 9);
+    return roundedUsd.toString();
+  }
+
+  async convertUsdtoNgn(xUsd: string) {
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=USD&convert=NGN",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const ngn = parseInt(xUsd) * Math.round(response.data.data.quote.NGN.price);
+    const roundedNgn = this.roundToSignificantFigures(ngn, 9);
+    return roundedNgn.toString();
+  }
 
   async sendEth(id: string, amount: string, toAddress: string) {
     try {
-      const url =
-      "https://rpc.ankr.com/blast_testnet_sepolia";
+      const url = "https://rpc.ankr.com/blast_testnet_sepolia";
       const provider = new providers.JsonRpcProvider(url);
 
       const user = await this.userModel.findById(id);

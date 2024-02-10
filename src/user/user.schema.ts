@@ -134,6 +134,11 @@ export class User {
   cryptoWalletBalanceInNgn: string;
 
   @Prop({type: mongoose.SchemaTypes.String})
+  cryptoWalletBalanceInUsd: string;
+
+
+
+  @Prop({type: mongoose.SchemaTypes.String})
   wallet_address: string;
 
   @Prop({type:mongoose.SchemaTypes.String})

@@ -34,6 +34,7 @@ import {Request} from "express";
 import {CloudinaryService} from "./cloudinary.service";
 import {FileInterceptor, FilesInterceptor} from "@nestjs/platform-express";
 import {LogisticsService} from "../user/logistics.service";
+import {UserService} from "../user/user.service";
 
 @ApiTags("posts-controller")
 @UseGuards(JwtAuthGuard)
@@ -45,6 +46,7 @@ export class PostController {
     private cloudinary: CloudinaryService,
     private eventEmmiter: EventEmitter2,
     private logisticsService: LogisticsService,
+    private userService: UserService,
   ) {}
   @Get("")
   @ApiResponse({
@@ -107,6 +109,9 @@ export class PostController {
         return res.eager[0].url;
       }),
     );
+    const usd_price = parseFloat(await this.userService.convertNgntoUsd(
+      amount.toString(),
+    ))
     let publisher_id = "";
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
@@ -133,6 +138,7 @@ export class PostController {
       weight,
       address,
       self_shipping,
+      usd_price
     };
     const createPost = await this.dataService.create(publisher_id, payload);
     this.eventEmmiter.emit("PostCreated", {

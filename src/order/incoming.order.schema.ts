@@ -49,6 +49,10 @@ export const incomingOrderSchema = new mongoose.Schema(
       required: true,
       enum: ["WEB2", "WEB3"],
     },
+    self_shipping:{
+      type: Boolean,
+      required: true,
+    }
   },
   {timestamps: true, versionKey: false},
 );

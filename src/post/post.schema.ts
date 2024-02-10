@@ -117,6 +117,10 @@ export class Post {
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Number, default: 0})
   rating: number;
+
+  @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.Number})
+  usd_price: number;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

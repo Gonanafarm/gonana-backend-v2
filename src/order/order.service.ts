@@ -53,6 +53,7 @@ export class OrderService {
       product_amount: product.amount,
       shipbubble_id: shipbubble_id,
       product_description: product.body,
+      self_shipping: product.self_shipping,
     });
     console.log(order);
     return order;
@@ -83,6 +84,7 @@ export class OrderService {
       product_amount: product.amount,
       shipbubble_id: shipbubble_id,
       product_description: product.body,
+      self_shipping: product.self_shipping,
     });
     console.log(order);
     return order;
