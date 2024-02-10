@@ -372,12 +372,17 @@ export class CartItemService extends GenericService<CartItemDocument> {
         return sum;
       }, 0);
 
+      const total_shipping_cost_in_usd = await this.userService.convertNgntoUsd(
+        total_shipping_cost.toString(),
+      );
+
       return {
         product_cost: totalAmount,
         shipping_req_token: request_tokens,
         service_code: service_codes,
         total_shipping_cost: total_shipping_cost,
         courier_id: courier_id,
+        total_shipping_cost_in_usd: total_shipping_cost_in_usd,
       };
     } catch (error: any) {
       throw new HttpException(
@@ -405,7 +410,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
       } else {
         totalCost = rates.total_shipping_cost + rates.product_cost;
       }
-   
 
       const user = await this.userModel.findById(user_id);
       if (!user) {
@@ -413,7 +417,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
       //@ts-ignore
       const balance = parseInt(user.balance);
-    
 
       if (balance < totalCost) {
         throw new BadRequestException(
@@ -428,7 +431,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const ids = data.map(item => item.id);
         return ids.join(", ");
       };
-     
 
       const transactions = await this.transactionsModel.findOne({
         userId: user.id,
@@ -470,7 +472,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
           itemsNotToShip.push(item);
         }
       }
-   
 
       if (itemsToShip.length > 0) {
         // Create a mapping of itemId to index in the itemsToShip array
@@ -480,7 +481,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
         });
 
         const orderItemsPromise = itemsToShip.map(async item => {
-        
           const product = await this.productModel.findById(item.id);
           if (!product) throw new NotFoundException("Product not found");
           const index = itemIdToIndexMap.get(item.id);
@@ -530,10 +530,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
               item.units,
               shipment.data.order_id,
               "WEB2",
-            )
+            );
             console.log(shipment.data.order_id);
             console.log(shipment.data);
-            
+
             return shipment.data;
           } else {
             return null;
@@ -541,7 +541,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
         });
 
         const resolvedShipments = await Promise.all(orderItemsPromise);
-    
       }
 
       if (itemsNotToShip.length > 0) {
@@ -591,7 +590,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
             item.units,
             `${abbr}${rn}`,
             "WEB2",
-          )
+          );
         });
       }
 
@@ -730,7 +729,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               item.units,
               shipment.data.order_id,
               "WEB2",
-            )
+            );
             this.userMailerService.notSelfShipmentMail(
               farmer.email,
               product,
@@ -812,7 +811,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               item.units,
               `${abbr}${rn}`,
               "WEB2",
-            )
+            );
             this.userMailerService.selfShipmentMail(
               farmer.email,
               product,
