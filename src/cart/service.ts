@@ -200,9 +200,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const product = await this.productModel.findById(productId);
         const user_id = product?.publisher_id;
         const user = await this.userModel.findById(user_id);
-        const usdAmount = await this.userService.convertNgntoUsd(product?.amount.toString() as string)
- 
-        if (product && user)     
+        const usdAmount = await this.userService.convertNgntoUsd(
+          product?.amount.toString() as string,
+        );
+
+        if (product && user)
           return {
             id: product?.id,
             Title: product?.title,
@@ -210,7 +212,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
             body: product?.body,
             From: `${user?.first_name} ${user?.last_name}`,
             image: product?.images,
-            usdAmount: usdAmount
+            usdAmount: usdAmount,
           };
       });
 
@@ -271,7 +273,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
       // Check if there's only one item left and it's self-shipping
       if (orderItems.length === 1 && product?.self_shipping === true) {
         const amount = product.amount * orderItems[0].units;
-        return {success: true, product_cost: amount};
+        const amountInUsd = await this.userService.convertNgntoUsd(
+          amount.toString(),
+        );
+        return {
+          success: true,
+          product_cost: amount,
+          product_cost_in_usd: amountInUsd,
+        };
       }
 
       const itemsToShip = [];
