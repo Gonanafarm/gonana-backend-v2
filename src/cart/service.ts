@@ -373,7 +373,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }, 0);
 
       const total_shipping_cost_in_usd = await this.userService.convertNgntoUsd(
-        total_shipping_cost.toString(),
+        (totalAmount + total_shipping_cost).toString(),
       );
 
       return {
