@@ -359,6 +359,14 @@ export class UserMailerService {
     status: string,
     tracking_url: string
   ) {
+    console.log(customerEmail);
+    console.log(order_id);
+    console.log(status);
+    console.log(tracking_url);
+    
+    
+    
+    
     this.mailerService.sendMail({
       to: customerEmail,
       subject: "ORDER STATUS CHANGED",
