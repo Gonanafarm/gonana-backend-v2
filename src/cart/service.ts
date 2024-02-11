@@ -200,8 +200,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const product = await this.productModel.findById(productId);
         const user_id = product?.publisher_id;
         const user = await this.userModel.findById(user_id);
-
-        if (product && user)
+        const usdAmount = await this.userService.convertNgntoUsd(product?.amount.toString() as string)
+ 
+        if (product && user)     
           return {
             id: product?.id,
             Title: product?.title,
@@ -209,6 +210,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
             body: product?.body,
             From: `${user?.first_name} ${user?.last_name}`,
             image: product?.images,
+            usdAmount: usdAmount
           };
       });
 
