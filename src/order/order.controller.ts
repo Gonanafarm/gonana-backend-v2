@@ -1,18 +1,7 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-  Req,
-  UseGuards,
-} from "@nestjs/common";
+import {Body, Controller, Get, Post, Req, UseGuards} from "@nestjs/common";
 import {Request} from "express";
-import {ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
+import {ApiTags} from "@nestjs/swagger";
 import {OrderService} from "./order.service";
-import {Order as OrderModel} from "./outgoing.order.schema";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 
@@ -41,7 +30,6 @@ export class OrderController {
 
   @Post("/webhook")
   async handleWebhook(@Body() payload: any) {
-    console.log(payload);
-    return;
+    return await this.dataService.handleWebhook(payload);
   }
 }

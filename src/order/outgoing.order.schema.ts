@@ -3,7 +3,26 @@ import {ApiProperty} from "@nestjs/swagger";
 import {IsString} from "class-validator";
 import * as mongoose from "mongoose";
 import {Document} from "mongoose";
-export type OrderDocument = Request & Document;
+export interface OrderDocument extends Document {
+  image: string[];
+  product_name: string;
+  product_id: string;
+  quantity: number;
+  product_amount: number;
+  farmer_id: string;
+  product_description: string;
+  shipbubble_id: string;
+  self_shipping: boolean;
+  type?: "OUTGOING";
+  status:
+    | "pending"
+    | "confirmed"
+    | "picked_up_from_farmer"
+    | "in_transit"
+    | "completed"
+    | "cancelled";
+  payment_method: "WEB2" | "WEB3";
+}
 
 @Schema({
   timestamps: {

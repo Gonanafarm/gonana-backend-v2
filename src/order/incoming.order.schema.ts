@@ -36,11 +36,11 @@ export const incomingOrderSchema = new mongoose.Schema(
       required: true,
       default: "INCOMING",
     },
-    status:{
-    type: String,
-    default: "pending"
+    status: {
+      type: String,
+      default: "pending",
     },
-    image:{
+    image: {
       type: Array,
       required: true,
     },
@@ -49,12 +49,31 @@ export const incomingOrderSchema = new mongoose.Schema(
       required: true,
       enum: ["WEB2", "WEB3"],
     },
-    self_shipping:{
+    self_shipping: {
       type: Boolean,
       required: true,
-    }
+    },
   },
   {timestamps: true, versionKey: false},
 );
 
-export type IncomingOrderDocument = Request & Document 
+export interface IncomingOrderDocument extends Document {
+  product_id: string;
+  product_description: string;
+  customer_id: string;
+  product_name: string;
+  product_amount: number;
+  quantity: number;
+  shipbubble_id: string;
+  type?: "INCOMING";
+  status:
+    | "pending"
+    | "confirmed"
+    | "picked_up_from_farmer"
+    | "in_transit"
+    | "completed"
+    | "cancelled";
+  image: Array<string>;
+  payment_method: "WEB2" | "WEB3";
+  self_shipping: boolean;
+}

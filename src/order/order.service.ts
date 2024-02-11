@@ -11,6 +11,7 @@ import {OrderDocument} from "./outgoing.order.schema";
 import {Post, PostDocument} from "../post/post.schema";
 import {UserDocument} from "../user/user.schema";
 import {IncomingOrderDocument} from "./incoming.order.schema";
+import {UserMailerService} from "../user/user.mailer.service";
 
 @Injectable()
 export class OrderService {
@@ -26,6 +27,7 @@ export class OrderService {
     //@ts-ignore
     @InjectModel("INCOMING_ORDERS")
     private incomingOrderModel: Model<IncomingOrderDocument>,
+    private userMailerService: UserMailerService,
   ) {}
 
   async createOutgoingOrder(
@@ -153,30 +155,83 @@ export class OrderService {
       );
     }
   }
-  // async handleWebhook(payload: any) {
-  //   if (payload.status !== "completed") {
-  //     return;
-  //   }
+  async handleWebhook(payload: any) {
+    const farmerEmail = payload.ship_from.email;
 
-  //   const farmerEmail = payload.ship_from.email;
-  //   //const farmer = (await this.userService.findByEmail(farmerEmail)).user;
+    const customerEmail = payload.ship_to.email;
 
-  //   const customerEmail = payload.ship_to.email;
-  // //  const customer = (await this.userService.findByEmail(customerEmail)).user;
+    const trackingUrl = payload.tracking_url;
+    const orderId = payload.order_id;
 
-  //   if (payload.event === "shipment.cancelled") {
-  //     this.userMailerService.orderCancelledCustomerMail(
-  //       customerEmail,
-  //       payload.ship_from.name,
-  //       payload.ship_from.address,
-  //       payload.ship_from.phone,
-  //     );
-  //     this.userMailerService.orderCancelledFarmerMail(
-  //       farmerEmail,
-  //       payload.ship_to.name,
-  //       payload.ship_to.address,
-  //       payload.ship_to.phone,
-  //     );
-  //   }
-  //  }
+    if (payload.event === "shipment.cancelled") {
+      this.userMailerService.orderCancelledCustomerMail(
+        customerEmail,
+        payload.ship_from.name,
+        payload.ship_from.address,
+        payload.ship_from.phone,
+        orderId,
+      );
+      this.userMailerService.orderCancelledFarmerMail(
+        farmerEmail,
+        payload.ship_to.name,
+        payload.ship_to.address,
+        payload.ship_to.phone,
+        orderId,
+      );
+      return;
+    }
+
+    if (payload.event === "shipment.status.changed") {
+      const incomingOrder = await this.incomingOrderModel.findOne({
+        shipbubble_id: orderId,
+      });
+      if (!incomingOrder) return;
+
+      if (payload.status === "picked_up") {
+        incomingOrder.status = "picked_up_from_farmer";
+        await incomingOrder.save();
+        this.userMailerService.customerOrderStatusChangedMail(
+          customerEmail,
+          payload.order_id,
+          "picked up by from farmer",
+          trackingUrl,
+        );
+      } else {
+        incomingOrder.status = payload.status;
+        await incomingOrder.save();
+        this.userMailerService.customerOrderStatusChangedMail(
+          customerEmail,
+          payload.order_id,
+          payload.status,
+          trackingUrl,
+        );
+      }
+
+      const outgoingOrder = await this.outgoingOrderModel.findOne({
+        shipbubble_id: payload.order_id,
+      });
+      if (!outgoingOrder) return;
+
+      if (payload.status === "picked_up") {
+        outgoingOrder.status = "picked_up_from_farmer";
+        await outgoingOrder.save();
+
+        this.userMailerService.farmerOrderStatusChangedMail(
+          farmerEmail,
+          orderId,
+          "picked up from farmer",
+          trackingUrl,
+        );
+      } else {
+        outgoingOrder.status = payload.status;
+        await outgoingOrder.save();
+        this.userMailerService.farmerOrderStatusChangedMail(
+          farmerEmail,
+          orderId,
+          payload.status,
+          trackingUrl,
+        );
+      }
+    }
+  }
 }

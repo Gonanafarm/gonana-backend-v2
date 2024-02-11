@@ -322,13 +322,14 @@ export class UserMailerService {
     customerName: string,
     customerAddress: string,
     customerNumber: string,
+    order_id: string,
   ) {
     try {
       this.mailerService.sendMail({
         to: farmerEmail,
         subject: "ORDER CANCELLED",
         from: "gonanadev@gmail.com",
-        text: `Your order to ${customerName} with phone number: ${customerNumber} and address: ${customerAddress} has been cancelled.`,
+        text: `Your order to ${customerName} with phone number: ${customerNumber}, address: ${customerAddress} and order id: ${order_id} has been cancelled.`,
       });
     } catch (error) {
       console.log(error);
@@ -339,16 +340,43 @@ export class UserMailerService {
     farmerName: string,
     farmerAddress: string,
     farmerNumber: string,
+    order_id: string,
   ) {
     try {
       this.mailerService.sendMail({
         to: customerEmail,
         subject: "ORDER CANCELLED",
         from: "gonanadev@gmail.com",
-        text: `Your order tfrom ${farmerName} with phone number ${farmerNumber} and address ${farmerAddress} has been cancelled`,
+        text: `Your order tfrom ${farmerName} with phone number ${farmerNumber}, address: ${farmerAddress} and order id: ${order_id} has been cancelled`,
       });
     } catch (error) {
       console.log(error);
     }
+  }
+  customerOrderStatusChangedMail(
+    customerEmail: string,
+    order_id: string,
+    status: string,
+    tracking_url: string
+  ) {
+    this.mailerService.sendMail({
+      to: customerEmail,
+      subject: "ORDER STATUS CHANGED",
+      from: "gonanadev@gmail.com",
+      text: `The status of your order with order id: ${order_id} has changed to ${status}. This is your tracking url: ${tracking_url}`,
+    });
+  }
+  farmerOrderStatusChangedMail(
+    farmerEmail: string,
+    order_id: string,
+    status: string,
+    tracking_url: string
+  ) {
+    this.mailerService.sendMail({
+      to: farmerEmail,
+      subject: "ORDER STATUS CHANGED",
+      from: "gonanadev@gmail.com",
+      text: `The status of your order with order id: ${order_id} has changed to ${status}. This is your tracking url: ${tracking_url}`,
+    });
   }
 }

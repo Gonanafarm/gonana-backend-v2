@@ -8,10 +8,11 @@ import { UserModule } from '../user/user.module';
 import { UserModel } from '../user/user.model';
 import { UserService } from '../user/user.service';
 import { IncomingOrderModel } from './incoming.order.model';
+import { UserMailerService } from '../user/user.mailer.service';
 
 
 @Module({
-  providers: [OrderService, PostModule, UserModule],
+  providers: [OrderService, PostModule, UserModule,UserMailerService],
   imports: [OutgoingOrderModel, PostModel, UserModel, IncomingOrderModel],
   exports: [OutgoingOrderModel, OrderService, IncomingOrderModel],
 })
