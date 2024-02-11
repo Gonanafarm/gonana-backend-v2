@@ -845,7 +845,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       };
     } catch (error: any) {
       console.log(error);
-      
+    
       throw new HttpException(
         {
           success: false,
