@@ -163,6 +163,14 @@ export class OrderService {
     const trackingUrl = payload.tracking_url;
     const orderId = payload.order_id;
 
+    const incomingOrder = await this.incomingOrderModel.findOne({
+      shipbubble_id: orderId,
+    });
+    if (!incomingOrder) return;
+    const outgoingOrder = await this.outgoingOrderModel.findOne({
+      shipbubble_id: payload.order_id,
+    });
+    if (!outgoingOrder) return;
     if (payload.event === "shipment.cancelled") {
       this.userMailerService.orderCancelledCustomerMail(
         customerEmail,
@@ -182,18 +190,23 @@ export class OrderService {
     }
 
     if (payload.event === "shipment.status.changed") {
-      const incomingOrder = await this.incomingOrderModel.findOne({
-        shipbubble_id: orderId,
-      });
-      if (!incomingOrder) return;
-
       if (payload.status === "picked_up") {
         incomingOrder.status = "picked_up_from_farmer";
         await incomingOrder.save();
         this.userMailerService.customerOrderStatusChangedMail(
           customerEmail,
           payload.order_id,
-          "picked up by from farmer",
+          "picked up from farmer",
+          trackingUrl,
+        );
+
+        outgoingOrder.status = "picked_up_from_farmer";
+        await outgoingOrder.save();
+
+        this.userMailerService.farmerOrderStatusChangedMail(
+          farmerEmail,
+          orderId,
+          "picked up from farmer",
           trackingUrl,
         );
       } else {
@@ -205,24 +218,6 @@ export class OrderService {
           payload.status,
           trackingUrl,
         );
-      }
-
-      const outgoingOrder = await this.outgoingOrderModel.findOne({
-        shipbubble_id: payload.order_id,
-      });
-      if (!outgoingOrder) return;
-
-      if (payload.status === "picked_up") {
-        outgoingOrder.status = "picked_up_from_farmer";
-        await outgoingOrder.save();
-
-        this.userMailerService.farmerOrderStatusChangedMail(
-          farmerEmail,
-          orderId,
-          "picked up from farmer",
-          trackingUrl,
-        );
-      } else {
         outgoingOrder.status = payload.status;
         await outgoingOrder.save();
         this.userMailerService.farmerOrderStatusChangedMail(
@@ -231,6 +226,23 @@ export class OrderService {
           payload.status,
           trackingUrl,
         );
+      }
+
+      if (payload.status === "completed") {
+        this.userMailerService.customerOrderCompletedMail(
+          customerEmail,
+          orderId,
+          payload.ship_from.phone,
+        );
+
+        this.userMailerService.farmerOrderCompletedMail(farmerEmail, orderId);
+      }
+
+      if (payload.status !== "completed" && "picked_up") {
+        incomingOrder.status = payload.status;
+        await incomingOrder.save();
+        outgoingOrder.status = payload.status;
+        await outgoingOrder.save();
       }
     }
   }

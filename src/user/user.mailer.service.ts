@@ -329,7 +329,7 @@ export class UserMailerService {
         to: farmerEmail,
         subject: "ORDER CANCELLED",
         from: "gonanadev@gmail.com",
-        text: `Your order to ${customerName} with phone number: ${customerNumber}, address: ${customerAddress} and order id: ${order_id} has been cancelled.`,
+        html: `Your order to ${customerName} with phone number: ${customerNumber}, address: ${customerAddress} and order id: ${order_id} has been cancelled.`,
       });
     } catch (error) {
       console.log(error);
@@ -347,7 +347,7 @@ export class UserMailerService {
         to: customerEmail,
         subject: "ORDER CANCELLED",
         from: "gonanadev@gmail.com",
-        text: `Your order tfrom ${farmerName} with phone number ${farmerNumber}, address: ${farmerAddress} and order id: ${order_id} has been cancelled`,
+        html: `Your order tfrom ${farmerName} with phone number ${farmerNumber}, address: ${farmerAddress} and order id: ${order_id} has been cancelled`,
       });
     } catch (error) {
       console.log(error);
@@ -357,34 +357,49 @@ export class UserMailerService {
     customerEmail: string,
     order_id: string,
     status: string,
-    tracking_url: string
+    tracking_url: string,
   ) {
-    console.log(customerEmail);
-    console.log(order_id);
-    console.log(status);
-    console.log(tracking_url);
-    
-    
-    
-    
+
     this.mailerService.sendMail({
       to: customerEmail,
       subject: "ORDER STATUS CHANGED",
       from: "gonanadev@gmail.com",
-      text: `The status of your order with order id: ${order_id} has changed to ${status}. This is your tracking url: ${tracking_url}`,
+      html: `The status of your order with order id: ${order_id} has changed to "${status}". This is your tracking url: ${tracking_url}`,
     });
   }
   farmerOrderStatusChangedMail(
     farmerEmail: string,
     order_id: string,
     status: string,
-    tracking_url: string
+    tracking_url: string,
   ) {
     this.mailerService.sendMail({
       to: farmerEmail,
       subject: "ORDER STATUS CHANGED",
       from: "gonanadev@gmail.com",
-      text: `The status of your order with order id: ${order_id} has changed to ${status}. This is your tracking url: ${tracking_url}`,
+      html: `The status of your order with order id: ${order_id} has changed to "${status}". This is your tracking url: ${tracking_url}`,
+    });
+  }
+
+  customerOrderCompletedMail(
+    customerEmail: string,
+    order_id: string,
+    farmerNumber: string,
+  ) {
+    this.mailerService.sendMail({
+      to: customerEmail,
+      subject: "ORDER COMPLETED",
+      from: "gonanadev@gmail.com",
+      html: `Dear customer your order with order id: ${order_id} has been completed. Problem with your order? Reach out to your farmer at : ${farmerNumber}`,
+    });
+  }
+
+  farmerOrderCompletedMail(farmerEmail: string, order_id: string) {
+    this.mailerService.sendMail({
+      to: farmerEmail,
+      subject: "ORDER COMPLETED",
+      from: "gonanadev@gmail.com",
+      html: `Dear customer your order with order id: ${order_id} has been completed.`,
     });
   }
 }
