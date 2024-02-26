@@ -45,6 +45,7 @@ export class UserController {
     return this.userService.getItem(id);
   }
 
+  
   @Get("/:id/customers")
   getCustomers(@Param("id") id: string) {
     return this.userService.getCustomers(id);
