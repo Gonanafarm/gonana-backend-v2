@@ -834,6 +834,13 @@ export class UserService extends GenericService<UserDocument> {
     }
     return {success: true, balance: user.balance};
   }
+  async getCustomers(id: string) {
+    const farmer = await this.userModel.findById(id);
+    if (!farmer) {
+      throw new NotFoundException("User not found");
+    }
+    return {success: true, data: farmer.patrons};
+  }
   async getUserTransactions(id: string, page?: string, limit?: string) {
     const transactionsPerPage = 10; // Set your desired page size here
 

@@ -136,13 +136,14 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String})
   cryptoWalletBalanceInUsd: string;
 
-
-
   @Prop({type: mongoose.SchemaTypes.String})
   wallet_address: string;
 
   @Prop({type:mongoose.SchemaTypes.String})
   privateKey: string;
+
+  @Prop({type:mongoose.SchemaTypes.Array})
+  patrons: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

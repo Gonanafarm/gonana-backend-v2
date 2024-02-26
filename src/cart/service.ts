@@ -705,10 +705,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
               product.amount.toString(),
             );
             const decimals = (ethAmount.split('.')[1] || []).length;
-            const parsedEthAmount = ethers.utils.parseUnits(ethAmount, decimals);
+            const parsedEthAmount = ethers.utils.parseEther(ethAmount)
             const order = await contract.orderProduct(
               product.id,
-              ethAmount,
+              parsedEthAmount,
               user_id,
               {
                 value: parsedEthAmount,
@@ -786,14 +786,17 @@ export class CartItemService extends GenericService<CartItemDocument> {
               product.amount.toString(),
             );
             const decimals = (ethAmount.split('.')[1] || []).length;
-            const parsedEthAmount = ethers.utils.parseUnits(ethAmount, decimals);
+            const parsedEthAmount = ethers.utils.parseEther(ethAmount as string);
+            
             const order = await contract.orderProduct(
               product.id,
-              ethAmount,
+              parsedEthAmount,
               user_id,
               {
                 value: parsedEthAmount,
+                gasLimit: 50000
               },
+
             );
 
             const tx = await order.wait();

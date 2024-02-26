@@ -9,7 +9,7 @@ import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 import {OrderDocument} from "./outgoing.order.schema";
 import {Post, PostDocument} from "../post/post.schema";
-import {UserDocument} from "../user/user.schema";
+import {User, UserDocument} from "../user/user.schema";
 import {IncomingOrderDocument} from "./incoming.order.schema";
 import {UserMailerService} from "../user/user.mailer.service";
 
@@ -155,10 +155,15 @@ export class OrderService {
       );
     }
   }
+
   async handleWebhook(payload: any) {
     const farmerEmail = payload.ship_from.email;
+    const farmer = await this.userModel.findOne({email: farmerEmail});
 
     const customerEmail = payload.ship_to.email;
+    const customer = await this.userModel.findOne({
+      email: customerEmail,
+    });
 
     const trackingUrl = payload.tracking_url;
     const orderId = payload.order_id;
@@ -236,6 +241,13 @@ export class OrderService {
         );
 
         this.userMailerService.farmerOrderCompletedMail(farmerEmail, orderId);
+        const farmerPatrons = farmer?.patrons;
+        if (farmerPatrons?.includes(customer?.id)) {
+          return;
+        } else {
+          farmer?.patrons.push(customer?.id);
+          await farmer?.save();
+        }
       }
 
       if (payload.status !== "completed" && "picked_up") {

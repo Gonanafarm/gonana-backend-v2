@@ -34,7 +34,7 @@ export class UserController {
     return this.userService.findByEmail(email);
   }
   @Get("/get-by-email/:email")
-  getByEmail(@Param("email") email:string){
+  getByEmail(@Param("email") email: string) {
     return this.userService.getByEmail(email);
   }
 
@@ -45,7 +45,10 @@ export class UserController {
     return this.userService.getItem(id);
   }
 
-
+  @Get("/:id/customers")
+  getCustomers(@Param("id") id: string) {
+    return this.userService.getCustomers(id);
+  }
 
   @Patch("update-image")
   @UseInterceptors(FileInterceptor("file"))
