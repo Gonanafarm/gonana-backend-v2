@@ -1201,4 +1201,26 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
   }
+
+  async sendNotification(data: any) {
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
+    };
+    const message ={
+      app_id: process.env.ONESIGNAL_APP_ID,
+      contents: {en: "Test push notification"},
+      included_segments:["All"],
+      content_available:true,
+      small_icon: "ic_notification_icon",
+      data:{
+        PushTitle: "CUSTOM NOTIFICATION"
+      }
+    }
+
+    const url = "https://onesignal.com/api/v1/notifications";
+    const req = await axios.post(url, data, {headers: headers});
+    console.log(req.data);
+    return
+  }
 }
