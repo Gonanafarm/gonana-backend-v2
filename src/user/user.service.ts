@@ -1230,7 +1230,6 @@ export class UserService extends GenericService<UserDocument> {
         "Content-Type": "application/json",
         Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
       };
-      console.log(data);
 
       const message = {
         app_id: process.env.ONESIGNAL_APP_ID,
@@ -1238,7 +1237,7 @@ export class UserService extends GenericService<UserDocument> {
         included_segments: ["include_player_ids"],
         include_player_ids: data,
         content_available: true,
-        small_icon: "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+   //     small_icon: "ic_stat_onesignal_default",
         data: {
           PushTitle: "CUSTOM NOTIFICATION",
         },
@@ -1246,7 +1245,7 @@ export class UserService extends GenericService<UserDocument> {
 
       const url = "https://onesignal.com/api/v1/notifications";
       const req = await axios.post(url, message, {headers: headers});
-      console.log(req.status);
+
       return req.data;
     } catch (error: any) {
       //  console.log(error);
