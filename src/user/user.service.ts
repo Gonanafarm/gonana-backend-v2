@@ -1202,25 +1202,101 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async sendNotification(data: any) {
+  async sendNotification() {
     const headers = {
       "Content-Type": "application/json",
       Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
     };
-    const message ={
+    const message = {
       app_id: process.env.ONESIGNAL_APP_ID,
       contents: {en: "Test push notification"},
-      included_segments:["All"],
-      content_available:true,
+      included_segments: ["All"],
+      content_available: true,
       small_icon: "ic_notification_icon",
-      data:{
-        PushTitle: "CUSTOM NOTIFICATION"
-      }
-    }
+      data: {
+        PushTitle: "CUSTOM NOTIFICATION",
+      },
+    };
 
     const url = "https://onesignal.com/api/v1/notifications";
-    const req = await axios.post(url, data, {headers: headers});
-    console.log(req.data);
-    return
+    const req = await axios.post(url, message, {headers: headers});
+
+    return req.data;
+  }
+
+  async sendNotificationToDevice(data: Array<string>) {
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
+      };
+      console.log(data);
+
+      const message = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {en: "Test push notification"},
+        included_segments: ["include_player_ids"],
+        include_player_ids: data,
+        content_available: true,
+        small_icon: "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        data: {
+          PushTitle: "CUSTOM NOTIFICATION",
+        },
+      };
+
+      const url = "https://onesignal.com/api/v1/notifications";
+      const req = await axios.post(url, message, {headers: headers});
+      console.log(req.status);
+      return req.data;
+    } catch (error: any) {
+      //  console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.errors,
+        },
+        error.response.status,
+      );
+    }
+  }
+
+  async isPlayerIdValid(playerId: string): Promise<boolean> {
+    const config = {
+      headers: {
+        host: "onesignal.com",
+      },
+    };
+
+    const url = `https://onesignal.com/api/v1/players/${playerId}?app_id=${process.env.ONESIGNAL_APP_ID}`;
+
+    try {
+      const response = await axios.get(url, config);
+
+      return !response.data.invalid_identifier;
+    } catch (error: any) {
+      if (error.response && error.response.data.errors) {
+        return false;
+      }
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.errors,
+        },
+        error.response.status,
+      );
+    }
+  }
+
+  async updateOneSignalId(userId: string, oneSignalId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    if (!oneSignalId) {
+      throw new BadRequestException("Must provide oneSignalId");
+    }
+    user.onesignal_id = oneSignalId;
+    await user.save();
+    return {success: true, message: "One signal Id updated"};
   }
 }

@@ -144,6 +144,9 @@ export class User {
 
   @Prop({type:mongoose.SchemaTypes.Array})
   patrons: string[];
+
+  @Prop({type:mongoose.SchemaTypes.String})
+  onesignal_id: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -172,6 +175,7 @@ UserSchema.methods.getPublicData = function () {
     cryptoWalletBalanceInNgn,
     wallet_address,
     country,
+    onesignal_id
   } = this;
   const publicData = {
     id,
@@ -193,6 +197,7 @@ UserSchema.methods.getPublicData = function () {
     cryptoWalletBalanceInNgn,
     wallet_address,
     country,
+    onesignal_id
   };
   return publicData;
 };
