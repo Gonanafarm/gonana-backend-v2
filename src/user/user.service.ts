@@ -463,16 +463,29 @@ export class UserService extends GenericService<UserDocument> {
 
   async getUserData(id: string) {
     const user = await this.userModel.findById(id);
-    const userData = user?.getPublicData();
-
+    const url = "https://rpc.ankr.com/blast_testnet_sepolia";
+    const provider = new providers.JsonRpcProvider(url);
     if (!user) {
       return null;
     }
+    if (user.wallet_address === undefined) {
+      const wallet = Wallet.createRandom();
+      const address = wallet.address;
+      const balance = await provider.getBalance(address);
+      const privateKey = wallet.privateKey;
+      console.log(privateKey);
+
+      user.wallet = balance.toString();
+      user.wallet_address = address;
+      user.privateKey = privateKey;
+      await user.save();
+    }
+    const userData = user?.getPublicData();
+
     if (userData) {
       user.cryptoWalletBalanceInNgn = await this.convertEthToNgn(user.wallet);
       console.log(user.cryptoWalletBalanceInNgn);
 
-      // Assuming user model has a method like save() to update the document in the database
       await user.save();
     }
     return userData;
@@ -1224,23 +1237,11 @@ export class UserService extends GenericService<UserDocument> {
     return req.data;
   }
 
-  async sendNotificationToDevice(data: Array<string>) {
+  async sendNotificationToDevice(message: object) {
     try {
       const headers = {
         "Content-Type": "application/json",
         Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
-      };
-
-      const message = {
-        app_id: process.env.ONESIGNAL_APP_ID,
-        contents: {en: "Test push notification"},
-        included_segments: ["include_player_ids"],
-        include_player_ids: data,
-        content_available: true,
-   //     small_icon: "ic_stat_onesignal_default",
-        data: {
-          PushTitle: "CUSTOM NOTIFICATION",
-        },
       };
 
       const url = "https://onesignal.com/api/v1/notifications";

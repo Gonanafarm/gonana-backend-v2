@@ -52,7 +52,7 @@ export class UserController {
   }
 
   @Post("send-notification")
-  sendNotification(@Body("data") data: string[]) {
+  sendNotification(@Body("data") data: object) {
     return this.userService.sendNotificationToDevice(data);
   }
 

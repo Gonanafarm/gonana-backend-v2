@@ -146,6 +146,7 @@ export class PostController {
       amount: createPost.amount.toString(),
       farmer_id: createPost.publisher_id,
       wallet: "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
+      images: createPost.images
     });
     return createPost;
   }
