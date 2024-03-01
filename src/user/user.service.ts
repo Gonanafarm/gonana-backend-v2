@@ -602,6 +602,7 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
   }
+  
   async verifyTransaction(data: any) {
     console.log(data);
 
