@@ -64,10 +64,11 @@ export class PostEventHandlers {
   async handleCreatePostEvent(payload: any) {
     const farmer = (await this.userModel.findById(payload.farmer_id)) as User;
     console.log(farmer.patrons);
+    console.log(payload.images);
 
     const message = {
       app_id: process.env.ONESIGNAL_APP_ID,
-      contents: {en: "Test push notification"},
+      contents: {en: `${payload.title}`},
       included_segments: ["include_player_ids"],
       include_player_ids: farmer.patrons,
       content_available: true,
@@ -83,7 +84,7 @@ export class PostEventHandlers {
     };
     if (farmer.patrons.length > 1) {
       console.log("here");
-      
+
       await this.userService.sendNotificationToDevice(message);
     }
 
@@ -106,8 +107,6 @@ export class PostEventHandlers {
       farmer.wallet_address,
     );
     const tx = await list_product.wait();
-
-    
   }
   // @OnEvent("Unlike")
   // async handleUnlikeEvent(payload: any) {

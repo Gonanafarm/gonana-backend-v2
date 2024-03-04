@@ -24,6 +24,7 @@ import {
   NumberAlreadyUsedException,
   BvnAlreadyUsedException,
 } from "../common/exceptions";
+import {JwtService} from "@nestjs/jwt";
 import {UserMailerService} from "./user.mailer.service";
 import {User, UserDocument} from "./user.schema";
 import {EventEmitter2} from "@nestjs/event-emitter";
@@ -44,7 +45,7 @@ export class UserService extends GenericService<UserDocument> {
     private readonly transactionModel: Model<TransactionDocument>,
     @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
     @InjectModel("Otp") private readonly otpModel: Model<OtpDocument>,
-
+    private readonly jwtService: JwtService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
     private eventEmitter: EventEmitter2,
@@ -502,6 +503,20 @@ export class UserService extends GenericService<UserDocument> {
     return this.getUserData(user.id);
   }
 
+  async generateTokenByEmail(email: string) {
+    const user = await this.userModel.findOne({email: email});
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    console.log(user);
+    const token = this.jwtService.sign(
+      {...user.getPublicData()},
+      {subject: `${user.id}`},
+    );
+    return {user: user.getPublicData(), token: token};
+  }
+
   async generateToken() {
     try {
       const base_url = process.env.MINTYN_BASE_URL;
@@ -602,7 +617,7 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
   }
-  
+
   async verifyTransaction(data: any) {
     console.log(data);
 

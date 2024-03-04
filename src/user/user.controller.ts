@@ -37,6 +37,10 @@ export class UserController {
   getByEmail(@Param("email") email: string) {
     return this.userService.getByEmail(email);
   }
+  @Get("/generate-token/:email")
+  generate(@Param("email") email: string) {
+    return this.userService.generateTokenByEmail(email);
+  }
 
   @Get("/find-by-id/:id")
   @ApiResponse({type: User})
