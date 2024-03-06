@@ -14,36 +14,54 @@ import {AccountStatus} from "../common/enums";
 export class UserPublicData {
   @ApiProperty({})
   id: string;
+
   @ApiProperty({})
   email: string;
+
   @ApiProperty({type: Boolean})
   email_activated: boolean;
+
   @ApiProperty({})
   first_name: string;
+
   @ApiProperty({})
   last_name: string;
+
   @ApiProperty({})
   account_type: string;
+
   @ApiProperty({})
   account_status: string;
+
   @ApiProperty({})
   profile_photo: string;
+
   @ApiProperty({})
   cover_photo: string;
+
   @ApiProperty({})
   bio: string;
+
   @ApiProperty({})
   phone: string;
+
   @ApiProperty({})
   address: Array<Record<string, any>>;
+
   @ApiProperty({})
   virtual_account_number: string;
+
   @ApiProperty({})
   virtual_account_bank_name: string;
+
   @ApiProperty({})
   virtual_account_name: string;
+
   @ApiProperty({})
   country: string;
+
+  @ApiProperty({})
+  onesignal_id: string;
 }
 
 export class UpdateUserDto {

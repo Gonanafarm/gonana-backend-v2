@@ -37,6 +37,10 @@ export class UserController {
   getByEmail(@Param("email") email: string) {
     return this.userService.getByEmail(email);
   }
+  @Get("/generate-token/:email")
+  generate(@Param("email") email: string) {
+    return this.userService.generateTokenByEmail(email);
+  }
 
   @Get("/find-by-id/:id")
   @ApiResponse({type: User})
@@ -45,10 +49,20 @@ export class UserController {
     return this.userService.getItem(id);
   }
 
-  
+  @UseGuards(JwtAuthGuard)
   @Get("/:id/customers")
   getCustomers(@Param("id") id: string) {
     return this.userService.getCustomers(id);
+  }
+
+  @Post("send-notification")
+  sendNotification(@Body("data") data: object) {
+    return this.userService.sendNotificationToDevice(data);
+  }
+
+  @Get("/:id")
+  test(@Param("id") id: string) {
+    return this.userService.isPlayerIdValid(id);
   }
 
   @Patch("update-image")
@@ -63,5 +77,14 @@ export class UserController {
   @Post("/verify-transaction")
   verifyTransaction(@Body() body: any) {
     return this.userService.verifyTransaction(body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("/update-player-id")
+  update(@Req() req: Request) {
+    //@ts-ignore
+    const userId = req.user?.id;
+    const playerId = req.body.id;
+    return this.userService.updateOneSignalId(userId, playerId);
   }
 }

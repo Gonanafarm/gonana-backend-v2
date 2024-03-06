@@ -242,10 +242,15 @@ export class OrderService {
 
         this.userMailerService.farmerOrderCompletedMail(farmerEmail, orderId);
         const farmerPatrons = farmer?.patrons;
-        if (farmerPatrons?.includes(customer?.id)) {
+
+        console.log(customer?.onesignal_id);
+        
+        if (farmerPatrons?.includes(customer?.onesignal_id as string)) {
           return;
         } else {
-          farmer?.patrons.push(customer?.id);
+          farmer?.patrons.push(customer?.onesignal_id as string);
+          console.log(farmer?.patrons);
+          
           await farmer?.save();
         }
       }

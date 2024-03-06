@@ -311,17 +311,17 @@ export class CartItemService extends GenericService<CartItemDocument> {
           unit_weight: product?.weight,
           unit_amount: product?.amount,
           quantity: item.units,
-        };
-        console.log(packageItem.quantity);
+        }
 
         const productLength = product.address.length;
         const productIndex = productLength - 1;
         const sender_address_code =
           product.address[productIndex].code || undefined;
-
+      console.log(product.address);
+      
         if (sender_address_code === undefined) {
           throw new BadRequestException(
-            "product does not have a valid address",
+            "farmer does not have a valid address",
           );
         }
         const userLength = user.address.length;

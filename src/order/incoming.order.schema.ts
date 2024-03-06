@@ -53,6 +53,19 @@ export const incomingOrderSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
+    farmer_shipped: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    customer_received: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    farmer_ship_date: {
+      type: Date,
+    },
   },
   {timestamps: true, versionKey: false},
 );
@@ -76,4 +89,7 @@ export interface IncomingOrderDocument extends Document {
   image: Array<string>;
   payment_method: "WEB2" | "WEB3";
   self_shipping: boolean;
+  farmer_shipped: boolean;
+  customer_received: boolean;
+  farmer_ship_date: Date;
 }
