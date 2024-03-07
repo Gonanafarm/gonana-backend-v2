@@ -361,7 +361,6 @@ export class OrderService {
     outgoingOrder.customer_received = true;
     outgoingOrder.customer_received_date = moment().utcOffset("+0100");
     await outgoingOrder.save();
-
     return {
       success: true,
       data: incomingOrder,
