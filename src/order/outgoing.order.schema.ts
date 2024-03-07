@@ -9,10 +9,14 @@ export interface OrderDocument extends Document {
   product_id: string;
   quantity: number;
   product_amount: number;
+  customer_id: string;
   farmer_id: string;
   product_description: string;
   shipbubble_id: string;
   self_shipping: boolean;
+  farmer_shipped?: boolean;
+  customer_received?: boolean;
+  farmer_ship_date?: Date;
   type?: "OUTGOING";
   status:
     | "pending"
@@ -56,6 +60,15 @@ export class Order {
   @Prop({type: mongoose.SchemaTypes.String, required: true})
   farmer_id: string;
 
+  @Prop({type: mongoose.SchemaTypes.Boolean, required: true, default: false})
+  farmer_shipped: boolean;
+
+  @Prop({type: mongoose.SchemaTypes.Boolean, required: true, default: false})
+  customer_received: boolean;
+
+  @Prop({type: mongoose.SchemaTypes.Date})
+  farmer_ship_date: Date;
+
   @Prop({type: mongoose.SchemaTypes.String, required: true})
   product_description: string;
 
@@ -74,6 +87,9 @@ export class Order {
 
   @Prop({type: mongoose.SchemaTypes.String, required: true, default: "pending"})
   status: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, required: true})
+  customer_id: string;
 
   @ApiProperty()
   @Prop({

@@ -4,6 +4,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  NotFoundException,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
@@ -33,6 +34,7 @@ export class OrderService {
   async createOutgoingOrder(
     product_id: string,
     farmer_id: string,
+    customer_id: string,
     quantity: number,
     shipbubble_id: string,
     payment_method: "WEB2" | "WEB3",
@@ -54,6 +56,7 @@ export class OrderService {
       product_id: product.id,
       product_amount: product.amount,
       shipbubble_id: shipbubble_id,
+      customer_id: customer_id,
       product_description: product.body,
       self_shipping: product.self_shipping,
     });
@@ -63,6 +66,7 @@ export class OrderService {
 
   async createIncomingOrder(
     product_id: string,
+    farmer_id: string,
     customer_id: string,
     quantity: number,
     shipbubble_id: string,
@@ -71,6 +75,11 @@ export class OrderService {
     const customer = await this.userModel.findById(customer_id);
     if (!customer) {
       throw new BadRequestException("User not found");
+    }
+
+    const farmer = await this.userModel.findById(farmer_id);
+    if (!farmer) {
+      throw new BadRequestException("Famer not found");
     }
 
     const product = await this.productModel.findById(product_id);
@@ -82,6 +91,7 @@ export class OrderService {
       quantity: quantity,
       payment_method: payment_method,
       image: product.images,
+      farmer_id: farmer_id,
       product_id: product.id,
       product_amount: product.amount,
       shipbubble_id: shipbubble_id,
@@ -159,11 +169,17 @@ export class OrderService {
   async handleWebhook(payload: any) {
     const farmerEmail = payload.ship_from.email;
     const farmer = await this.userModel.findOne({email: farmerEmail});
+    if (!farmer) {
+      return;
+    }
 
     const customerEmail = payload.ship_to.email;
     const customer = await this.userModel.findOne({
       email: customerEmail,
     });
+    if (!customer) {
+      return;
+    }
 
     const trackingUrl = payload.tracking_url;
     const orderId = payload.order_id;
@@ -241,17 +257,24 @@ export class OrderService {
         );
 
         this.userMailerService.farmerOrderCompletedMail(farmerEmail, orderId);
-        const farmerPatrons = farmer?.patrons;
+        const farmerPatrons = farmer.patrons;
 
-        console.log(customer?.onesignal_id);
-        
-        if (farmerPatrons?.includes(customer?.onesignal_id as string)) {
+        const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
+
+        const newBalance = farmer.balance + reducedProductCost;
+
+        farmer.balance = newBalance;
+        await farmer.save();
+
+        console.log(customer.onesignal_id);
+
+        if (farmerPatrons.includes(customer.onesignal_id as string)) {
           return;
         } else {
-          farmer?.patrons.push(customer?.onesignal_id as string);
-          console.log(farmer?.patrons);
-          
-          await farmer?.save();
+          farmer.patrons.push(customer.onesignal_id as string);
+          console.log(farmer.patrons);
+
+          await farmer.save();
         }
       }
 
@@ -262,5 +285,30 @@ export class OrderService {
         await outgoingOrder.save();
       }
     }
+  }
+  async confirmOutgoingOrderSent(orderId: string, farmerId: string) {
+    if (!orderId) {
+      throw new BadRequestException("Must provide orderId");
+    }
+    const outgoingOrder = await this.outgoingOrderModel.findById(orderId);
+    if (!outgoingOrder) {
+      throw new NotFoundException("Order not found");
+    }
+    if (farmerId !== outgoingOrder.farmer_id) {
+      throw new BadRequestException("This is not your order");
+    }
+    if (outgoingOrder.self_shipping === false) {
+      throw new BadRequestException(
+        "Shipment of this product is not handled by you",
+      );
+    }
+    outgoingOrder.farmer_shipped = true;
+    outgoingOrder.farmer_ship_date = new Date();
+    await outgoingOrder.save();
+
+    return {
+      success: true,
+      data: outgoingOrder,
+    };
   }
 }

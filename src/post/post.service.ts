@@ -84,7 +84,7 @@ export class PostService extends GenericService<PostDocument> {
   async deleteDiscount(productid: string) {
     const exists = await this.discountModel.findOne({productid: productid});
     if (!exists) {
-      console.log("discount model does not exist");
+      
       return;
     }
     const deleteProduct = await this.discountModel.deleteOne({
@@ -124,7 +124,7 @@ export class PostService extends GenericService<PostDocument> {
     if (products.length < 1) {
       throw new NotFoundException("No Doscounted Products");
     }
-    console.log(products.length);
+  
 
     const ids = products.map(product => product.productid);
     const discountedProductsPromises = ids.map(async id => {
@@ -181,7 +181,7 @@ export class PostService extends GenericService<PostDocument> {
       if (products.length < 1) {
         throw new NotFoundException("Products Not Found");
       }
-      console.log(products.length);
+     
       return {
         success: true,
         data: products,
@@ -230,7 +230,7 @@ export class PostService extends GenericService<PostDocument> {
       if (products.length < 1) {
         throw new NotFoundException("Products Not Found");
       }
-      console.log(products.length);
+   
       const productPromises = products.map(async (product: any) => {
         const id = product.publisher_id;
         const user = await this.userModel.findById(id);
@@ -293,7 +293,7 @@ export class PostService extends GenericService<PostDocument> {
       if (products.length < 1) {
         throw new NotFoundException("Products Not Found");
       }
-      console.log(products.length);
+  
 
       const productPromises = products.map(async (product: any) => {
         const id = product.publisher_id;

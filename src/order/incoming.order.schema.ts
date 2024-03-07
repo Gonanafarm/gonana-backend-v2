@@ -15,6 +15,10 @@ export const incomingOrderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    farmer_id: {
+      type: String,
+      required: true,
+    },
     product_name: {
       type: String,
       required: true,
@@ -73,6 +77,7 @@ export const incomingOrderSchema = new mongoose.Schema(
 export interface IncomingOrderDocument extends Document {
   product_id: string;
   product_description: string;
+  farmer_id: string;
   customer_id: string;
   product_name: string;
   product_amount: number;
