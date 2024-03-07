@@ -32,4 +32,12 @@ export class OrderController {
   async handleWebhook(@Body() payload: any) {
     return await this.dataService.handleWebhook(payload);
   }
+
+  @Post("/confirm-sent")
+  @UseGuards(JwtAuthGuard)
+  async confirmSent(@Body("orderId") data: string, @Req() req: Request) {
+    //@ts-ignore
+    const farmerId = req.user?.id;
+    return await this.dataService.confirmOutgoingOrderSent(data, farmerId);
+  }
 }

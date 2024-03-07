@@ -13,7 +13,7 @@ import {Post, PostDocument} from "../post/post.schema";
 import {User, UserDocument} from "../user/user.schema";
 import {IncomingOrderDocument} from "./incoming.order.schema";
 import {UserMailerService} from "../user/user.mailer.service";
-
+import * as moment from "moment";
 @Injectable()
 export class OrderService {
   //@ts-ignore
@@ -302,13 +302,61 @@ export class OrderService {
         "Shipment of this product is not handled by you",
       );
     }
+
+    if (outgoingOrder.farmer_ship_date !== undefined) {
+      throw new BadRequestException(
+        "You have already confirmed this order has been shipped",
+      );
+    }
     outgoingOrder.farmer_shipped = true;
-    outgoingOrder.farmer_ship_date = new Date();
+    outgoingOrder.farmer_ship_date = moment().utcOffset("+0100");
+
     await outgoingOrder.save();
+
+    const incomingOrder = await this.incomingOrderModel.findOne({
+      shipbubble_id: outgoingOrder.shipbubble_id,
+    });
+    if (!incomingOrder) {
+      console.log("here");
+      
+      return;
+    }
+    incomingOrder.farmer_shipped = true;
+    incomingOrder.farmer_ship_date = moment().utcOffset("+0100");
+    await incomingOrder.save();
 
     return {
       success: true,
       data: outgoingOrder,
     };
+  }
+
+  async confirmIncomingOrderReceived(orderId: string, customerId: string) {
+    if (!orderId) {
+      throw new BadRequestException("Must provide orderId");
+    }
+
+    const incomingOrder = await this.incomingOrderModel.findById(orderId);
+    if (!incomingOrder) {
+      throw new NotFoundException("Order not found");
+    }
+
+    if (customerId !== incomingOrder.customer_id) {
+      throw new BadRequestException("This is not your order");
+    }
+    incomingOrder.customer_received = true;
+    incomingOrder.customer_received_date = moment().utcOffset("+0100");
+
+    await incomingOrder.save();
+
+    const outgoingOrder = await this.outgoingOrderModel.findOne({
+      shipbubble_id: incomingOrder.shipbubble_id,
+    });
+    if (!outgoingOrder) {
+      return;
+    }
+    outgoingOrder.customer_received = true;
+    outgoingOrder.customer_received_date = moment().utcOffset("+0100");
+    await outgoingOrder.save();
   }
 }

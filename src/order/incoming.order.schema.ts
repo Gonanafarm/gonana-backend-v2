@@ -1,3 +1,4 @@
+import {Moment} from "moment";
 import * as mongoose from "mongoose";
 import {Document} from "mongoose";
 
@@ -67,8 +68,13 @@ export const incomingOrderSchema = new mongoose.Schema(
       default: false,
       required: true,
     },
+    customer_received_date: {
+      type: Date,
+      default: undefined,
+    },
     farmer_ship_date: {
       type: Date,
+      default: undefined,
     },
   },
   {timestamps: true, versionKey: false},
@@ -96,5 +102,6 @@ export interface IncomingOrderDocument extends Document {
   self_shipping: boolean;
   farmer_shipped: boolean;
   customer_received: boolean;
-  farmer_ship_date: Date;
+  farmer_ship_date: Moment;
+  customer_received_date: Moment;
 }
