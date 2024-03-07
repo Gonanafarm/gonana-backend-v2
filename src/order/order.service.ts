@@ -318,7 +318,7 @@ export class OrderService {
     });
     if (!incomingOrder) {
       console.log("here");
-      
+
       return;
     }
     incomingOrder.farmer_shipped = true;
@@ -344,6 +344,9 @@ export class OrderService {
     if (customerId !== incomingOrder.customer_id) {
       throw new BadRequestException("This is not your order");
     }
+    if(incomingOrder.farmer_shipped === false){
+      throw new BadRequestException("Farmer has not sent out this product")
+    }
     incomingOrder.customer_received = true;
     incomingOrder.customer_received_date = moment().utcOffset("+0100");
 
@@ -358,5 +361,10 @@ export class OrderService {
     outgoingOrder.customer_received = true;
     outgoingOrder.customer_received_date = moment().utcOffset("+0100");
     await outgoingOrder.save();
+
+    return {
+      success: true,
+      data: incomingOrder,
+    };
   }
 }

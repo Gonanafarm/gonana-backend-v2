@@ -40,4 +40,12 @@ export class OrderController {
     const farmerId = req.user?.id;
     return await this.dataService.confirmOutgoingOrderSent(data, farmerId);
   }
+
+  @Post("/confirm-received")
+  @UseGuards(JwtAuthGuard)
+  async confirmReceived(@Body("orderId") data: string, @Req() req: Request) {
+    //@ts-ignore
+    const customerId = req.user?.id;
+    return await this.dataService.confirmIncomingOrderReceived(data, customerId);
+  }
 }
