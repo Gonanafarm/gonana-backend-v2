@@ -10,7 +10,7 @@ import {UserService} from "../user/user.service";
 import {IncomingOrderModel} from "./incoming.order.model";
 import {UserMailerService} from "../user/user.mailer.service";
 import {ScheduleModule} from "@nestjs/schedule";
-import {OrderCronJob} from "./order.cron";
+//import {OrderCronJob} from "./order.cron";
 
 @Module({
   providers: [
@@ -18,7 +18,7 @@ import {OrderCronJob} from "./order.cron";
     PostModule,
     UserModule,
     UserMailerService,
-    OrderCronJob,
+  //  OrderCronJob,
   ],
   imports: [
     ScheduleModule.forRoot(),
