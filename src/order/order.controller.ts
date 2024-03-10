@@ -52,7 +52,7 @@ export class OrderController {
 
   @Post("/complaint")
   @UseGuards(JwtAuthGuard)
-  async complaint(@Body() data:any, @Req() req: Request ){
+  async complaint(@Body() data:Complaint, @Req() req: Request ){
     //@ts-ignore
     const userId = req.user?.id;
     return await this.dataService.complaint(data.orderId, data.complaint, userId, data.subject);

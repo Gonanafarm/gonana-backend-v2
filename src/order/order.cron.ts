@@ -12,18 +12,23 @@ import {UserService} from "../user/user.service";
 @Injectable()
 export class OrderCronJob {
   constructor(
+    //@ts-ignore
     @InjectModel("OUTGOING_ORDERS")
     private outgoingOrderModel: Model<OrderDocument>,
+
+    //@ts-ignore
     @InjectModel("INCOMING_ORDERS")
     private incomingOrderModel: Model<IncomingOrderDocument>,
+
     private orderService: OrderService,
+    //@ts-ignore
     @InjectModel("User") private userModel: Model<UserDocument>,
     private userMailerService: UserMailerService,
- //   private userService: UserService,
-  ) {}
+  ) //   private userService: UserService,
+  {}
   @Cron(CronExpression.EVERY_DAY_AT_11AM)
   async handleOutgoingOrders() {
- const outgoingOrders = await this.outgoingOrderModel.find();
+    const outgoingOrders = await this.outgoingOrderModel.find();
     const farmerDefaulters = outgoingOrders
       .map((item: OrderDocument) => {
         if (item.farmer_shipped !== true) {
@@ -36,7 +41,6 @@ export class OrderCronJob {
           return;
         }
         const diffInDays = today.diff(farmer_ship_date, "days");
-
 
         if (diffInDays > 3) {
           return item;

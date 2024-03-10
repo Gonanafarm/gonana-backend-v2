@@ -9,6 +9,8 @@ module.exports = {
       {
         "ts-ignore": false
       }
-    ]
+    ],
+    "@typescript-eslint/no-explicit-any": "off" // or "warn"
   }
 };
+
