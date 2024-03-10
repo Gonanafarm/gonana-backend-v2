@@ -10,9 +10,10 @@ import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 import {OrderDocument} from "./outgoing.order.schema";
 import {Post, PostDocument} from "../post/post.schema";
-import { UserDocument} from "../user/user.schema";
+import {UserDocument} from "../user/user.schema";
 import {IncomingOrderDocument} from "./incoming.order.schema";
 import {UserMailerService} from "../user/user.mailer.service";
+import * as moment from "moment";
 const now = new Date(); // Get the current date and time in UTC
 @Injectable()
 export class OrderService {
@@ -433,6 +434,16 @@ export class OrderService {
         message: "Farmer has not sent out the item",
       });
     }
+    const today = moment(now);
+    const farmer_ship_date = moment(incomingOrder.farmer_ship_date);
+    const diffInDays = today.diff(farmer_ship_date, "days");
+    if (diffInDays < 5) {
+      throw new BadRequestException({
+        success: false,
+        message: "Delivery time is not over",
+      });
+    }
+
     this.userMailerService.complaint(user.first_name, subject, complaint);
     return {
       success: true,

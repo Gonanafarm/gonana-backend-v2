@@ -1,4 +1,3 @@
-import {Moment} from "moment";
 import * as mongoose from "mongoose";
 import {Document} from "mongoose";
 

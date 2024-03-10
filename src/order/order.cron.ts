@@ -23,9 +23,8 @@ export class OrderCronJob {
     private orderService: OrderService,
     //@ts-ignore
     @InjectModel("User") private userModel: Model<UserDocument>,
-    private userMailerService: UserMailerService,
-  ) //   private userService: UserService,
-  {}
+    private userMailerService: UserMailerService, //   private userService: UserService,
+  ) {}
   @Cron(CronExpression.EVERY_DAY_AT_11AM)
   async handleOutgoingOrders() {
     const outgoingOrders = await this.outgoingOrderModel.find();
@@ -42,7 +41,7 @@ export class OrderCronJob {
         }
         const diffInDays = today.diff(farmer_ship_date, "days");
 
-        if (diffInDays > 3) {
+        if (diffInDays > 3 && item.customer_received === false) {
           return item;
         } else return;
       })
@@ -110,4 +109,9 @@ export class OrderCronJob {
       // }
     });
   }
+
+  // @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  // async handleIncomingOrders() {
+
+  // }
 }
