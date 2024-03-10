@@ -2,19 +2,14 @@ import {
   Controller,
   Get,
   Req,
-  Param,
   UseGuards,
   Post,
-  UseInterceptors,
-  UploadedFile,
   Body,
   Patch,
-  Query,
 } from "@nestjs/common";
 import {Request} from "express";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
-import {AuthGuard} from "@nestjs/passport";
 import {LogisticsService} from "./logistics.service";
 import {ShipmentData, ValidatePostAdress} from "./user.dto";
 
@@ -82,6 +77,4 @@ export class LogisticsController {
   async updatePostAddress(@Body() body: any) {
     return this.logisticsService.updatePostAddress(body.address, body.id);
   }
-
-
 }

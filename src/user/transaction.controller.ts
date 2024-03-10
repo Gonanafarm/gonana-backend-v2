@@ -2,12 +2,10 @@ import {
   Controller,
   Get,
   Req,
-  Param,
   UseGuards,
   Post,
   Body,
   HttpCode,
-  Patch,
   Query,
 } from "@nestjs/common";
 import {Request} from "express";

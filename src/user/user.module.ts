@@ -18,7 +18,7 @@ import { GeocodeModule } from "../geocoder/module";
 import { LogisticsController } from "./logistics.controller";
 import { TransactionController } from "./transaction.controller";
 import { TransactionModel } from "./transaction.model";
-import { CartItemModule } from "../cart/module";
+
 
 
 @Module({

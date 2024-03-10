@@ -4,7 +4,6 @@ import * as mongoose from "mongoose";
 import {Document} from "mongoose";
 import {UserPublicData} from "./user.dto";
 import {AccountStatus, AccountType} from "../common/enums";
-import { UserService } from "./user.service";
 import {OtpDocument} from "./otp.schema";
 
 export type UserMethods = {

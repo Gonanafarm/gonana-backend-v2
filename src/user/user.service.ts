@@ -1,5 +1,4 @@
 import {Model} from "mongoose";
-import * as mongoose from "mongoose";
 import {v4 as uuid} from "uuid";
 import {
   Injectable,
@@ -8,7 +7,6 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
   HttpException,
-  HttpStatus,
   ConflictException,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
@@ -17,12 +15,9 @@ import {comparePassword, hashPassword} from "../common/auth";
 import {
   UserNotFoundException,
   EmailAlreadyUsedException,
-  PasswordResetTokenInvalidException,
   ActivationTokenInvalidException,
   DeletionException,
-  InvalidPasscodeException,
   NumberAlreadyUsedException,
-  BvnAlreadyUsedException,
 } from "../common/exceptions";
 import {JwtService} from "@nestjs/jwt";
 import {UserMailerService} from "./user.mailer.service";
@@ -41,9 +36,12 @@ export class UserService extends GenericService<UserDocument> {
   constructor(
     //@ts-ignore
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    //@ts-ignore
     @InjectModel("Transactions")
     private readonly transactionModel: Model<TransactionDocument>,
+    //@ts-ignore
     @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
+    //@ts-ignore
     @InjectModel("Otp") private readonly otpModel: Model<OtpDocument>,
     private readonly jwtService: JwtService,
     private readonly cloudinaryService: CloudinaryService,
@@ -120,10 +118,6 @@ export class UserService extends GenericService<UserDocument> {
         throw DeletionException();
       }
       const id = user.user.id;
-      const posts = await this.postModel.find({publisher_id: id});
-      const postIds = posts.map((post: any) => {
-        return post.id;
-      });
 
       await this.postModel.deleteMany({publisher_id: id});
       const deleteOtp = await this.otpModel.deleteOne({email: email});

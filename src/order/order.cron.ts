@@ -8,7 +8,7 @@ import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 import {OrderDocument} from "./outgoing.order.schema";
 import {UserDocument} from "../user/user.schema";
-import {UserService} from "../user/user.service";
+//import {UserService} from "../user/user.service";
 @Injectable()
 export class OrderCronJob {
   constructor(

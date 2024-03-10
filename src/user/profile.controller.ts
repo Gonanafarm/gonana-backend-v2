@@ -7,18 +7,14 @@ import {
   Post,
   Get,
   UseInterceptors,
-  UploadedFile,
   HttpCode,
-  forwardRef,
-  Inject,
 } from "@nestjs/common";
 import {Request} from "express";
-import {ApiBearerAuth, ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
+import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {User} from "./user.schema";
 import {
-  UpdateTransferReceipient,
   UpdateUserDto,
   VerifyPasscodeOtpDto,
 } from "./user.dto";

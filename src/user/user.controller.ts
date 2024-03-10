@@ -9,14 +9,12 @@ import {
   UploadedFile,
   Body,
   Patch,
-  Query,
 } from "@nestjs/common";
 import {Request} from "express";
-import {ApiBearerAuth, ApiHeader, ApiResponse, ApiTags} from "@nestjs/swagger";
+import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {User} from "./user.schema";
-import {AuthGuard} from "@nestjs/passport";
 import {FileInterceptor} from "@nestjs/platform-express";
 import {LogisticsService} from "./logistics.service";
 

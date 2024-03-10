@@ -9,10 +9,8 @@ import {
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import axios from "axios";
-import {UserService} from "./user.service";
 import {User, UserDocument} from "./user.schema";
 import {Model} from "mongoose";
-import {PostModel} from "../post/post.model";
 import {Post, PostDocument} from "../post/post.schema";
 import {GeocodeService} from "../geocoder/service";
 import {ShipmentData} from "./user.dto";
@@ -391,6 +389,4 @@ export class LogisticsService {
       );
     }
   }
-
-
 }
