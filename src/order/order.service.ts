@@ -405,22 +405,34 @@ export class OrderService {
     subject: string,
   ) {
     if (!orderId) {
-      throw new BadRequestException({success: false}, "Must provide orderId");
+      throw new BadRequestException({
+        success: false,
+        message: "Must provide orderId",
+      });
     }
     const user = await this.userModel.findById(userId);
     if (!user) {
-      throw new BadRequestException("User not found");
+      throw new BadRequestException({
+        success: false,
+        message: "User not found",
+      });
     }
     const incomingOrder = await this.incomingOrderModel.findById(orderId);
     if (!incomingOrder) {
-      throw new NotFoundException("Order not found");
+      throw new NotFoundException({success: false, message: "Order not found"});
     }
     if (incomingOrder.customer_id !== user.id) {
-      throw new BadRequestException("This is not your order");
+      throw new BadRequestException({
+        success: false,
+        message: "This is not your order",
+      });
     }
 
     if (incomingOrder.farmer_shipped === false) {
-      throw new BadRequestException("Farmer has not sent out the item");
+      throw new BadRequestException({
+        success: false,
+        message: "Farmer has not sent out the item",
+      });
     }
     this.userMailerService.complaint(user.first_name, subject, complaint);
     return {
