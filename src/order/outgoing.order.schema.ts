@@ -28,6 +28,7 @@ export interface OrderDocument extends Document {
     | "completed"
     | "cancelled";
   payment_method: "WEB2" | "WEB3";
+  complaint: boolean;
 }
 
 @Schema({
@@ -103,6 +104,10 @@ export class Order {
     required: true,
   })
   payment_method: string;
+
+  @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  complaint: boolean;
 }
 
 export const OutgoingOrderSchema = SchemaFactory.createForClass(Order);

@@ -19,11 +19,4 @@ export class Complaint {
   @IsNotEmpty()
   orderId: string;
 
-  @IsString()
-  @IsNotEmpty()
-  complaint: string;
-
-  @IsString()
-  @IsNotEmpty()
-  subject: string;
 }

@@ -398,12 +398,7 @@ export class OrderService {
     };
   }
 
-  async complaint(
-    orderId: string,
-    complaint: string,
-    userId: string,
-    subject: string,
-  ) {
+  async complaint(orderId: string, userId: string) {
     if (!orderId) {
       throw new BadRequestException({
         success: false,
@@ -443,8 +438,18 @@ export class OrderService {
         message: "Delivery time is not over",
       });
     }
+    incomingOrder.complaint = true;
+    await incomingOrder.save();
+    const outgoingOrder = (await this.outgoingOrderModel.findOne({
+      shipbubble_id: incomingOrder.shipbubble_id,
+    })) as OrderDocument;
 
-    this.userMailerService.complaint(user.first_name, subject, complaint);
+    outgoingOrder.complaint = true;
+    await outgoingOrder.save();
+    this.userMailerService.complaint(
+      user.first_name,
+      incomingOrder.shipbubble_id,
+    );
     return {
       success: true,
       message: "Complaint has been forwarded to our customer service",

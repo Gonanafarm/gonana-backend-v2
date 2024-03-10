@@ -4,7 +4,7 @@ import {ApiTags} from "@nestjs/swagger";
 import {OrderService} from "./order.service";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
-import { Complaint } from "./order.dto";
+import {Complaint} from "./order.dto";
 
 @ApiTags("order-controller")
 @ApiBearerAuth()
@@ -47,14 +47,17 @@ export class OrderController {
   async confirmReceived(@Body("orderId") data: string, @Req() req: Request) {
     //@ts-ignore
     const customerId = req.user?.id;
-    return await this.dataService.confirmIncomingOrderReceived(data, customerId);
+    return await this.dataService.confirmIncomingOrderReceived(
+      data,
+      customerId,
+    );
   }
 
   @Post("/complaint")
   @UseGuards(JwtAuthGuard)
-  async complaint(@Body() data:Complaint, @Req() req: Request ){
+  async complaint(@Body() data: Complaint, @Req() req: Request) {
     //@ts-ignore
     const userId = req.user?.id;
-    return await this.dataService.complaint(data.orderId, data.complaint, userId, data.subject);
+    return await this.dataService.complaint(data.orderId, userId);
   }
 }

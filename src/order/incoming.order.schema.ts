@@ -75,6 +75,10 @@ export const incomingOrderSchema = new mongoose.Schema(
       type: Date,
       default: undefined,
     },
+    complaint: {
+      type: Boolean,
+      default: false,
+    },
   },
   {timestamps: true, versionKey: false},
 );
@@ -103,4 +107,5 @@ export interface IncomingOrderDocument extends Document {
   customer_received: boolean;
   farmer_ship_date: Date;
   customer_received_date: Date;
+  complaint?: boolean;
 }

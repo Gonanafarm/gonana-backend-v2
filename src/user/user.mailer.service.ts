@@ -54,13 +54,11 @@ export class UserMailerService {
       .catch(console.log);
   }
   sendBvnVerificationFailedMail(email: string, text: string) {
-  
-      this.mailerService.sendMail({
-        to: email,
-        subject: "BVN ALREADY VERIFIED",
-        html: text,
-      });
-
+    this.mailerService.sendMail({
+      to: email,
+      subject: "BVN ALREADY VERIFIED",
+      html: text,
+    });
   }
 
   sendResetPasswordMail(email: string) {
@@ -416,12 +414,12 @@ export class UserMailerService {
     });
   }
 
-  complaint(customerName: string, subject: string, complaint: string) {
+  complaint(customerName: string, orderId: string) {
     this.mailerService.sendMail({
       to: "contact@gonana.farm",
-      subject: subject,
+      subject: "COMPLAINT",
       from: "gonanadev@gmail.com",
-      html: `complaint from ${customerName} : ${complaint}`,
+      html: `complaint from ${customerName} about order : ${orderId}`,
     });
   }
 }
