@@ -17,8 +17,8 @@ export interface OrderDocument extends Document {
   self_shipping: boolean;
   farmer_shipped?: boolean;
   customer_received?: boolean;
-  farmer_ship_date?: Moment;
-  customer_received_date?: Moment;
+  farmer_ship_date?: Date;
+  customer_received_date?: Date;
   type?: "OUTGOING";
   status:
     | "pending"
@@ -68,11 +68,11 @@ export class Order {
   @Prop({type: mongoose.SchemaTypes.Boolean, required: true, default: false})
   customer_received: boolean;
 
-  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
-  customer_received_date: Moment;
+  @Prop({type: mongoose.SchemaTypes.Date, default: undefined})
+  customer_received_date: Date;
 
-  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
-  farmer_ship_date: Moment;
+  @Prop({type: mongoose.SchemaTypes.Date, default: undefined})
+  farmer_ship_date: Date;
 
   @Prop({type: mongoose.SchemaTypes.String, required: true})
   product_description: string;

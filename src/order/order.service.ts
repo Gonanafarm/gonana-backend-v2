@@ -14,6 +14,7 @@ import {User, UserDocument} from "../user/user.schema";
 import {IncomingOrderDocument} from "./incoming.order.schema";
 import {UserMailerService} from "../user/user.mailer.service";
 import * as moment from "moment";
+const now = new Date(); // Get the current date and time in UTC
 @Injectable()
 export class OrderService {
   //@ts-ignore
@@ -309,7 +310,9 @@ export class OrderService {
       );
     }
     outgoingOrder.farmer_shipped = true;
-    outgoingOrder.farmer_ship_date = moment().utcOffset("+0100");
+    outgoingOrder.farmer_ship_date = new Date(
+      now.getTime() + 1 * 60 * 60 * 1000,
+    );
 
     await outgoingOrder.save();
 
@@ -322,7 +325,9 @@ export class OrderService {
       return;
     }
     incomingOrder.farmer_shipped = true;
-    incomingOrder.farmer_ship_date = moment().utcOffset("+0100");
+    incomingOrder.farmer_ship_date = new Date(
+      now.getTime() + 1 * 60 * 60 * 1000,
+    );
     await incomingOrder.save();
 
     return {
@@ -341,14 +346,28 @@ export class OrderService {
       throw new NotFoundException("Order not found");
     }
 
+    const farmer = await this.userModel.findById(incomingOrder.farmer_id);
+    if (!farmer) {
+      throw new BadRequestException("Farmer may have deleted their account");
+    }
+    const customer = await this.userModel.findById(incomingOrder.customer_id);
+    if (!customer) {
+      throw new BadRequestException("This is not your order");
+    }
+
     if (customerId !== incomingOrder.customer_id) {
       throw new BadRequestException("This is not your order");
     }
-    if(incomingOrder.farmer_shipped === false){
-      throw new BadRequestException("Farmer has not sent out this product")
+    if (incomingOrder.farmer_shipped === false) {
+      throw new BadRequestException("Farmer has not sent out this product");
     }
     incomingOrder.customer_received = true;
-    incomingOrder.customer_received_date = moment().utcOffset("+0100");
+
+    incomingOrder.customer_received_date = new Date(
+      now.getTime() + 1 * 60 * 60 * 1000,
+    ); // Convert to the local time in West Africa Time (WAT is UTC+1) and save
+
+    incomingOrder.status = "completed";
 
     await incomingOrder.save();
 
@@ -359,11 +378,54 @@ export class OrderService {
       return;
     }
     outgoingOrder.customer_received = true;
-    outgoingOrder.customer_received_date = moment().utcOffset("+0100");
+    outgoingOrder.customer_received_date = new Date(
+      now.getTime() + 1 * 60 * 60 * 1000,
+    );
+    outgoingOrder.status = "completed";
     await outgoingOrder.save();
+    this.userMailerService.farmerOrderCompletedMail(
+      farmer.email,
+      incomingOrder.shipbubble_id,
+    );
+    this.userMailerService.customerOrderCompletedMail(
+      customer.email,
+      incomingOrder.shipbubble_id,
+      farmer.phone,
+    );
     return {
       success: true,
       data: incomingOrder,
+    };
+  }
+
+  async complaint(
+    orderId: string,
+    complaint: string,
+    userId: string,
+    subject: string,
+  ) {
+    if (!orderId) {
+      throw new BadRequestException({success: false}, "Must provide orderId");
+    }
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new BadRequestException("User not found");
+    }
+    const incomingOrder = await this.incomingOrderModel.findById(orderId);
+    if (!incomingOrder) {
+      throw new NotFoundException("Order not found");
+    }
+    if (incomingOrder.customer_id !== user.id) {
+      throw new BadRequestException("This is not your order");
+    }
+
+    if (incomingOrder.farmer_shipped === false) {
+      throw new BadRequestException("Farmer has not sent out the item");
+    }
+    this.userMailerService.complaint(user.first_name, subject, complaint);
+    return {
+      success: true,
+      message: "Complaint has been forwarded to our customer service",
     };
   }
 }

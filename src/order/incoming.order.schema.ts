@@ -102,6 +102,6 @@ export interface IncomingOrderDocument extends Document {
   self_shipping: boolean;
   farmer_shipped: boolean;
   customer_received: boolean;
-  farmer_ship_date: Moment;
-  customer_received_date: Moment;
+  farmer_ship_date: Date;
+  customer_received_date: Date;
 }

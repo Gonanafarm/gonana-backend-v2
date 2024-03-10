@@ -3,7 +3,7 @@ import {MailerService} from "@nest-modules/mailer";
 import {User} from "./user.schema";
 import {Post} from "../post/post.schema";
 
-export const convertArrayToString = (array: Array<any>) => {
+export const convertArrayToString = (array: string[]) => {
   if (Array.isArray(array)) {
     if (array.length === 1) {
       return array[0];
@@ -54,15 +54,13 @@ export class UserMailerService {
       .catch(console.log);
   }
   sendBvnVerificationFailedMail(email: string, text: string) {
-    try {
+  
       this.mailerService.sendMail({
         to: email,
         subject: "BVN ALREADY VERIFIED",
         html: text,
       });
-    } catch (error: any) {
-      console.log(error);
-    }
+
   }
 
   sendResetPasswordMail(email: string) {
@@ -78,7 +76,9 @@ export class UserMailerService {
       .catch();
   }
 
-  sendLoginSecurityMail(email: string) {}
+  sendLoginSecurityMail(email: string) {
+    console.log(email);
+  }
 
   sendNotification(email: string, title: string, message: string) {
     this.mailerService
@@ -359,7 +359,6 @@ export class UserMailerService {
     status: string,
     tracking_url: string,
   ) {
-
     this.mailerService.sendMail({
       to: customerEmail,
       subject: "ORDER STATUS CHANGED",
@@ -400,6 +399,29 @@ export class UserMailerService {
       subject: "ORDER COMPLETED",
       from: "gonanadev@gmail.com",
       html: `Dear customer your order with order id: ${order_id} has been completed.`,
+    });
+  }
+
+  farmerBehindSchedule(
+    farmerEmail: string,
+    order_id: string,
+    customerName: string,
+    customerAdress: string,
+  ) {
+    this.mailerService.sendMail({
+      to: farmerEmail,
+      subject: "ORDER DELIVERY BEHIND SCHEDULE",
+      from: "gonanadev@gmail.com",
+      html: `Dear farmer, your order with order id : ${order_id} was supposed to have been delivered by today to ${customerName} at ${customerAdress}`,
+    });
+  }
+
+  complaint(customerName: string, subject: string, complaint: string) {
+    this.mailerService.sendMail({
+      to: "contact@gonana.farm",
+      subject: subject,
+      from: "gonanadev@gmail.com",
+      html: `complaint from ${customerName} : ${complaint}`,
     });
   }
 }
