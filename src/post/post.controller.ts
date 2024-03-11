@@ -109,9 +109,9 @@ export class PostController {
         return res.eager[0].url;
       }),
     );
-    const usd_price = parseFloat(await this.userService.convertNgntoUsd(
-      amount.toString(),
-    ))
+    const usd_price = parseFloat(
+      await this.userService.convertNgntoUsd(amount.toString()),
+    );
     let publisher_id = "";
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
@@ -138,7 +138,7 @@ export class PostController {
       weight,
       address,
       self_shipping,
-      usd_price
+      usd_price,
     };
     const createPost = await this.dataService.create(publisher_id, payload);
     this.eventEmmiter.emit("PostCreated", {

@@ -14,7 +14,7 @@ import {EventEmitter2} from "@nestjs/event-emitter";
 import {DiscountDocument} from "./discount.schema";
 import {UserDocument, User} from "../user/user.schema";
 import {GeocodeService} from "../geocoder/service";
-import { UserService } from "../user/user.service";
+import {UserService} from "../user/user.service";
 import {LogisticsService} from "../user/logistics.service";
 import {
   DeletionException,
@@ -37,7 +37,7 @@ export class PostService extends GenericService<PostDocument> {
     private logisticsService: LogisticsService,
     private geocoderService: GeocodeService,
     private eventEmmiter: EventEmitter2,
-    private userService: UserService
+    private userService: UserService,
   ) {
     super(productModel);
   }
@@ -60,8 +60,12 @@ export class PostService extends GenericService<PostDocument> {
       }
 
       product.amount = price;
-      const updatedProduct = await product.save();
-      return updatedProduct;
+      const usd_price = parseFloat(
+        await this.userService.convertNgntoUsd(product.amount.toString()),
+      );
+      product.usd_price = usd_price;
+      await product.save();
+      return product;
     } catch (error: any) {
       console.error(error);
       throw new HttpException(
@@ -129,6 +133,15 @@ export class PostService extends GenericService<PostDocument> {
     const ids = products.map(product => product.productid);
     const discountedProductsPromises = ids.map(async id => {
       const product = await this.productModel.findOne({_id: id});
+      if (!product) return;
+      const usd_price = parseFloat(
+        await this.userService.convertNgntoUsd(
+          product.amount.toString() as string,
+        ),
+      );
+      product.usd_price = usd_price;
+      await product.save();
+
       return product !== null ? product : undefined;
     });
     const discountedProducts = await Promise.all(discountedProductsPromises);
@@ -150,7 +163,6 @@ export class PostService extends GenericService<PostDocument> {
   ) {
     try {
       const query: Record<string, unknown> = {publisher_id: id};
-
 
       if (type !== undefined) {
         query.type = type;
@@ -178,10 +190,23 @@ export class PostService extends GenericService<PostDocument> {
         .sort({_id: -1}) // Lifo order
         .skip(skipCount)
         .limit(lim);
-      if (products.length < 1) {
+
+      const newProductsPromises = products.map(
+        async (product: PostDocument) => {
+          const usd_price = parseFloat(
+            await this.userService.convertNgntoUsd(
+              product.amount.toString() as string,
+            ),
+          );
+          product.usd_price = usd_price;
+          await product.save();
+          return product;
+        },
+      );
+      const newProducts = await Promise.all(newProductsPromises);
+      if (newProducts.length < 1) {
         throw new NotFoundException("Products Not Found");
       }
-      console.log(products.length);
       return {
         success: true,
         data: products,
@@ -231,7 +256,12 @@ export class PostService extends GenericService<PostDocument> {
         throw new NotFoundException("Products Not Found");
       }
       console.log(products.length);
-      const productPromises = products.map(async (product: any) => {
+      const productPromises = products.map(async (product: PostDocument) => {
+        const usd_price = parseFloat(
+          await this.userService.convertNgntoUsd(product.amount.toString()),
+        );
+        product.usd_price = usd_price;
+        await product.save();
         const id = product.publisher_id;
         const user = await this.userModel.findById(id);
         return {
@@ -295,7 +325,14 @@ export class PostService extends GenericService<PostDocument> {
       }
       console.log(products.length);
 
-      const productPromises = products.map(async (product: any) => {
+      const productPromises = products.map(async (product: PostDocument) => {
+        const usd_price = parseFloat(
+          await this.userService.convertNgntoUsd(
+            product.amount.toString() as string,
+          ),
+        );
+        product.usd_price = usd_price;
+        await product.save();
         const id = product.publisher_id;
         const user = await this.userModel.findById(id);
         return {
@@ -333,8 +370,8 @@ export class PostService extends GenericService<PostDocument> {
       const userData = {
         id: user.id,
         name: `${user.first_name} ${user.last_name}`,
-        photo: user.profile_photo
-      }
+        photo: user.profile_photo,
+      };
       post.likes.push(userData);
       await post.save();
       user.likedPosts.push(postId);
@@ -381,7 +418,7 @@ export class PostService extends GenericService<PostDocument> {
       } else {
         throw new BadRequestException("User has not liked this post");
       }
-    
+
       const userIndex = user.likedPosts.indexOf(postId);
       user.likedPosts.splice(userIndex, 1);
       await user.save();
@@ -501,5 +538,4 @@ export class PostService extends GenericService<PostDocument> {
     const roundedUsd = this.userService.roundToSignificantFigures(usd, 9);
     return roundedUsd.toString();
   }
-  
 }
