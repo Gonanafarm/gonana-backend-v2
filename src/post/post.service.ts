@@ -134,13 +134,13 @@ export class PostService extends GenericService<PostDocument> {
     const discountedProductsPromises = ids.map(async id => {
       const product = await this.productModel.findOne({_id: id});
       if (!product) return;
-      const usd_price = parseFloat(
-        await this.userService.convertNgntoUsd(
-          product.amount.toString() as string,
-        ),
-      );
-      product.usd_price = usd_price;
-      await product.save();
+      // const usd_price = parseFloat(
+      //   await this.userService.convertNgntoUsd(
+      //     product.amount.toString() as string,
+      //   ),
+      // );
+      // product.usd_price = usd_price;
+      // await product.save();
 
       return product !== null ? product : undefined;
     });
@@ -257,11 +257,11 @@ export class PostService extends GenericService<PostDocument> {
       }
       console.log(products.length);
       const productPromises = products.map(async (product: PostDocument) => {
-        const usd_price = parseFloat(
-          await this.userService.convertNgntoUsd(product.amount.toString()),
-        );
-        product.usd_price = usd_price;
-        await product.save();
+        // const usd_price = parseFloat(
+        //   await this.userService.convertNgntoUsd(product.amount.toString()),
+        // );
+        // product.usd_price = usd_price;
+        // await product.save();
         const id = product.publisher_id;
         const user = await this.userModel.findById(id);
         return {
