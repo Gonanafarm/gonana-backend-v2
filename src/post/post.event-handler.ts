@@ -73,8 +73,8 @@ export class PostEventHandlers {
       include_player_ids: farmer.patrons,
       content_available: true,
       onesignal_notification_accent_color: "FF00FF00",
-      big_picture: payload.images[0],
-      large_icon: payload.images[0],
+   //   big_picture: payload.images[0],
+     // large_icon: payload.images[0],
       data: {
         PushTitle: `Products Posted`,
       },

@@ -1248,26 +1248,17 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async sendNotificationToDevice(message: object) {
-    try {
-      const headers = {
-        "Content-Type": "application/json",
-        Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
-      };
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
+    };
 
-      const url = "https://onesignal.com/api/v1/notifications";
-      const req = await axios.post(url, message, {headers: headers});
+    const url = "https://onesignal.com/api/v1/notifications";
+    const req = await axios.post(url, message, {headers: headers});
 
-      return req.data;
-    } catch (error: any) {
-      //  console.log(error);
-      throw new HttpException(
-        {
-          success: false,
-          message: error.response.data.errors,
-        },
-        error.response.status,
-      );
-    }
+    console.log(req.data);
+    return req.data;
+    
   }
 
   async isPlayerIdValid(playerId: string): Promise<boolean> {
