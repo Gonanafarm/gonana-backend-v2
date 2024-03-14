@@ -54,8 +54,8 @@ export class UserController {
   }
 
   @Post("send-notification")
-  sendNotification(@Body("data") data: object) {
-    return this.userService.sendNotificationToDevice(data);
+  sendNotification(@Body("data") data: string[]) {
+    return this.userService.sendTestNotificationToDevice(data);
   }
 
   @Get("/:id")

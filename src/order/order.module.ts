@@ -6,27 +6,40 @@ import {PostModule} from "../post/post.module";
 import {PostModel} from "../post/post.model";
 import {UserModule} from "../user/user.module";
 import {UserModel} from "../user/user.model";
-//import {UserService} from "../user/user.service";
+import {UserService} from "../user/user.service";
 import {IncomingOrderModel} from "./incoming.order.model";
 import {UserMailerService} from "../user/user.mailer.service";
 import {ScheduleModule} from "@nestjs/schedule";
 import {OrderCronJob} from "./order.cron";
+import {PostService} from "../post/post.service";
+import {TransactionModel} from "../user/transaction.model";
+import {OtpModel} from "../user/otp.model";
+import {JwtModule} from "@nestjs/jwt";
+import config from "../config";
+import {CloudinaryService} from "../post/cloudinary.service";
 
 @Module({
   providers: [
     OrderService,
     PostModule,
     UserModule,
+    UserService,
+    CloudinaryService,
     UserMailerService,
     OrderCronJob,
-  //  UserService
   ],
   imports: [
     ScheduleModule.forRoot(),
+    JwtModule.register({
+      secret: config.auth.secret,
+      signOptions: {expiresIn: config.auth.jwtTokenExpireInSec},
+    }),
     OutgoingOrderModel,
     PostModel,
+    TransactionModel,
     UserModel,
     IncomingOrderModel,
+    OtpModel,
   ],
   exports: [OutgoingOrderModel, OrderService, IncomingOrderModel],
 })

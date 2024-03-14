@@ -13,6 +13,8 @@ import {Post, PostDocument} from "../post/post.schema";
 import {UserDocument} from "../user/user.schema";
 import {IncomingOrderDocument} from "./incoming.order.schema";
 import {UserMailerService} from "../user/user.mailer.service";
+import {UserService} from "../user/user.service";
+import {PostService} from "../post/post.service";
 import * as moment from "moment";
 const now = new Date(); // Get the current date and time in UTC
 @Injectable()
@@ -29,6 +31,7 @@ export class OrderService {
     //@ts-ignore
     @InjectModel("INCOMING_ORDERS")
     private incomingOrderModel: Model<IncomingOrderDocument>,
+    private userService: UserService,
     private userMailerService: UserMailerService,
   ) {}
 
@@ -208,6 +211,10 @@ export class OrderService {
         payload.ship_to.phone,
         orderId,
       );
+      incomingOrder.status = "cancelled";
+      await incomingOrder.save();
+      outgoingOrder.status = "cancelled";
+      await outgoingOrder.save();
       return;
     }
 
@@ -277,6 +284,61 @@ export class OrderService {
 
           await farmer.save();
         }
+        const customerOnesignalId = [];
+        const farmerOnesignalId = [];
+
+        if (
+          customer.onesignal_id &&
+          (await this.userService.isPlayerIdValid(customer.onesignal_id))
+        ) {
+          customerOnesignalId.push(customer.onesignal_id);
+        }
+
+        if (
+          farmer.onesignal_id &&
+          (await this.userService.isPlayerIdValid(farmer.onesignal_id))
+        ) {
+          farmerOnesignalId.push(farmer.onesignal_id);
+        }
+
+        const customerMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `Order ${incomingOrder.shipbubble_id} received`,
+          },
+          included_segments: ["include_player_ids"],
+          include_player_ids: customerOnesignalId,
+          content_available: true,
+          onesignal_notification_accent_color: "FF00FF00",
+          large_icon: incomingOrder.image[0],
+          data: {
+            PushTitle: `Products Received`,
+          },
+          headings: {
+            en: `Oder received`,
+          },
+        };
+        await this.userService.sendNotificationToDevice(customerMessage);
+
+        const farmerMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `Order ${incomingOrder.shipbubble_id} received by customer `,
+          },
+          included_segments: ["include_player_ids"],
+          include_player_ids: farmerOnesignalId,
+          content_available: true,
+          onesignal_notification_accent_color: "FF00FF00",
+          large_icon: incomingOrder.image[0],
+          data: {
+            PushTitle: `Products received by customer`,
+          },
+          headings: {
+            en: `Oder received by customer`,
+          },
+        };
+
+        await this.userService.sendNotificationToDevice(farmerMessage);
       }
 
       if (payload.status !== "completed" && "picked_up") {
@@ -392,6 +454,68 @@ export class OrderService {
       incomingOrder.shipbubble_id,
       farmer.phone,
     );
+    const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
+
+    const newBalance = farmer.balance + reducedProductCost;
+
+    farmer.balance = newBalance;
+    await farmer.save();
+    const customerOnesignalId = [];
+    const farmerOnesignalId = [];
+
+    if (
+      customer.onesignal_id &&
+      (await this.userService.isPlayerIdValid(customer.onesignal_id))
+    ) {
+      customerOnesignalId.push(customer.onesignal_id);
+    }
+
+    if (
+      farmer.onesignal_id &&
+      (await this.userService.isPlayerIdValid(farmer.onesignal_id))
+    ) {
+      farmerOnesignalId.push(farmer.onesignal_id);
+    }
+
+    const customerMessage = {
+      app_id: process.env.ONESIGNAL_APP_ID,
+      contents: {
+        en: `Order ${incomingOrder.shipbubble_id} received`,
+      },
+      included_segments: ["include_player_ids"],
+      include_player_ids: customerOnesignalId,
+      content_available: true,
+      onesignal_notification_accent_color: "FF00FF00",
+      large_icon: incomingOrder.image[0],
+      data: {
+        PushTitle: `Products Received`,
+      },
+      headings: {
+        en: `Oder received`,
+      },
+    };
+    await this.userService.sendNotificationToDevice(customerMessage);
+
+    const farmerMessage = {
+      app_id: process.env.ONESIGNAL_APP_ID,
+      contents: {
+        en: `Order ${incomingOrder.shipbubble_id} received by customer `,
+      },
+      included_segments: ["include_player_ids"],
+      include_player_ids: farmerOnesignalId,
+      content_available: true,
+      onesignal_notification_accent_color: "FF00FF00",
+      large_icon: incomingOrder.image[0],
+      data: {
+        PushTitle: `Products received by customer`,
+      },
+      headings: {
+        en: `Oder received by customer`,
+      },
+    };
+
+    await this.userService.sendNotificationToDevice(farmerMessage);
+
     return {
       success: true,
       data: incomingOrder,
