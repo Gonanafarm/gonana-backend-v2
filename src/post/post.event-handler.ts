@@ -73,8 +73,8 @@ export class PostEventHandlers {
       include_player_ids: farmer.patrons,
       content_available: true,
       onesignal_notification_accent_color: "FF00FF00",
-   //   big_picture: payload.images[0],
-     // large_icon: payload.images[0],
+      //   big_picture: payload.images[0],
+      // large_icon: payload.images[0],
       data: {
         PushTitle: `Products Posted`,
       },
@@ -84,8 +84,16 @@ export class PostEventHandlers {
     };
     if (farmer.patrons.length > 1) {
       console.log("here");
-
-      await this.userService.sendNotificationToDevice(message);
+      const patrons = farmer.patrons;
+      const patronFunc = patrons.map(async patron => {
+        const user = await this.userModel.findOne({onesignal_id: patron});
+        if (!user) {
+          return;
+        }
+        message.include_player_ids = [patron];
+        await this.userService.sendNotificationToDevice(message, user.id);
+      });
+      await Promise.all(patronFunc);
     }
 
     const provider = new providers.JsonRpcProvider(

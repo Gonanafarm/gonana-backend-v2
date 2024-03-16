@@ -58,6 +58,14 @@ export class UserController {
     return this.userService.sendTestNotificationToDevice(data);
   }
 
+  @Get("notifications")
+  @UseGuards(JwtAuthGuard)
+  getNotifications(@Req() req: Request){
+    //@ts-ignore
+    const userId = req.user?.id;
+    return this.userService.getNotifications(userId)
+  }
+
   @Get("/:id")
   test(@Param("id") id: string) {
     return this.userService.isPlayerIdValid(id);

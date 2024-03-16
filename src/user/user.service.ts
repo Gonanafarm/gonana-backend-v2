@@ -30,6 +30,7 @@ import {CloudinaryService} from "../post/cloudinary.service";
 import axios from "axios";
 import {showObjectProperties} from "./logistics.service";
 import {TransactionDocument} from "./transaction.schema";
+import {NotificationDocument} from "./notification.schema";
 import {providers, Wallet, utils, ethers} from "ethers";
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -43,6 +44,8 @@ export class UserService extends GenericService<UserDocument> {
     @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
     //@ts-ignore
     @InjectModel("Otp") private readonly otpModel: Model<OtpDocument>,
+    @InjectModel("Notifications")
+    private readonly notificationModel: Model<NotificationDocument>,
     private readonly jwtService: JwtService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
@@ -1247,7 +1250,7 @@ export class UserService extends GenericService<UserDocument> {
     return req.data;
   }
 
-  async sendNotificationToDevice(message: object) {
+  async sendNotificationToDevice(message: any, userId: string) {
     const headers = {
       "Content-Type": "application/json",
       Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
@@ -1255,10 +1258,24 @@ export class UserService extends GenericService<UserDocument> {
 
     const url = "https://onesignal.com/api/v1/notifications";
     const req = await axios.post(url, message, {headers: headers});
+    const notificationExists = await this.notificationModel.findOne({
+      userId: userId,
+    });
+    console.log(message.contents.en);
+    if (notificationExists) {
+      console.log("here");
+
+      notificationExists.notification.push({body: message.contents.en});
+      await notificationExists.save();
+      return;
+    }
+    const notification = await this.notificationModel.create({
+      userId: userId,
+      notification: [{body: message.contents.en}],
+    });
 
     console.log(req.data);
     return req.data;
-    
   }
   async sendTestNotificationToDevice(data: Array<string>) {
     try {
@@ -1274,7 +1291,8 @@ export class UserService extends GenericService<UserDocument> {
         included_segments: ["include_player_ids"],
         include_player_ids: data,
         content_available: true,
-        small_icon: "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
         data: {
           PushTitle: "CUSTOM NOTIFICATION",
         },
@@ -1285,7 +1303,7 @@ export class UserService extends GenericService<UserDocument> {
       console.log(req.status);
       return req.data;
     } catch (error: any) {
-        console.log(error);
+      console.log(error);
       throw new HttpException(
         {
           success: false,
@@ -1295,7 +1313,6 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
   }
-
 
   async isPlayerIdValid(playerId: string): Promise<boolean> {
     const config = {
@@ -1335,5 +1352,33 @@ export class UserService extends GenericService<UserDocument> {
     user.onesignal_id = oneSignalId;
     await user.save();
     return {success: true, message: "One signal Id updated"};
+  }
+
+  async getNotifications(userId: string) {
+    if (!userId) {
+      throw new BadRequestException({
+        success: false,
+        message: "User not found",
+      });
+    }
+    const notifications = await this.notificationModel.findOne({
+      userId: userId,
+    });
+    if (!notifications) {
+      throw new BadRequestException({
+        success: false,
+        message: "Notifications not found",
+      });
+    }
+    if (notifications.notification.length < 1) {
+      throw new BadRequestException({
+        success: false,
+        message: "User does not have any notifications",
+      });
+    }
+    return {
+      success: true,
+      data: notifications.notification,
+    };
   }
 }

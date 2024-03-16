@@ -318,7 +318,10 @@ export class OrderService {
             en: `Oder received`,
           },
         };
-        await this.userService.sendNotificationToDevice(customerMessage);
+        await this.userService.sendNotificationToDevice(
+          customerMessage,
+          customer.id,
+        );
 
         const farmerMessage = {
           app_id: process.env.ONESIGNAL_APP_ID,
@@ -338,7 +341,10 @@ export class OrderService {
           },
         };
 
-        await this.userService.sendNotificationToDevice(farmerMessage);
+        await this.userService.sendNotificationToDevice(
+          farmerMessage,
+          farmer.id,
+        );
       }
 
       if (payload.status !== "completed" && "picked_up") {
@@ -375,21 +381,20 @@ export class OrderService {
     outgoingOrder.farmer_ship_date = new Date(
       now.getTime() + 1 * 60 * 60 * 1000,
     );
-
+    outgoingOrder.status = "in_transit";
     await outgoingOrder.save();
 
     const incomingOrder = await this.incomingOrderModel.findOne({
       shipbubble_id: outgoingOrder.shipbubble_id,
     });
     if (!incomingOrder) {
-      console.log("here");
-
       return;
     }
     incomingOrder.farmer_shipped = true;
     incomingOrder.farmer_ship_date = new Date(
       now.getTime() + 1 * 60 * 60 * 1000,
     );
+    incomingOrder.status = "in_transit";
     await incomingOrder.save();
 
     return {
@@ -494,7 +499,10 @@ export class OrderService {
         en: `Oder received`,
       },
     };
-    await this.userService.sendNotificationToDevice(customerMessage);
+    await this.userService.sendNotificationToDevice(
+      customerMessage,
+      customerId,
+    );
 
     const farmerMessage = {
       app_id: process.env.ONESIGNAL_APP_ID,
@@ -514,7 +522,7 @@ export class OrderService {
       },
     };
 
-    await this.userService.sendNotificationToDevice(farmerMessage);
+    await this.userService.sendNotificationToDevice(farmerMessage, farmer.id);
 
     return {
       success: true,

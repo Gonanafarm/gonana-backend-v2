@@ -17,6 +17,7 @@ import {OtpModel} from "../user/otp.model";
 import {JwtModule} from "@nestjs/jwt";
 import config from "../config";
 import {CloudinaryService} from "../post/cloudinary.service";
+import { NotificationModel } from "../user/notification.model";
 
 @Module({
   providers: [
@@ -40,6 +41,7 @@ import {CloudinaryService} from "../post/cloudinary.service";
     UserModel,
     IncomingOrderModel,
     OtpModel,
+    NotificationModel
   ],
   exports: [OutgoingOrderModel, OrderService, IncomingOrderModel],
 })
