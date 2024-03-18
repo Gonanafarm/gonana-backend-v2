@@ -428,6 +428,12 @@ export class OrderService {
     if (incomingOrder.farmer_shipped === false) {
       throw new BadRequestException("Farmer has not sent out this product");
     }
+
+    if (incomingOrder.customer_received === false) {
+      throw new BadRequestException(
+        "You have already confirmed that you recieved this product",
+      );
+    }
     incomingOrder.customer_received = true;
 
     incomingOrder.customer_received_date = new Date(
@@ -561,7 +567,7 @@ export class OrderService {
         message: "Farmer has not sent out the item",
       });
     }
-    
+
     const today = moment(now);
     const farmer_ship_date = moment(incomingOrder.farmer_ship_date);
     const diffInDays = today.diff(farmer_ship_date, "days");
@@ -576,7 +582,6 @@ export class OrderService {
     const outgoingOrder = (await this.outgoingOrderModel.findOne({
       shipbubble_id: incomingOrder.shipbubble_id,
     })) as OrderDocument;
-
 
     outgoingOrder.complaint = true;
     await outgoingOrder.save();
