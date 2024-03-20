@@ -312,17 +312,15 @@ export class CartItemService extends GenericService<CartItemDocument> {
           unit_amount: product?.amount,
           quantity: item.units,
         };
-        console.log(packageItem.quantity);
 
         const productLength = product.address.length;
         const productIndex = productLength - 1;
         const sender_address_code =
           product.address[productIndex].code || undefined;
+        console.log(product.address);
 
         if (sender_address_code === undefined) {
-          throw new BadRequestException(
-            "product does not have a valid address",
-          );
+          throw new BadRequestException("farmer does not have a valid address");
         }
         const userLength = user.address.length;
         const userIndex = userLength - 1;
@@ -531,12 +529,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
             await this.orderService.createOutgoingOrder(
               item.id,
               farmer.id,
+              user_id,
               item.units,
               shipment.data.order_id,
               "WEB2",
             );
             await this.orderService.createIncomingOrder(
               item.id,
+              farmer.id,
               user.id,
               item.units,
               shipment.data.order_id,
@@ -591,12 +591,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
           await this.orderService.createOutgoingOrder(
             item.id,
             farmer.id,
+            user_id,
             item.units,
             `${abbr}${rn}`,
             "WEB2",
           );
           await this.orderService.createIncomingOrder(
             item.id,
+            farmer.id,
             user.id,
             item.units,
             `${abbr}${rn}`,
@@ -704,8 +706,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const ethAmount = await this.userService.convertNgntoEth(
               product.amount.toString(),
             );
-            const decimals = (ethAmount.split('.')[1] || []).length;
-            const parsedEthAmount = ethers.utils.parseEther(ethAmount)
+            const decimals = (ethAmount.split(".")[1] || []).length;
+            const parsedEthAmount = ethers.utils.parseEther(ethAmount);
             const order = await contract.orderProduct(
               product.id,
               parsedEthAmount,
@@ -732,12 +734,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
             await this.orderService.createOutgoingOrder(
               item.id,
               farmer.id,
+              user_id,
               item.units,
               shipment.data.order_id,
               "WEB2",
             );
             await this.orderService.createIncomingOrder(
               item.id,
+              farmer.id,
               user.id,
               item.units,
               shipment.data.order_id,
@@ -785,18 +789,19 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const ethAmount = await this.userService.convertNgntoEth(
               product.amount.toString(),
             );
-            const decimals = (ethAmount.split('.')[1] || []).length;
-            const parsedEthAmount = ethers.utils.parseEther(ethAmount as string);
-            
+            const decimals = (ethAmount.split(".")[1] || []).length;
+            const parsedEthAmount = ethers.utils.parseEther(
+              ethAmount as string,
+            );
+
             const order = await contract.orderProduct(
               product.id,
               parsedEthAmount,
               user_id,
               {
                 value: parsedEthAmount,
-                gasLimit: 50000
+                gasLimit: 50000,
               },
-
             );
 
             const tx = await order.wait();
@@ -819,12 +824,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
             await this.orderService.createOutgoingOrder(
               item.id,
               farmer.id,
+              user_id,
               item.units,
               `${abbr}${rn}`,
               "WEB2",
             );
             await this.orderService.createIncomingOrder(
               item.id,
+              farmer.id,
               user.id,
               item.units,
               `${abbr}${rn}`,
@@ -852,7 +859,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       };
     } catch (error: any) {
       console.log(error);
-    
+
       throw new HttpException(
         {
           success: false,

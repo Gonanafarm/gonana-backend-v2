@@ -15,6 +15,10 @@ export const incomingOrderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    farmer_id: {
+      type: String,
+      required: true,
+    },
     product_name: {
       type: String,
       required: true,
@@ -53,6 +57,28 @@ export const incomingOrderSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
+    farmer_shipped: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    customer_received: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    customer_received_date: {
+      type: Date,
+      default: undefined,
+    },
+    farmer_ship_date: {
+      type: Date,
+      default: undefined,
+    },
+    complaint: {
+      type: Boolean,
+      default: false,
+    },
   },
   {timestamps: true, versionKey: false},
 );
@@ -60,6 +86,7 @@ export const incomingOrderSchema = new mongoose.Schema(
 export interface IncomingOrderDocument extends Document {
   product_id: string;
   product_description: string;
+  farmer_id: string;
   customer_id: string;
   product_name: string;
   product_amount: number;
@@ -76,4 +103,9 @@ export interface IncomingOrderDocument extends Document {
   image: Array<string>;
   payment_method: "WEB2" | "WEB3";
   self_shipping: boolean;
+  farmer_shipped: boolean;
+  customer_received: boolean;
+  farmer_ship_date: Date;
+  customer_received_date: Date;
+  complaint?: boolean;
 }

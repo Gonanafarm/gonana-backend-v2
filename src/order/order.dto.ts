@@ -1,21 +1,22 @@
-import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
-  IsObject,
-  IsArray,
-  IsOptional,
-  IsEnum,
-  ArrayNotEmpty,
-} from 'class-validator';
-
+  IsNotEmpty,
+} from "class-validator";
 
 export enum PaymentOptions {
-  CASH = 'cash',
-  PAYSTACK = 'wallet',
+  CASH = "cash",
+  PAYSTACK = "wallet",
 }
 
-enum PaymentStatus {
-  PENDING = 'pending',
-  AWAITING_PAYMENT = 'awaiting-payment',
-  COMPLETED = 'completed',
+// enum PaymentStatus {
+//   PENDING = "pending",
+//   AWAITING_PAYMENT = "awaiting-payment",
+//   COMPLETED = "completed",
+// }
+
+export class Complaint {
+  @IsString()
+  @IsNotEmpty()
+  orderId: string;
+
 }

@@ -4,15 +4,19 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  NotFoundException,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 import {OrderDocument} from "./outgoing.order.schema";
 import {Post, PostDocument} from "../post/post.schema";
-import {User, UserDocument} from "../user/user.schema";
+import {UserDocument} from "../user/user.schema";
 import {IncomingOrderDocument} from "./incoming.order.schema";
 import {UserMailerService} from "../user/user.mailer.service";
-
+import {UserService} from "../user/user.service";
+import {PostService} from "../post/post.service";
+import * as moment from "moment";
+const now = new Date(); // Get the current date and time in UTC
 @Injectable()
 export class OrderService {
   //@ts-ignore
@@ -27,12 +31,14 @@ export class OrderService {
     //@ts-ignore
     @InjectModel("INCOMING_ORDERS")
     private incomingOrderModel: Model<IncomingOrderDocument>,
+    private userService: UserService,
     private userMailerService: UserMailerService,
   ) {}
 
   async createOutgoingOrder(
     product_id: string,
     farmer_id: string,
+    customer_id: string,
     quantity: number,
     shipbubble_id: string,
     payment_method: "WEB2" | "WEB3",
@@ -54,6 +60,7 @@ export class OrderService {
       product_id: product.id,
       product_amount: product.amount,
       shipbubble_id: shipbubble_id,
+      customer_id: customer_id,
       product_description: product.body,
       self_shipping: product.self_shipping,
     });
@@ -63,6 +70,7 @@ export class OrderService {
 
   async createIncomingOrder(
     product_id: string,
+    farmer_id: string,
     customer_id: string,
     quantity: number,
     shipbubble_id: string,
@@ -71,6 +79,11 @@ export class OrderService {
     const customer = await this.userModel.findById(customer_id);
     if (!customer) {
       throw new BadRequestException("User not found");
+    }
+
+    const farmer = await this.userModel.findById(farmer_id);
+    if (!farmer) {
+      throw new BadRequestException("Famer not found");
     }
 
     const product = await this.productModel.findById(product_id);
@@ -82,6 +95,7 @@ export class OrderService {
       quantity: quantity,
       payment_method: payment_method,
       image: product.images,
+      farmer_id: farmer_id,
       product_id: product.id,
       product_amount: product.amount,
       shipbubble_id: shipbubble_id,
@@ -159,11 +173,17 @@ export class OrderService {
   async handleWebhook(payload: any) {
     const farmerEmail = payload.ship_from.email;
     const farmer = await this.userModel.findOne({email: farmerEmail});
+    if (!farmer) {
+      return;
+    }
 
     const customerEmail = payload.ship_to.email;
     const customer = await this.userModel.findOne({
       email: customerEmail,
     });
+    if (!customer) {
+      return;
+    }
 
     const trackingUrl = payload.tracking_url;
     const orderId = payload.order_id;
@@ -191,6 +211,10 @@ export class OrderService {
         payload.ship_to.phone,
         orderId,
       );
+      incomingOrder.status = "cancelled";
+      await incomingOrder.save();
+      outgoingOrder.status = "cancelled";
+      await outgoingOrder.save();
       return;
     }
 
@@ -241,13 +265,86 @@ export class OrderService {
         );
 
         this.userMailerService.farmerOrderCompletedMail(farmerEmail, orderId);
-        const farmerPatrons = farmer?.patrons;
-        if (farmerPatrons?.includes(customer?.id)) {
+        const farmerPatrons = farmer.patrons;
+
+        const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
+
+        const newBalance = farmer.balance + reducedProductCost;
+
+        farmer.balance = newBalance;
+        await farmer.save();
+
+        console.log(customer.onesignal_id);
+
+        if (farmerPatrons.includes(customer.onesignal_id as string)) {
           return;
         } else {
-          farmer?.patrons.push(customer?.id);
-          await farmer?.save();
+          farmer.patrons.push(customer.onesignal_id as string);
+          console.log(farmer.patrons);
+
+          await farmer.save();
         }
+        const customerOnesignalId = [];
+        const farmerOnesignalId = [];
+
+        if (
+          customer.onesignal_id &&
+          (await this.userService.isPlayerIdValid(customer.onesignal_id))
+        ) {
+          customerOnesignalId.push(customer.onesignal_id);
+        }
+
+        if (
+          farmer.onesignal_id &&
+          (await this.userService.isPlayerIdValid(farmer.onesignal_id))
+        ) {
+          farmerOnesignalId.push(farmer.onesignal_id);
+        }
+
+        const customerMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `Order ${incomingOrder.shipbubble_id} received`,
+          },
+          included_segments: ["include_player_ids"],
+          include_player_ids: customerOnesignalId,
+          content_available: true,
+          onesignal_notification_accent_color: "FF00FF00",
+          large_icon: incomingOrder.image[0],
+          data: {
+            PushTitle: `Products Received`,
+          },
+          headings: {
+            en: `Oder received`,
+          },
+        };
+        await this.userService.sendNotificationToDevice(
+          customerMessage,
+          customer.id,
+        );
+
+        const farmerMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `Order ${incomingOrder.shipbubble_id} received by customer `,
+          },
+          included_segments: ["include_player_ids"],
+          include_player_ids: farmerOnesignalId,
+          content_available: true,
+          onesignal_notification_accent_color: "FF00FF00",
+          large_icon: incomingOrder.image[0],
+          data: {
+            PushTitle: `Products received by customer`,
+          },
+          headings: {
+            en: `Oder received by customer`,
+          },
+        };
+
+        await this.userService.sendNotificationToDevice(
+          farmerMessage,
+          farmer.id,
+        );
       }
 
       if (payload.status !== "completed" && "picked_up") {
@@ -257,5 +354,244 @@ export class OrderService {
         await outgoingOrder.save();
       }
     }
+  }
+  async confirmOutgoingOrderSent(orderId: string, farmerId: string) {
+    if (!orderId) {
+      throw new BadRequestException("Must provide orderId");
+    }
+    const outgoingOrder = await this.outgoingOrderModel.findById(orderId);
+    if (!outgoingOrder) {
+      throw new NotFoundException("Order not found");
+    }
+    if (farmerId !== outgoingOrder.farmer_id) {
+      throw new BadRequestException("This is not your order");
+    }
+    if (outgoingOrder.self_shipping === false) {
+      throw new BadRequestException(
+        "Shipment of this product is not handled by you",
+      );
+    }
+
+    if (outgoingOrder.farmer_ship_date !== undefined) {
+      throw new BadRequestException(
+        "You have already confirmed this order has been shipped",
+      );
+    }
+    outgoingOrder.farmer_shipped = true;
+    outgoingOrder.farmer_ship_date = new Date(
+      now.getTime() + 1 * 60 * 60 * 1000,
+    );
+    outgoingOrder.status = "in_transit";
+    await outgoingOrder.save();
+
+    const incomingOrder = await this.incomingOrderModel.findOne({
+      shipbubble_id: outgoingOrder.shipbubble_id,
+    });
+    if (!incomingOrder) {
+      return;
+    }
+    incomingOrder.farmer_shipped = true;
+    incomingOrder.farmer_ship_date = new Date(
+      now.getTime() + 1 * 60 * 60 * 1000,
+    );
+    incomingOrder.status = "in_transit";
+    await incomingOrder.save();
+
+    return {
+      success: true,
+      data: outgoingOrder,
+    };
+  }
+
+  async confirmIncomingOrderReceived(orderId: string, customerId: string) {
+    if (!orderId) {
+      throw new BadRequestException("Must provide orderId");
+    }
+
+    const incomingOrder = await this.incomingOrderModel.findById(orderId);
+    if (!incomingOrder) {
+      throw new NotFoundException("Order not found");
+    }
+
+    const farmer = await this.userModel.findById(incomingOrder.farmer_id);
+    if (!farmer) {
+      throw new BadRequestException("Farmer may have deleted their account");
+    }
+    const customer = await this.userModel.findById(incomingOrder.customer_id);
+    if (!customer) {
+      throw new BadRequestException("This is not your order");
+    }
+
+    if (customerId !== incomingOrder.customer_id) {
+      throw new BadRequestException("This is not your order");
+    }
+    if (incomingOrder.farmer_shipped === false) {
+      throw new BadRequestException("Farmer has not sent out this product");
+    }
+
+    if (incomingOrder.customer_received === false) {
+      throw new BadRequestException(
+        "You have already confirmed that you recieved this product",
+      );
+    }
+    incomingOrder.customer_received = true;
+
+    incomingOrder.customer_received_date = new Date(
+      now.getTime() + 1 * 60 * 60 * 1000,
+    ); // Convert to the local time in West Africa Time (WAT is UTC+1) and save
+
+    incomingOrder.status = "completed";
+
+    await incomingOrder.save();
+
+    const outgoingOrder = await this.outgoingOrderModel.findOne({
+      shipbubble_id: incomingOrder.shipbubble_id,
+    });
+    if (!outgoingOrder) {
+      return;
+    }
+    outgoingOrder.customer_received = true;
+    outgoingOrder.customer_received_date = new Date(
+      now.getTime() + 1 * 60 * 60 * 1000,
+    );
+    outgoingOrder.status = "completed";
+    await outgoingOrder.save();
+    this.userMailerService.farmerOrderCompletedMail(
+      farmer.email,
+      incomingOrder.shipbubble_id,
+    );
+    this.userMailerService.customerOrderCompletedMail(
+      customer.email,
+      incomingOrder.shipbubble_id,
+      farmer.phone,
+    );
+    const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
+
+    const newBalance = farmer.balance + reducedProductCost;
+
+    farmer.balance = newBalance;
+    await farmer.save();
+    const customerOnesignalId = [];
+    const farmerOnesignalId = [];
+
+    if (
+      customer.onesignal_id &&
+      (await this.userService.isPlayerIdValid(customer.onesignal_id))
+    ) {
+      customerOnesignalId.push(customer.onesignal_id);
+    }
+
+    if (
+      farmer.onesignal_id &&
+      (await this.userService.isPlayerIdValid(farmer.onesignal_id))
+    ) {
+      farmerOnesignalId.push(farmer.onesignal_id);
+    }
+
+    const customerMessage = {
+      app_id: process.env.ONESIGNAL_APP_ID,
+      contents: {
+        en: `Order ${incomingOrder.shipbubble_id} received`,
+      },
+      included_segments: ["include_player_ids"],
+      include_player_ids: customerOnesignalId,
+      content_available: true,
+      onesignal_notification_accent_color: "FF00FF00",
+      large_icon: incomingOrder.image[0],
+      data: {
+        PushTitle: `Products Received`,
+      },
+      headings: {
+        en: `Oder received`,
+      },
+    };
+    await this.userService.sendNotificationToDevice(
+      customerMessage,
+      customerId,
+    );
+
+    const farmerMessage = {
+      app_id: process.env.ONESIGNAL_APP_ID,
+      contents: {
+        en: `Order ${incomingOrder.shipbubble_id} received by customer `,
+      },
+      included_segments: ["include_player_ids"],
+      include_player_ids: farmerOnesignalId,
+      content_available: true,
+      onesignal_notification_accent_color: "FF00FF00",
+      large_icon: incomingOrder.image[0],
+      data: {
+        PushTitle: `Products received by customer`,
+      },
+      headings: {
+        en: `Oder received by customer`,
+      },
+    };
+
+    await this.userService.sendNotificationToDevice(farmerMessage, farmer.id);
+
+    return {
+      success: true,
+      data: incomingOrder,
+    };
+  }
+
+  async complaint(orderId: string, userId: string) {
+    if (!orderId) {
+      throw new BadRequestException({
+        success: false,
+        message: "Must provide orderId",
+      });
+    }
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new BadRequestException({
+        success: false,
+        message: "User not found",
+      });
+    }
+    const incomingOrder = await this.incomingOrderModel.findById(orderId);
+    if (!incomingOrder) {
+      throw new NotFoundException({success: false, message: "Order not found"});
+    }
+    if (incomingOrder.customer_id !== user.id) {
+      throw new BadRequestException({
+        success: false,
+        message: "This is not your order",
+      });
+    }
+
+    if (incomingOrder.farmer_shipped === false) {
+      throw new BadRequestException({
+        success: false,
+        message: "Farmer has not sent out the item",
+      });
+    }
+
+    const today = moment(now);
+    const farmer_ship_date = moment(incomingOrder.farmer_ship_date);
+    const diffInDays = today.diff(farmer_ship_date, "days");
+    if (diffInDays < 5) {
+      throw new BadRequestException({
+        success: false,
+        message: "Delivery time is not over",
+      });
+    }
+    incomingOrder.complaint = true;
+    await incomingOrder.save();
+    const outgoingOrder = (await this.outgoingOrderModel.findOne({
+      shipbubble_id: incomingOrder.shipbubble_id,
+    })) as OrderDocument;
+
+    outgoingOrder.complaint = true;
+    await outgoingOrder.save();
+    this.userMailerService.complaint(
+      user.first_name,
+      incomingOrder.shipbubble_id,
+    );
+    return {
+      success: true,
+      message: "Complaint has been forwarded to our customer service",
+    };
   }
 }

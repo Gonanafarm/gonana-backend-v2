@@ -1,5 +1,4 @@
 import {Model} from "mongoose";
-import * as mongoose from "mongoose";
 import {v4 as uuid} from "uuid";
 import {
   Injectable,
@@ -8,7 +7,6 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
   HttpException,
-  HttpStatus,
   ConflictException,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
@@ -17,13 +15,11 @@ import {comparePassword, hashPassword} from "../common/auth";
 import {
   UserNotFoundException,
   EmailAlreadyUsedException,
-  PasswordResetTokenInvalidException,
   ActivationTokenInvalidException,
   DeletionException,
-  InvalidPasscodeException,
   NumberAlreadyUsedException,
-  BvnAlreadyUsedException,
 } from "../common/exceptions";
+import {JwtService} from "@nestjs/jwt";
 import {UserMailerService} from "./user.mailer.service";
 import {User, UserDocument} from "./user.schema";
 import {EventEmitter2} from "@nestjs/event-emitter";
@@ -34,17 +30,23 @@ import {CloudinaryService} from "../post/cloudinary.service";
 import axios from "axios";
 import {showObjectProperties} from "./logistics.service";
 import {TransactionDocument} from "./transaction.schema";
+import {NotificationDocument} from "./notification.schema";
 import {providers, Wallet, utils, ethers} from "ethers";
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
     //@ts-ignore
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    //@ts-ignore
     @InjectModel("Transactions")
     private readonly transactionModel: Model<TransactionDocument>,
+    //@ts-ignore
     @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
+    //@ts-ignore
     @InjectModel("Otp") private readonly otpModel: Model<OtpDocument>,
-
+    @InjectModel("Notifications")
+    private readonly notificationModel: Model<NotificationDocument>,
+    private readonly jwtService: JwtService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
     private eventEmitter: EventEmitter2,
@@ -119,10 +121,6 @@ export class UserService extends GenericService<UserDocument> {
         throw DeletionException();
       }
       const id = user.user.id;
-      const posts = await this.postModel.find({publisher_id: id});
-      const postIds = posts.map((post: any) => {
-        return post.id;
-      });
 
       await this.postModel.deleteMany({publisher_id: id});
       const deleteOtp = await this.otpModel.deleteOne({email: email});
@@ -463,16 +461,29 @@ export class UserService extends GenericService<UserDocument> {
 
   async getUserData(id: string) {
     const user = await this.userModel.findById(id);
-    const userData = user?.getPublicData();
-
+    const url = "https://rpc.ankr.com/blast_testnet_sepolia";
+    const provider = new providers.JsonRpcProvider(url);
     if (!user) {
       return null;
     }
+    if (user.wallet_address === undefined) {
+      const wallet = Wallet.createRandom();
+      const address = wallet.address;
+      const balance = await provider.getBalance(address);
+      const privateKey = wallet.privateKey;
+      console.log(privateKey);
+
+      user.wallet = balance.toString();
+      user.wallet_address = address;
+      user.privateKey = privateKey;
+      await user.save();
+    }
+    const userData = user?.getPublicData();
+
     if (userData) {
       user.cryptoWalletBalanceInNgn = await this.convertEthToNgn(user.wallet);
       console.log(user.cryptoWalletBalanceInNgn);
 
-      // Assuming user model has a method like save() to update the document in the database
       await user.save();
     }
     return userData;
@@ -487,6 +498,20 @@ export class UserService extends GenericService<UserDocument> {
     console.log(user);
 
     return this.getUserData(user.id);
+  }
+
+  async generateTokenByEmail(email: string) {
+    const user = await this.userModel.findOne({email: email});
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    console.log(user);
+    const token = this.jwtService.sign(
+      {...user.getPublicData()},
+      {subject: `${user.id}`},
+    );
+    return {user: user.getPublicData(), token: token};
   }
 
   async generateToken() {
@@ -589,6 +614,7 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
   }
+
   async verifyTransaction(data: any) {
     console.log(data);
 
@@ -1202,25 +1228,157 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async sendNotification(data: any) {
+  async sendNotification() {
     const headers = {
       "Content-Type": "application/json",
       Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
     };
-    const message ={
+    const message = {
       app_id: process.env.ONESIGNAL_APP_ID,
       contents: {en: "Test push notification"},
-      included_segments:["All"],
-      content_available:true,
+      included_segments: ["All"],
+      content_available: true,
       small_icon: "ic_notification_icon",
-      data:{
-        PushTitle: "CUSTOM NOTIFICATION"
-      }
-    }
+      data: {
+        PushTitle: "CUSTOM NOTIFICATION",
+      },
+    };
 
     const url = "https://onesignal.com/api/v1/notifications";
-    const req = await axios.post(url, data, {headers: headers});
+    const req = await axios.post(url, message, {headers: headers});
+
+    return req.data;
+  }
+
+  async sendNotificationToDevice(message: any, userId: string) {
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
+    };
+
+    const url = "https://onesignal.com/api/v1/notifications";
+    const req = await axios.post(url, message, {headers: headers});
+    const notificationExists = await this.notificationModel.findOne({
+      userId: userId,
+    });
+    console.log(message.contents.en);
+    if (notificationExists) {
+      console.log("here");
+
+      notificationExists.notification.push({body: message.contents.en});
+      await notificationExists.save();
+      return;
+    }
+    const notification = await this.notificationModel.create({
+      userId: userId,
+      notification: [{body: message.contents.en}],
+    });
+
     console.log(req.data);
-    return
+    return req.data;
+  }
+  async sendTestNotificationToDevice(data: Array<string>) {
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
+      };
+      console.log(data);
+
+      const message = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {en: "Test push notification"},
+        included_segments: ["include_player_ids"],
+        include_player_ids: data,
+        content_available: true,
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        data: {
+          PushTitle: "CUSTOM NOTIFICATION",
+        },
+      };
+
+      const url = "https://onesignal.com/api/v1/notifications";
+      const req = await axios.post(url, message, {headers: headers});
+      console.log(req.status);
+      return req.data;
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.errors,
+        },
+        error.response.status,
+      );
+    }
+  }
+
+  async isPlayerIdValid(playerId: string): Promise<boolean> {
+    const config = {
+      headers: {
+        host: "onesignal.com",
+      },
+    };
+
+    const url = `https://onesignal.com/api/v1/players/${playerId}?app_id=${process.env.ONESIGNAL_APP_ID}`;
+
+    try {
+      const response = await axios.get(url, config);
+
+      return !response.data.invalid_identifier;
+    } catch (error: any) {
+      if (error.response && error.response.data.errors) {
+        return false;
+      }
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.errors,
+        },
+        error.response.status,
+      );
+    }
+  }
+
+  async updateOneSignalId(userId: string, oneSignalId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    if (!oneSignalId) {
+      throw new BadRequestException("Must provide oneSignalId");
+    }
+    user.onesignal_id = oneSignalId;
+    await user.save();
+    return {success: true, message: "One signal Id updated"};
+  }
+
+  async getNotifications(userId: string) {
+    if (!userId) {
+      throw new BadRequestException({
+        success: false,
+        message: "User not found",
+      });
+    }
+    const notifications = await this.notificationModel.findOne({
+      userId: userId,
+    });
+    if (!notifications) {
+      throw new BadRequestException({
+        success: false,
+        message: "Notifications not found",
+      });
+    }
+    if (notifications.notification.length < 1) {
+      throw new BadRequestException({
+        success: false,
+        message: "User does not have any notifications",
+      });
+    }
+    return {
+      success: true,
+      data: notifications.notification,
+    };
   }
 }

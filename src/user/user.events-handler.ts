@@ -85,7 +85,7 @@ export class UserEventHanders {
 
   @OnEvent("driver.disapproved")
   async handleDriverDisApproved(driver_id: string) {
-    let user = await this.userService.getItem(driver_id);
+    const user = await this.userService.getItem(driver_id);
 
     this.userMailer.sendNotification(
       user.email,

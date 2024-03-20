@@ -1,5 +1,4 @@
-import {Module, forwardRef } from "@nestjs/common";
-
+import {Module, forwardRef} from "@nestjs/common";
 import {UserMailerService} from "./user.mailer.service";
 import {UserService} from "./user.service";
 import {UserModel} from "./user.model";
@@ -10,16 +9,15 @@ import {JwtModule} from "@nestjs/jwt";
 import config from "../config";
 import {UserEventHanders} from "./user.events-handler";
 import {ProfileController} from "./profile.controller";
-import { CloudinaryService } from "../post/cloudinary.service";
-import { HttpModule } from "@nestjs/axios";
-import { LogisticsService } from "./logistics.service";
-import { PostModule } from "../post/post.module";
-import { GeocodeModule } from "../geocoder/module";
-import { LogisticsController } from "./logistics.controller";
-import { TransactionController } from "./transaction.controller";
-import { TransactionModel } from "./transaction.model";
-import { CartItemModule } from "../cart/module";
-
+import {CloudinaryService} from "../post/cloudinary.service";
+import {HttpModule} from "@nestjs/axios";
+import {LogisticsService} from "./logistics.service";
+import {PostModule} from "../post/post.module";
+import {GeocodeModule} from "../geocoder/module";
+import {LogisticsController} from "./logistics.controller";
+import {TransactionController} from "./transaction.controller";
+import {TransactionModel} from "./transaction.model";
+import {NotificationModel} from "./notification.model";
 
 @Module({
   imports: [
@@ -28,14 +26,26 @@ import { CartItemModule } from "../cart/module";
     OtpModel,
     UserModel,
     TransactionModel,
+    NotificationModel,
     HttpModule,
     JwtModule.register({
       secret: config.auth.secret,
       signOptions: {expiresIn: config.auth.jwtTokenExpireInSec},
     }),
   ],
-  controllers: [UserController, ProfileController, LogisticsController, TransactionController],
-  providers: [UserMailerService, UserService, UserEventHanders, CloudinaryService, LogisticsService],
+  controllers: [
+    UserController,
+    ProfileController,
+    LogisticsController,
+    TransactionController,
+  ],
+  providers: [
+    UserMailerService,
+    UserService,
+    UserEventHanders,
+    CloudinaryService,
+    LogisticsService,
+  ],
   exports: [UserService, UserModel, LogisticsService, UserMailerService],
 })
 export class UserModule {}
