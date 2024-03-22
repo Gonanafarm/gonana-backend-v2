@@ -42,6 +42,14 @@ export class TransactionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post("recover-virtual-account")
+  recoverVirtualAccount(@Body("bvn") bvn: string, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.recoverVirtualAccount(bvn, user_id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post("/transfer-to-user")
   @HttpCode(200)
   transferToUser(@Body() body: TransferToUser, @Req() req: Request) {

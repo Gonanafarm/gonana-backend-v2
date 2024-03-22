@@ -817,6 +817,75 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
+  async recoverVirtualAccount(bvn: string, userId: string) {
+    try {
+      const token = await this.generateToken();
+      if (!token) {
+        throw new InternalServerErrorException("Failed To Get Token");
+      }
+      const accountHeaders = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      const user = await this.userModel.findById(userId);
+
+      if (!user) {
+        throw new NotFoundException(`User Not Found, Login and try again`);
+      }
+
+      if (user.bvn !== undefined) {
+        `You have already generated a virtual account`;
+      }
+
+      if (bvn.length !== 11) {
+        throw new BadRequestException("Bvn should be 11 digits");
+      }
+      const bvnExists = await this.userModel.findOne({bvn: bvn});
+
+      if (bvnExists?.id === userId) {
+        throw new BadRequestException(
+          `You have already generated a virtual account`,
+        );
+      }
+
+      if (bvnExists) {
+        throw new ConflictException(`Gonana user with this bvn exists`);
+      }
+
+      const base_url = process.env.MINTYN_BASE_URL;
+
+      const url = `${base_url}/api/v1/merchant/virtual-account/accounts?bvn=${bvn}&page=0&size=100`;
+      const response = await axios.get(url, {headers: accountHeaders});
+      if (response.data.data.records.length < 1) {
+        throw new BadRequestException("Bvn not previously validated");
+      }
+      user.virtual_account_bank_name = response.data.data.records[0].bankName;
+      user.bvn = response.data.data.records[0].bvn;
+      user.virtual_account_name = response.data.data.records[0].accountName;
+      user.virtual_account_number = response.data.data.records[0].accountNumber;
+      await user.save();
+      return {
+        success: true,
+        message: "Virtual Account Recovered",
+        accountDetails: {
+          accountNumber: user.virtual_account_number,
+          accountName: user.virtual_account_name,
+          bankName: user.virtual_account_bank_name,
+        },
+      };
+    } catch (error: any) {
+      console.log(error);
+
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
   async resolveAccountNumber(account_number: string, bank: string) {
     try {
       const bankCode = await this.getBankCode(bank);
