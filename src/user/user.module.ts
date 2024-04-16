@@ -18,6 +18,8 @@ import {LogisticsController} from "./logistics.controller";
 import {TransactionController} from "./transaction.controller";
 import {TransactionModel} from "./transaction.model";
 import {NotificationModel} from "./notification.model";
+import {ScheduleModule} from "@nestjs/schedule";
+import {UserCronJob} from "./user.cron";
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import {NotificationModel} from "./notification.model";
     GeocodeModule,
     OtpModel,
     UserModel,
+    ScheduleModule.forRoot(),
     TransactionModel,
     NotificationModel,
     HttpModule,
@@ -45,6 +48,7 @@ import {NotificationModel} from "./notification.model";
     UserEventHanders,
     CloudinaryService,
     LogisticsService,
+    UserCronJob,
   ],
   exports: [UserService, UserModel, LogisticsService, UserMailerService],
 })

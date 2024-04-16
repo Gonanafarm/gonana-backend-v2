@@ -42,6 +42,16 @@ export const getAbbreviation = (inputString: string): string => {
 export const generateRandomSixDigitNumber = (): number => {
   return Math.floor(100000 + Math.random() * 900000);
 };
+
+export const generateRandomString = (): string => {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 12; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
 @Injectable()
 export class CartItemService extends GenericService<CartItemDocument> {
   constructor(
@@ -436,7 +446,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       user.balance = newBalance;
       await user.save();
 
-      const getIds = (data: Array<{id: string; units: number}>) => {
+      const getIds = (data: Array<{id: string; units: number}>): string => {
         const ids = data.map(item => item.id);
         return ids.join(", ");
       };
@@ -449,7 +459,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
           userId: user.id,
           transactions: [
             {
-              Type: "ORDER DEBIT",
+              Type: "ORDER DEBIT", // Represents debits from orders
+              Session_Id: generateRandomString(),
               AmountSent: totalCost.toString(),
               AmountSettled: totalCost.toString(),
               productId: getIds(orderItems),
@@ -458,10 +469,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
         });
       } else {
         const transactionObject = {
-          Type: "DEBIT",
+          Session_id: generateRandomString(),
+          Type: "ORDER DEBIT" as const, // Represents debits from orders
           AmountSent: totalCost,
           AmountSettled: totalCost,
           productId: getIds(orderItems),
+          Time: new Date().toISOString(),
         };
         transactions.transactions.push(transactionObject);
         await transactions.save();
