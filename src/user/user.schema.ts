@@ -7,7 +7,7 @@ import {AccountStatus, AccountType} from "../common/enums";
 import {OtpDocument} from "./otp.schema";
 
 export type UserMethods = {
-  getPublicData: () => UserPublicData | any
+  getPublicData: () => UserPublicData | any;
 };
 
 export type UserDocument = User & Document & UserMethods & OtpDocument;
@@ -138,14 +138,17 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String})
   wallet_address: string;
 
-  @Prop({type:mongoose.SchemaTypes.String})
+  @Prop({type: mongoose.SchemaTypes.String})
   privateKey: string;
 
-  @Prop({type:mongoose.SchemaTypes.Array})
+  @Prop({type: mongoose.SchemaTypes.Array})
   patrons: string[];
 
-  @Prop({type:mongoose.SchemaTypes.String})
+  @Prop({type: mongoose.SchemaTypes.String})
   onesignal_id: string;
+
+  @Prop({type: mongoose.SchemaTypes.Boolean})
+  insurance: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -174,7 +177,7 @@ UserSchema.methods.getPublicData = function () {
     cryptoWalletBalanceInNgn,
     wallet_address,
     country,
-    onesignal_id
+    onesignal_id,
   } = this;
   const publicData = {
     id,
@@ -196,7 +199,7 @@ UserSchema.methods.getPublicData = function () {
     cryptoWalletBalanceInNgn,
     wallet_address,
     country,
-    onesignal_id
+    onesignal_id,
   };
   return publicData;
 };

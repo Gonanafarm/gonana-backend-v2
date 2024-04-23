@@ -15,7 +15,7 @@ export const tranSactionSchema = new mongoose.Schema(
         Type: {
           type: "string",
           required: true,
-          enum: ["CREDIT", "DEBIT", "ORDER DEBIT", "ORDER CREDIT"],
+          enum: ["CREDIT", "DEBIT", "ORDER DEBIT", "ORDER CREDIT", "PENDING"],
         },
         AmountSent: {
           type: "number",
@@ -43,5 +43,18 @@ export const tranSactionSchema = new mongoose.Schema(
 
 export interface TransactionDocument extends Document {
   userId: string;
-  transactions: Array<Record<string, any>>;
+  transactions: Array<{
+    Session_id: string;
+    Type:
+      | "CREDIT"
+      | "DEBIT"
+      | "PENDING"
+      | "ORDER DEBIT" /* Represents debits from orders*/
+      | "ORDER CREDIT";
+    productId?: string;
+    Time: string;
+    narration?: string;
+    AmountSent: number;
+    AmountSettled: number;
+  }>;
 }

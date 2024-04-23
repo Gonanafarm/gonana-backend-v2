@@ -76,9 +76,9 @@ export class AuthService {
 
   async signUpUser(userData: SignUpDto, origin: string) {
     const user = await this.userService.createAccount(
-      userData.first_name,
-      userData.last_name,
-      userData.phone,
+      userData.first_name.trim(),
+      userData.last_name.trim(),
+      userData.phone.trim(),
       userData.email,
       userData.password,
       origin,
