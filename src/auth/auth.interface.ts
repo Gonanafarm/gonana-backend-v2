@@ -15,6 +15,8 @@ import {
 import {ApiProperty} from "@nestjs/swagger";
 import {UserPublicData} from "../user/user.dto";
 import {AccountType, SignupAccountType} from "../common/enums";
+import { Transform } from "class-transformer";
+
 
 export class ActivateParams {
   @ApiProperty({type: String})

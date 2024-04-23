@@ -72,6 +72,8 @@ export class AuthController {
   @Post("signup")
   @ApiResponse({type: AuthenticatedUser})
   async signup(@Body() signUpDto: SignUpDto, @Req() req: Request) {
+    console.log(signUpDto);
+    
     return this.authService.signUpUser(signUpDto, getOriginHeader(req));
   }
 
