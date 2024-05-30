@@ -153,4 +153,10 @@ export class TransactionController {
   ngnToUsd(@Body("ngn") data: string) {
     return this.userService.convertNgntoUsd(data);
   }
+
+  @Post("test")
+  test(@Body() data: any) {
+    console.log(data);
+    return;
+  }
 }
