@@ -58,6 +58,11 @@ export class UserController {
     return this.userService.sendTestNotificationToDevice(data);
   }
 
+  @Post("send-notification-to-devices")
+  sendNotifications(@Body("text") data:string){
+    return this.userService.sendNotificationToDevices(data)
+  }
+
   @Get("notifications")
   @UseGuards(JwtAuthGuard)
   getNotifications(@Req() req: Request){

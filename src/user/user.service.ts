@@ -1365,14 +1365,45 @@ export class UserService extends GenericService<UserDocument> {
       const message = {
         app_id: process.env.ONESIGNAL_APP_ID,
         contents: {en: "Test push notification"},
+        headings: {en: "Test😃"},
         included_segments: ["include_player_ids"],
         include_player_ids: data,
         content_available: true,
         small_icon:
           "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
-        data: {
-          PushTitle: "CUSTOM NOTIFICATION",
+      };
+
+      const url = "https://onesignal.com/api/v1/notifications";
+      const req = await axios.post(url, message, {headers: headers});
+      console.log(req.status);
+      return req.data;
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.errors,
         },
+        error.response.status,
+      );
+    }
+  }
+
+  async sendNotificationToDevices(text: string) {
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: "Basic " + process.env.ONESIGNAL_API_KEY,
+      };
+
+      const message = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {en: text},
+        headings: {en: "Hello Farmers 😃"},
+        included_segments: ["All"],
+        content_available: true,
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
       };
 
       const url = "https://onesignal.com/api/v1/notifications";
