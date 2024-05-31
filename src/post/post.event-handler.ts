@@ -97,7 +97,7 @@ export class PostEventHandlers {
     }
 
     const provider = new providers.JsonRpcProvider(
-      "https://rpc.ankr.com/blast_testnet_sepolia",
+      "https://rpc.sepolia-api.lisk.com",
     );
 
     //wallet instance of the contract admin
