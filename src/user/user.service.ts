@@ -1259,6 +1259,7 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found");
       }
+      
       const privateKey = user.privateKey;
       if (privateKey === undefined || privateKey.length < 1) {
         throw new BadRequestException(
