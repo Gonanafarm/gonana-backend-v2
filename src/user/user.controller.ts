@@ -58,17 +58,18 @@ export class UserController {
     return this.userService.sendTestNotificationToDevice(data);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post("send-notification-to-devices")
-  sendNotifications(@Body("text") data:string){
-    return this.userService.sendNotificationToDevices(data)
+  sendNotifications(@Body("text") data: string) {
+    return this.userService.sendNotificationToDevices(data);
   }
 
   @Get("notifications")
   @UseGuards(JwtAuthGuard)
-  getNotifications(@Req() req: Request){
+  getNotifications(@Req() req: Request) {
     //@ts-ignore
     const userId = req.user?.id;
-    return this.userService.getNotifications(userId)
+    return this.userService.getNotifications(userId);
   }
 
   @Get("/:id")
