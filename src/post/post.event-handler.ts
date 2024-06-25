@@ -97,7 +97,7 @@ export class PostEventHandlers {
     }
 
     const provider = new providers.JsonRpcProvider(
-      "https://rpc.ankr.com/blast_testnet_sepolia",
+      "https://rpc.sepolia-api.lisk.com",
     );
 
     //wallet instance of the contract admin
@@ -113,7 +113,10 @@ export class PostEventHandlers {
       payload.amount,
       payload.farmer_id,
       farmer.wallet_address,
+      {gasLimit: 100000},
     );
+    console.log(list_product);
+
     const tx = await list_product.wait();
   }
   // @OnEvent("Unlike")

@@ -17,6 +17,7 @@ import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {User} from "./user.schema";
 import {FileInterceptor} from "@nestjs/platform-express";
 import {LogisticsService} from "./logistics.service";
+import {sendNotificationDto} from "./user.dto";
 
 @ApiTags("user-controller")
 @ApiBearerAuth()
@@ -60,8 +61,10 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Post("send-notification-to-devices")
-  sendNotifications(@Body("text") data: string) {
-    return this.userService.sendNotificationToDevices(data);
+  sendNotifications(@Body() data: sendNotificationDto) {
+    console.log(data);
+    
+    return this.userService.sendNotificationToDevices(data.body, data.title);
   }
 
   @Get("notifications")

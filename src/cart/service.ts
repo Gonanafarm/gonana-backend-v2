@@ -666,7 +666,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         );
       }
       const provider = new providers.JsonRpcProvider(
-        "https://rpc.ankr.com/blast_testnet_sepolia",
+        "https://rpc.sepolia-api.lisk.com",
       );
 
       const buyerWallet = new ethers.Wallet(user.privateKey, provider);
