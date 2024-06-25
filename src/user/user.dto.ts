@@ -117,6 +117,16 @@ export class GetUserTransactonsDto {
   page: string;
 }
 
+export class sendNotificationDto {
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @IsString()
+  @IsNotEmpty()
+  body: string;
+}
+
 export class UpdateTransferReceipient {
   @ApiProperty({})
   @IsString()

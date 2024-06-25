@@ -1259,7 +1259,7 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found");
       }
-      
+
       const privateKey = user.privateKey;
       if (privateKey === undefined || privateKey.length < 1) {
         throw new BadRequestException(
@@ -1390,7 +1390,7 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async sendNotificationToDevices(text: string) {
+  async sendNotificationToDevices(body: string, title: string) {
     try {
       const headers = {
         "Content-Type": "application/json",
@@ -1399,8 +1399,8 @@ export class UserService extends GenericService<UserDocument> {
 
       const message = {
         app_id: process.env.ONESIGNAL_APP_ID,
-        contents: {en: text},
-        headings: {en: "Hello Farmers 😃"},
+        contents: {en: body},
+        headings: {en: title},
         included_segments: ["All"],
         content_available: true,
         small_icon:
