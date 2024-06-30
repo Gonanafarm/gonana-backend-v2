@@ -32,6 +32,12 @@ import {showObjectProperties} from "./logistics.service";
 import {TransactionDocument} from "./transaction.schema";
 import {NotificationDocument} from "./notification.schema";
 import {providers, Wallet, utils, ethers} from "ethers";
+
+export const toronetHeaders = {
+  admin: process.env.TORONET_ADMIN_ADDRESS,
+  adminpwd: process.env.TORONET_ADMIN_PASSWORD,
+};
+export const toronetBaseUrl = process.env.TORONET_BASE_URL;
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
@@ -467,6 +473,28 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       return null;
     }
+    if (user.fiat_wallet_address === undefined) {
+      const data = {
+        op: "createkey",
+        params: [
+          {
+            name: "pwd",
+            value: `${user.email}`,
+          },
+        ],
+      };
+      const toronetResponse = await axios.post(
+        `${process.env.TORONET_BASE_URL}/keystore`,
+        data,
+        {
+          headers: toronetHeaders,
+        },
+      );
+      const fiat_wallet_address = toronetResponse.data.address;
+      user.fiat_wallet_address = fiat_wallet_address;
+      await user.save();
+    }
+
     if (user.wallet_address === undefined) {
       const wallet = Wallet.createRandom();
       const address = wallet.address;
@@ -544,68 +572,120 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async virtualAccount(bvn: string, id: string) {
-    const base_url = process.env.MINTYN_BASE_URL;
+  // async virtualAccount(bvn: string, id: string) {
+  //   const base_url = process.env.MINTYN_BASE_URL;
+  //   try {
+  //     const token = await this.generateToken();
+  //     if (!token) {
+  //       throw new InternalServerErrorException("Failed To Get Token");
+  //     }
+  //     const accountHeaders = {
+  //       Authorization: `Bearer ${token}`,
+  //       "Content-Type": "application/json",
+  //     };
+  //     const user = await this.userModel.findById(id);
+  //     if (!user) {
+  //       throw new NotFoundException(`User Not Found, Login and try again`);
+  //     }
+  //     if (bvn.length !== 11) {
+  //       throw new BadRequestException("Bvn should be 11 digits");
+  //     }
+  //     const bvnExists = await this.userModel.findOne({bvn: bvn});
+  //     if (bvnExists && bvnExists.id !== user.id) {
+  //       throw new ConflictException(`Gonana user with this bvn exists`);
+  //     }
+  //     const data = {
+  //       customerFirstName: `${user.first_name} ${user.last_name}`,
+  //       customerBVN: bvn,
+  //     };
+
+  //     const accountUrl = `${base_url}/api/v1/merchant/virtual-account/reserved-account`;
+  //     const createAccount = await axios.post(accountUrl, data, {
+  //       headers: accountHeaders,
+  //     });
+
+  //     console.log(createAccount.data);
+  //     if (createAccount.data.data === null) {
+  //       console.log(createAccount.data);
+  //       this.userMailer.sendBvnVerificationFailedMail(
+  //         user.email,
+  //         `${createAccount.data.responseMessage}. Login again and check your verification status`,
+  //       );
+  //       throw new HttpException(
+  //         {
+  //           success: false,
+  //           message: createAccount.data.responseMessage,
+  //         },
+  //         400,
+  //       );
+  //     }
+  //     user.bvn = bvn;
+  //     await user.save();
+
+  //     user.virtual_account_number = createAccount.data.data.accountNumber;
+  //     await user.save();
+
+  //     user.virtual_account_bank_name = createAccount.data.data.bankName;
+  //     await user.save();
+
+  //     user.virtual_account_name = createAccount.data.data.accountName;
+  //     await user.save();
+
+  //     return createAccount.data;
+  //   } catch (error: any) {
+  //     console.log(error);
+  //     throw new HttpException(
+  //       {
+  //         success: false,
+  //         message: error.message,
+  //       },
+  //       error.status,
+  //     );
+  //   }
+  // }
+
+  async virtualAccount(userId: string) {
     try {
-      const token = await this.generateToken();
-      if (!token) {
-        throw new InternalServerErrorException("Failed To Get Token");
-      }
-      const accountHeaders = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-      const user = await this.userModel.findById(id);
+      const user = await this.userModel.findById(userId);
       if (!user) {
-        throw new NotFoundException(`User Not Found, Login and try again`);
+        throw new BadRequestException("Login and try again");
       }
-      if (bvn.length !== 11) {
-        throw new BadRequestException("Bvn should be 11 digits");
+      if (!user.fiat_wallet_address) {
+        throw new BadRequestException("Login and try again");
       }
-      const bvnExists = await this.userModel.findOne({bvn: bvn});
-      if (bvnExists && bvnExists.id !== user.id) {
-        throw new ConflictException(`Gonana user with this bvn exists`);
-      }
-      const data = {
-        customerFirstName: `${user.first_name} ${user.last_name}`,
-        customerBVN: bvn,
-      };
-
-      const accountUrl = `${base_url}/api/v1/merchant/virtual-account/reserved-account`;
-      const createAccount = await axios.post(accountUrl, data, {
-        headers: accountHeaders,
-      });
-
-      console.log(createAccount.data);
-      if (createAccount.data.data === null) {
-        console.log(createAccount.data);
-        this.userMailer.sendBvnVerificationFailedMail(
-          user.email,
-          `${createAccount.data.responseMessage}. Login again and check your verification status`,
-        );
-        throw new HttpException(
+      const toroData = {
+        op: "generatevirtualwallet",
+        params: [
           {
-            success: false,
-            message: createAccount.data.responseMessage,
+            name: "address",
+            value: `${user.fiat_wallet_address}`, //wallet address
           },
-          400,
-        );
+          {
+            name: "payername",
+            value: `${user.first_name} ${user.last_name}`, //name of the account holder
+          },
+          {
+            name: "currency",
+            value: "NGN", //current options are USD, EUR, NGN - default
+          },
+        ],
+      };
+      const baseUrl = process.env.TORONET_BASE_URL;
+      const toronetRequest = await axios.post(
+        `${baseUrl}/payment/toro/`,
+        toroData,
+        {headers: toronetHeaders},
+      );
+      if (toronetRequest.data.result === false) {
+        throw new BadRequestException(toronetRequest.data.error);
       }
-      user.bvn = bvn;
+      user.virtual_account_bank_name = toronetRequest.data.bankname;
+      user.virtual_account_name = toronetRequest.data.accountname;
+      user.virtual_account_number = toronetRequest.data.accountnumber;
       await user.save();
-
-      user.virtual_account_number = createAccount.data.data.accountNumber;
-      await user.save();
-
-      user.virtual_account_bank_name = createAccount.data.data.bankName;
-      await user.save();
-
-      user.virtual_account_name = createAccount.data.data.accountName;
-      await user.save();
-
-      return createAccount.data;
+      return toronetRequest.data;
     } catch (error: any) {
-      console.log(error);
+      console.error(error);
       throw new HttpException(
         {
           success: false,
@@ -737,19 +817,23 @@ export class UserService extends GenericService<UserDocument> {
 
   async getBanks() {
     try {
-      const token = await this.generateToken();
-      const bankHeaders = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+      const base_url = process.env.TORONET_BASE_URL;
+      const url = `${base_url}/payment/toro/`;
+      const toroData = {
+        op: "getbanklist_ngn",
+        params: [],
       };
-      const base_url = process.env.MINTYN_BASE_URL;
-      const url = `${base_url}/api/v1/merchant/transfer-service/banks`;
-      const response = await axios.get(url, {headers: bankHeaders});
+      const response = await axios.post(url, toroData);
       const banks = response.data.data;
       return {success: true, data: banks};
-    } catch (error) {
-      console.error(error);
-      throw new InternalServerErrorException("Request failed");
+    } catch (error: any) {
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
   }
 
@@ -759,15 +843,16 @@ export class UserService extends GenericService<UserDocument> {
     user_id: string,
   ) {
     try {
-      const res = await this.resolveAccountNumber(account_number, bank);
-
-      const account_details = res.data.data;
-      console.log(account_details);
-
       const user = await this.userModel.findById(user_id);
       if (!user) {
         throw new UnauthorizedException("Login and try again");
       }
+
+      const res = await this.resolveAccountNumber(account_number, bank);
+
+      let account_details = res.data.data;
+      console.log(account_details);
+
       const isDuplicate = user.account_details.some(existingAccount => {
         return existingAccount.accountNumber === account_details.accountNumber;
       });
@@ -775,9 +860,14 @@ export class UserService extends GenericService<UserDocument> {
       if (isDuplicate) {
         throw new BadRequestException("Account number already exists");
       }
+      account_details = {
+        accountName: account_details.accountName,
+        accountNumber: account_details.accountNumber,
+        bankName: bank,
+      };
       user.account_details.push(account_details);
       await user.save();
-      return {success: true, user: user.account_details};
+      return {success: true, beneficiaries: user.account_details};
     } catch (error: any) {
       throw new HttpException(
         {
@@ -790,22 +880,14 @@ export class UserService extends GenericService<UserDocument> {
   }
   async getBankCode(bank_name: string) {
     try {
-      const token = await this.generateToken();
-      const bankHeaders = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-      const base_url = process.env.MINTYN_BASE_URL;
-      const url = `${base_url}/api/v1/merchant/transfer-service/banks`;
-      const response = await axios.get(url, {headers: bankHeaders});
-      const banks = response.data.data;
+      const banks = (await this.getBanks()).data;
       const bank = banks.find(
-        (bank: any) => bank.name.toLowerCase() === bank_name.toLowerCase(),
+        (bank: any) => bank.bankName.toLowerCase() === bank_name.toLowerCase(),
       );
       if (!bank) {
         throw new NotFoundException("Bank Not Found");
       }
-      return bank.code;
+      return bank.bankCode;
     } catch (error: any) {
       console.error(error);
       throw new HttpException(
@@ -891,16 +973,24 @@ export class UserService extends GenericService<UserDocument> {
     try {
       const bankCode = await this.getBankCode(bank);
       console.log(bankCode);
-
-      const token = await this.generateToken();
-      const bankHeaders = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+      const toroData = {
+        op: "verifybankaccountname_ngn",
+        params: [
+          {
+            name: "destinationInstitutionCode",
+            value: bankCode, //destinationInstitutionCode
+          },
+          {
+            name: "accountNumber",
+            value: account_number,
+          },
+        ],
       };
-
-      const base_url = process.env.MINTYN_BASE_URL;
-      const url = `${base_url}/api/v1/merchant/transfer-service/resolve-account?accountNumber=${account_number}&bankCode=${bankCode}`;
-      const response = await axios.get(url, {headers: bankHeaders});
+      const base_url = process.env.TORONET_BASE_URL;
+      const url = `${base_url}/payment/toro/`;
+      const response = await axios.post(url, toroData, {
+        headers: toronetHeaders,
+      });
       if (response.data.data === null) {
         throw new HttpException(
           {
@@ -924,11 +1014,33 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async getUserBalance(id: string) {
-    const user = await this.userModel.findById(id);
-    if (!user) {
-      throw new NotFoundException("User not found, Login and Try again.");
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new NotFoundException("User not found, Login and Try again.");
+      }
+
+      const toroData = {
+        op: "getaddrbalance",
+        params: [
+          {
+            name: "addr",
+            value: `${user.fiat_wallet_address}`,
+          },
+        ],
+      };
+      const balanceReq = axios.get(`${toronetBaseUrl}/query`, {headers: toronetHeaders});
+      return {success: true, balance: user.balance};
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
     }
-    return {success: true, balance: user.balance};
   }
   async getCustomers(id: string) {
     const farmer = await this.userModel.findById(id);

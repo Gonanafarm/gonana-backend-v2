@@ -25,11 +25,11 @@ export class TransactionController {
 
   @UseGuards(JwtAuthGuard)
   @Post("/create-virtual-account")
-  virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
+  virtualAccount(@Req() req: Request) {
     //@ts-ignore
     const user_id = req.user?.id;
 
-    return this.userService.virtualAccount(bvn, user_id);
+    return this.userService.virtualAccount(user_id);
   }
 
   @UseGuards(JwtAuthGuard)

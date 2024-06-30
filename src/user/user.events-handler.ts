@@ -1,9 +1,9 @@
 import {Injectable} from "@nestjs/common";
 import {OnEvent} from "@nestjs/event-emitter";
 import {UserMailerService} from "./user.mailer.service";
-import {UserService} from "./user.service";
+import {toronetHeaders, UserService} from "./user.service";
 import {providers, Wallet} from "ethers";
-
+import axios from "axios";
 @Injectable()
 export class UserEventHanders {
   constructor(
@@ -32,6 +32,25 @@ export class UserEventHanders {
     data.user.privateKey = privateKey;
     data.user.wallet = balance.toString();
     data.user.wallet_address = address;
+
+    const torodata = {
+      op: "createkey",
+      params: [
+        {
+          name: "pwd",
+          value: `${data.user.email}`,
+        },
+      ],
+    };
+    const toronetResponse = await axios.post(
+      `${process.env.TORONET_BASE_URL}/keystore`,
+      torodata,
+      {
+        headers: toronetHeaders,
+      },
+    );
+    const fiat_wallet_address = toronetResponse.data.address;
+    data.user.fiat_wallet_address = fiat_wallet_address;
     await data.user.save();
 
     console.log("Wallet Address:", address);
