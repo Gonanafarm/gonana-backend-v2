@@ -1020,17 +1020,36 @@ export class UserService extends GenericService<UserDocument> {
         throw new NotFoundException("User not found, Login and Try again.");
       }
 
-      const toroData = {
-        op: "getaddrbalance",
-        params: [
-          {
-            name: "addr",
-            value: `${user.fiat_wallet_address}`,
-          },
-        ],
+      if (!user.fiat_wallet_address || user.fiat_wallet_address.length < 1) {
+        throw new BadRequestException("Login and try again");
+      }
+      const response = await axios.get(`${toronetBaseUrl}/query`, {
+        params: {
+          op: "getaddrbalance",
+          params: [
+            {
+              name: "addr",
+              value: `${user.fiat_wallet_address}`,
+            },
+          ],
+        },
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.data.result !== true || response.data.result === undefined) {
+        throw new BadRequestException(response.data.error);
+      }
+      const balance = response.data.bal_naira;
+      console.log(balance);
+
+      user.balance = parseFloat(parseFloat(balance).toFixed(2));
+
+      await user.save();
+      return {
+        success: true,
+        balance: user.balance,
       };
-      const balanceReq = axios.get(`${toronetBaseUrl}/query`, {headers: toronetHeaders});
-      return {success: true, balance: user.balance};
     } catch (error: any) {
       console.log(error);
       throw new HttpException(
