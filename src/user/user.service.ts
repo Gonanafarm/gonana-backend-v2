@@ -679,6 +679,8 @@ export class UserService extends GenericService<UserDocument> {
       if (toronetRequest.data.result === false) {
         throw new BadRequestException(toronetRequest.data.error);
       }
+      console.log(toroData);
+
       user.virtual_account_bank_name = toronetRequest.data.bankname;
       user.virtual_account_name = toronetRequest.data.accountname;
       user.virtual_account_number = toronetRequest.data.accountnumber;
@@ -1023,6 +1025,18 @@ export class UserService extends GenericService<UserDocument> {
       if (!user.fiat_wallet_address || user.fiat_wallet_address.length < 1) {
         throw new BadRequestException("Login and try again");
       }
+      const toroData = {
+        op: "updatevirtualwallettransactions",
+        params: [
+          {
+            name: "walletaddress",
+            value: user.virtual_account_number, //blockchain address
+          },
+        ],
+      };
+      await axios.post(`${toronetBaseUrl}/payment`, toroData, {
+        headers: toronetHeaders,
+      });
       const response = await axios.get(`${toronetBaseUrl}/query`, {
         params: {
           op: "getaddrbalance",
@@ -1049,6 +1063,87 @@ export class UserService extends GenericService<UserDocument> {
       return {
         success: true,
         balance: user.balance,
+      };
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
+  async kycVerification(userId: string, dob: string) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException("User not found, Login and Try again.");
+      }
+      if (!user.bvn || user.bvn.length < 11) {
+        throw new BadRequestException("Invalid Bvn");
+      }
+
+      if (!user.fiat_wallet_address) {
+        throw new BadRequestException("Login and try again");
+      }
+      const toroData = {
+        op: "check_kyc",
+        params: [
+          {
+            name: "currency",
+            value: "NGN", //current options are NGN
+          },
+          {
+            name: "bvn",
+            value: user.bvn,
+          },
+          {
+            name: "firstName",
+            value: user.first_name,
+          },
+          {
+            name: "lastName",
+            value: user.last_name,
+          },
+          {
+            name: "middleName",
+            value: "",
+          },
+          {
+            name: "phoneNumber",
+            value: user.phone,
+          },
+          {
+            name: "dob",
+            value: dob,
+          },
+          {
+            name: "address",
+            value: user.fiat_wallet_address,
+          },
+        ],
+      };
+
+      const res = await axios.post(
+        `${toronetBaseUrl}/payment/toro/`,
+        toroData,
+        {headers: toronetHeaders},
+      );
+      console.log(toroData);
+
+      console.log(res.data);
+
+      if (res.data.result === false) {
+        throw new BadRequestException(res.data.error);
+      }
+      user.date_of_birth = dob;
+      await user.save();
+      return {
+        success: true,
+        message: "Kyc completed",
       };
     } catch (error: any) {
       console.log(error);

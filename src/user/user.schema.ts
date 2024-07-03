@@ -103,6 +103,9 @@ export class User {
   bvn: string;
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
+  date_of_birth: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   virtual_account_number: string;
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})

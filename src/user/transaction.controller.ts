@@ -121,6 +121,14 @@ export class TransactionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post("/kyc")
+  verify(@Req() req: Request, @Body("dob") dob: string) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.kycVerification(user_id, dob);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get("/crypto-balance")
   getCryptoWalletBalance(@Req() req: Request) {
     //@ts-ignore
