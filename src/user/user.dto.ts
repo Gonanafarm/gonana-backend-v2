@@ -177,6 +177,10 @@ export class TransferFundsDto {
 
   @ApiProperty({})
   @IsString()
+  accountName: string;
+  
+  @ApiProperty({})
+  @IsString()
   @IsOptional()
   narration: string;
 

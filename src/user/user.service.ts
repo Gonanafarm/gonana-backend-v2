@@ -473,7 +473,10 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       return null;
     }
-    if (user.fiat_wallet_address === undefined) {
+    if (
+      user.fiat_wallet_address === undefined ||
+      user.fiat_wallet_address.length < 1
+    ) {
       const data = {
         op: "createkey",
         params: [
@@ -1203,6 +1206,7 @@ export class UserService extends GenericService<UserDocument> {
     accountNumber: string,
     bankName: string,
     amount: number,
+    account_name: string,
     narration?: string,
   ) {
     try {
@@ -1229,52 +1233,124 @@ export class UserService extends GenericService<UserDocument> {
         }
         return result;
       };
-      const requestReference = generateRandomString();
-      const nameEnquirySessionId = resolve.data.data.sessionId;
-      const token = await this.generateToken();
-      const Headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-      const base_url = process.env.MINTYN_BASE_URL;
-      const url = `${base_url}/api/v1/merchant/transfer-service/transfer`;
 
-      const data: Record<string, any> = {
-        bankCode: bankCode,
-        requestReference: requestReference,
-        amount: amount,
-        accountNumber: accountNumber,
-        nameEnquirySessionId: nameEnquirySessionId,
+      const data = {
+        op: "recordfiatwithdrawal",
+        params: [
+          {
+            name: "addr",
+            value: user.fiat_wallet_address,
+          },
+          {
+            name: "pwd",
+            value: user.email,
+          },
+          {
+            name: "currency",
+            value: "NGN",
+          },
+          {
+            name: "token",
+            value: "NGN",
+          },
+          {
+            name: "payername",
+            value: `${user.first_name} ${user.last_name}`,
+          },
+          {
+            name: "payeremail",
+            value: user.email,
+          },
+          {
+            name: "payeraddress",
+            value: "nil",
+          },
+          {
+            name: "payercity",
+            value: "nil",
+          },
+          {
+            name: "payerstate",
+            value: "nil",
+          },
+          {
+            name: "payercountry",
+            value: "NG",
+          },
+          {
+            name: "payerzipcode",
+            value: "nil",
+          },
+          {
+            name: "payerphone",
+            value: user.phone,
+          },
+          {
+            name: "description",
+            value: narration,
+          },
+          {
+            name: "amount",
+            value: amount.toString(),
+          },
+          {
+            name: "accounttype",
+            value: "ach",
+          },
+          {
+            name: "bankname",
+            value: bankName,
+          },
+          {
+            name: "routingno",
+            value: "nil",
+          },
+          {
+            name: "accountno",
+            value: accountNumber,
+          },
+          {
+            name: "expirydate",
+            value: "nil",
+          },
+          {
+            name: "accountname",
+            value: account_name,
+          },
+          {
+            name: "recipientstate",
+            value: "nil",
+          },
+          {
+            name: "recipientzip",
+            value: "nil",
+          },
+          {
+            name: "recipientphone",
+            value: "nil",
+          },
+        ],
       };
-      if (narration !== undefined) {
-        data.narration = narration;
-      }
+
       console.log(data);
 
-      const res = await axios.post(url, data, {headers: Headers});
+      const res = await axios.post(`${toronetBaseUrl}/payment/toro/`, data, {
+        headers: toronetHeaders,
+      });
       console.log(res.data);
-
-      if (res.data.responseCode === "02") {
-        console.log(res.data);
-        throw new HttpException(
-          {
-            success: false,
-            message: res.data.responseMessage,
-          },
-          400,
-        );
+      if (res.data.result !== true) {
+        throw new BadRequestException(res.data.error);
       }
-      const newBalance = balance - parseInt(res.data.data.totalAmount);
-      user.balance = newBalance;
-      console.log(newBalance);
-      await user.save();
+
       const transactionObject: Record<string, any> = {
-        Session_id: res.data.data.reference,
+        Session_id: res.data.data.data.sessionID,
         userId: user.id,
         Type: "DEBIT" as const,
-        AmountSettled: res.data.data.totalAmount,
-        Time: res.data.data.transactionDate,
+        AmountSettled: res.data.data.data.amount,
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString(),
       };
+      
+      
       if (narration !== undefined) {
         transactionObject.narration = narration;
       }
@@ -1286,19 +1362,18 @@ export class UserService extends GenericService<UserDocument> {
         return {success: true, data: res.data};
       }
       const transactionArrayObject = {
-        Session_id: res.data.data.reference,
+        Session_id: res.data.data.data.sessionID,
         Type: "DEBIT" as const,
-        AmountSettled: res.data.data.totalAmount,
-        AmountSent: res.data.data.totalAmount,
-        Time: res.data.data.transactionDate,
+        AmountSettled: res.data.data.data.amount,
+        AmountSent: res.data.data.data.amount,
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString(),
       };
+      console.log(transactionArrayObject);
       transaction.transactions.push(transactionArrayObject);
       await transaction.save();
-      console.log(transactionObject);
 
-      console.log(transaction);
 
-      return {success: true, data: res.data};
+      return {success: true, data: res.data.data.data};
     } catch (error: any) {
       console.log(error);
       throw new HttpException(
@@ -1327,6 +1402,7 @@ export class UserService extends GenericService<UserDocument> {
         user.virtual_account_number,
         user.virtual_account_bank_name,
         amount,
+        user.virtual_account_name,
         narration,
       );
       return {success: true, data: res.data};

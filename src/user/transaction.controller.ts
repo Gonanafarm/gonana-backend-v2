@@ -92,6 +92,7 @@ export class TransactionController {
       body.accountNumber,
       body.bankName,
       body.amount,
+      body.accountName,
       body?.narration,
     );
   }
