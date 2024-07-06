@@ -286,6 +286,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const amountInUsd = await this.userService.convertNgntoUsd(
           amount.toString(),
         );
+        const farmer = await this.userModel.findById(product.publisher_id);
+        if (!farmer) throw new BadRequestException("Farmer does not exist");
+        if (
+          farmer.virtual_account_number ||
+          farmer.virtual_account_number.length < 1
+        ) {
+          throw new BadRequestException("Farmer has not validated bvn");
+        }
         return {
           success: true,
           product_cost: amount,
@@ -296,7 +304,20 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const itemsToShip = [];
       for (const item of orderItems) {
         const product = await this.productModel.findById(item.id);
+
         if (product?.self_shipping === false) {
+          const farmer = await this.userModel.findById(product.publisher_id);
+          if (!farmer)
+            throw new BadRequestException(
+              `Owner of product ${product.title} does not exist`,
+            );
+          if (
+            !farmer.virtual_account_number ||
+            farmer.virtual_account_number.length < 1
+          )
+            throw new BadRequestException(
+              `Farmer ${farmer.first_name} ${farmer.last_name} has not validated bvn`,
+            );
           itemsToShip.push(item);
         }
       }
@@ -422,7 +443,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
   ) {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
-      //@ts-ignore
       let totalCost: number;
       if (!rates.total_shipping_cost) {
         totalCost = rates.product_cost;
@@ -434,17 +454,37 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (!user) {
         throw new BadRequestException(`User Not found`);
       }
-      //@ts-ignore
-      const balance = parseInt(user.balance);
+
+      const balance = (await this.userService.getUserBalance(user_id)).balance;
 
       if (balance < totalCost) {
         throw new BadRequestException(
           `Insufficient balance fund wallet and try again`,
         );
       }
-      const newBalance = balance - totalCost;
-      user.balance = newBalance;
-      await user.save();
+      for (const item of orderItems) {
+        const product = await this.productModel.findById(item.id);
+        if (!product)
+          throw new BadRequestException(`Item ${item.id} not found`);
+
+        const farmer = await this.userModel.findById(product.publisher_id);
+        if (!farmer)
+          throw new BadRequestException(
+            `Farmer ${product.publisher_id} not found`,
+          );
+        if (!farmer)
+          throw new BadRequestException(
+            `Owner of product ${product.title} does not exist`,
+          );
+        if (
+          !farmer.virtual_account_number ||
+          farmer.virtual_account_number.length < 1
+        )
+          throw new BadRequestException(
+            `Farmer ${farmer.first_name} ${farmer.last_name} has not validated bvn`,
+          );
+      }
+     
 
       const getIds = (data: Array<{id: string; units: number}>): string => {
         const ids = data.map(item => item.id);

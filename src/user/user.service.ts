@@ -1079,13 +1079,13 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async kycVerification(userId: string, dob: string) {
+  async kycVerification(userId: string, dob: string, bvn?: string) {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new NotFoundException("User not found, Login and Try again.");
       }
-      if (!user.bvn || user.bvn.length < 11) {
+      if (!user.bvn && user.bvn.length < 11 && !bvn) {
         throw new BadRequestException("Invalid Bvn");
       }
 
@@ -1101,7 +1101,7 @@ export class UserService extends GenericService<UserDocument> {
           },
           {
             name: "bvn",
-            value: user.bvn,
+            value: user.bvn || bvn,
           },
           {
             name: "firstName",
@@ -1143,6 +1143,10 @@ export class UserService extends GenericService<UserDocument> {
         throw new BadRequestException(res.data.error);
       }
       user.date_of_birth = dob;
+      if (!user.bvn || (user.bvn.length < 1 && bvn)) {
+        user.bvn = bvn as string;
+        await user.save();
+      }
       await user.save();
       return {
         success: true,
@@ -1349,8 +1353,7 @@ export class UserService extends GenericService<UserDocument> {
         AmountSettled: res.data.data.data.amount,
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString(),
       };
-      
-      
+
       if (narration !== undefined) {
         transactionObject.narration = narration;
       }
@@ -1371,7 +1374,6 @@ export class UserService extends GenericService<UserDocument> {
       console.log(transactionArrayObject);
       transaction.transactions.push(transactionArrayObject);
       await transaction.save();
-
 
       return {success: true, data: res.data.data.data};
     } catch (error: any) {

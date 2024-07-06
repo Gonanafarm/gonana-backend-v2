@@ -123,10 +123,10 @@ export class TransactionController {
 
   @UseGuards(JwtAuthGuard)
   @Post("/kyc")
-  verify(@Req() req: Request, @Body("dob") dob: string) {
+  verify(@Req() req: Request, @Body() data: any) {
     //@ts-ignore
     const user_id = req.user?.id;
-    return this.userService.kycVerification(user_id, dob);
+    return this.userService.kycVerification(user_id, data.dob, data.bvn);
   }
 
   @UseGuards(JwtAuthGuard)
