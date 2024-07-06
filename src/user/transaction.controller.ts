@@ -13,6 +13,7 @@ import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {
   GetUserTransactonsDto,
+  KycVerification,
   ResolveAccountNumber,
   TransferEthDto,
   TransferFundsDto,
@@ -123,7 +124,7 @@ export class TransactionController {
 
   @UseGuards(JwtAuthGuard)
   @Post("/kyc")
-  verify(@Req() req: Request, @Body() data: any) {
+  verify(@Req() req: Request, @Body() data: KycVerification) {
     //@ts-ignore
     const user_id = req.user?.id;
     return this.userService.kycVerification(user_id, data.dob, data.bvn);
