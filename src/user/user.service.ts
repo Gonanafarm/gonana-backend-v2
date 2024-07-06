@@ -1085,7 +1085,7 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found, Login and Try again.");
       }
-      if (!user.bvn && user.bvn.length < 11 && !bvn) {
+      if (!user.bvn && !bvn) {
         throw new BadRequestException("Invalid Bvn");
       }
 
@@ -1143,7 +1143,7 @@ export class UserService extends GenericService<UserDocument> {
         throw new BadRequestException(res.data.error);
       }
       user.date_of_birth = dob;
-      if (!user.bvn || (user.bvn.length < 1 && bvn)) {
+      if (!user.bvn && bvn) {
         user.bvn = bvn as string;
         await user.save();
       }
