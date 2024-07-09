@@ -846,7 +846,7 @@ export class UserService extends GenericService<UserDocument> {
     await axios.post(`${toronetBaseUrl}/payment`, toroData, {
       headers: toronetHeaders,
     });
-    
+
     const accountName = resolve.data.data.accountName;
     const narration = "Order Settlement from Gonana";
     const data = {
@@ -1405,14 +1405,20 @@ export class UserService extends GenericService<UserDocument> {
         throw new BadRequestException(res.data.error);
       }
       if (res.data.data.passed === false) {
-        throw new HttpException(
-          {
-            success: false,
-            message: "Validation failed",
-            data: res.data.data,
-          },
-          400,
+        const failedProps = Object.keys(res.data.data).filter(
+          key => res.data.data[key] === "N",
         );
+        if (failedProps.includes("dob")) {
+          throw new BadRequestException(
+            "Date of Birth provided does not match the one associated with your bvn",
+          );
+        } else {
+          throw new BadRequestException(
+            `${failedProps.join(
+              ", ",
+            )} in your profile does not match the one associated with your bvn`,
+          );
+        }
       }
       user.date_of_birth = dob;
       if (!user.bvn && bvn) {
