@@ -484,13 +484,16 @@ export class CartItemService extends GenericService<CartItemDocument> {
             `Farmer ${farmer.first_name} ${farmer.last_name} has not validated bvn`,
           );
       }
-     
 
       const getIds = (data: Array<{id: string; units: number}>): string => {
         const ids = data.map(item => item.id);
         return ids.join(", ");
       };
 
+      await this.userService.transferToEscrowFromUser(
+        totalCost.toString(),
+        user_id,
+      );
       const transactions = await this.transactionsModel.findOne({
         userId: user.id,
       });

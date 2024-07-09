@@ -43,6 +43,20 @@ export class TransactionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post("/transferToEscrow")
+  sendToEscrow(@Body("amount") amount: string, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.transferToEscrowFromUser(amount, user_id);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Post("/transferFromEscrow")
+  sendFromEscrow(@Body("amount") amount: string, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.transferFromEscrowToUser(user_id, amount);
+  }
+  @UseGuards(JwtAuthGuard)
   @Post("recover-virtual-account")
   recoverVirtualAccount(@Body("bvn") bvn: string, @Req() req: Request) {
     //@ts-ignore

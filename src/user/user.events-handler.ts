@@ -1,9 +1,10 @@
 import {Injectable} from "@nestjs/common";
 import {OnEvent} from "@nestjs/event-emitter";
 import {UserMailerService} from "./user.mailer.service";
-import {toronetHeaders, UserService} from "./user.service";
+import {UserService} from "./user.service";
 import {providers, Wallet} from "ethers";
 import axios from "axios";
+import { toronetHeaders } from "../common/enums";
 @Injectable()
 export class UserEventHanders {
   constructor(

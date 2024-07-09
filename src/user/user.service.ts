@@ -32,12 +32,17 @@ import {showObjectProperties} from "./logistics.service";
 import {TransactionDocument} from "./transaction.schema";
 import {NotificationDocument} from "./notification.schema";
 import {providers, Wallet, utils, ethers} from "ethers";
+import {
+  gonanaAccountBankName,
+  gonanaAccountName,
+  gonanaAccountNumber,
+  gonanaAdminAddress,
+  gonanaAdminPassword,
+  gonanaAdminPhoneNumber,
+  toronetBaseUrl,
+  toronetHeaders,
+} from "../common/enums";
 
-export const toronetHeaders = {
-  admin: process.env.TORONET_ADMIN_ADDRESS,
-  adminpwd: process.env.TORONET_ADMIN_PASSWORD,
-};
-export const toronetBaseUrl = process.env.TORONET_BASE_URL;
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
   constructor(
@@ -674,6 +679,7 @@ export class UserService extends GenericService<UserDocument> {
         ],
       };
       const baseUrl = process.env.TORONET_BASE_URL;
+
       const toronetRequest = await axios.post(
         `${baseUrl}/payment/toro/`,
         toroData,
@@ -682,7 +688,6 @@ export class UserService extends GenericService<UserDocument> {
       if (toronetRequest.data.result === false) {
         throw new BadRequestException(toronetRequest.data.error);
       }
-      console.log(toroData);
 
       user.virtual_account_bank_name = toronetRequest.data.bankname;
       user.virtual_account_name = toronetRequest.data.accountname;
@@ -699,6 +704,259 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+  }
+
+  async transferToEscrowFromUser(amount: string, userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user)
+      throw new BadRequestException("Login and try again, Invalid token");
+
+    const resolve = await this.resolveAccountNumber(
+      gonanaAccountNumber,
+      gonanaAccountBankName,
+    );
+    const accountName = resolve.data.data.accountName;
+    const narration = "order credit";
+    const data = {
+      op: "recordfiatwithdrawal",
+      params: [
+        {
+          name: "addr",
+          value: user.fiat_wallet_address,
+        },
+        {
+          name: "pwd",
+          value: user.email,
+        },
+        {
+          name: "currency",
+          value: "NGN",
+        },
+        {
+          name: "token",
+          value: "NGN",
+        },
+        {
+          name: "payername",
+          value: `${user.first_name} ${user.last_name}`,
+        },
+        {
+          name: "payeremail",
+          value: user.email,
+        },
+        {
+          name: "payeraddress",
+          value: "nil",
+        },
+        {
+          name: "payercity",
+          value: "nil",
+        },
+        {
+          name: "payerstate",
+          value: "nil",
+        },
+        {
+          name: "payercountry",
+          value: "NG",
+        },
+        {
+          name: "payerzipcode",
+          value: "nil",
+        },
+        {
+          name: "payerphone",
+          value: user.phone,
+        },
+        {
+          name: "description",
+          value: narration,
+        },
+        {
+          name: "amount",
+          value: amount.toString(),
+        },
+        {
+          name: "accounttype",
+          value: "ach",
+        },
+        {
+          name: "bankname",
+          value: gonanaAccountBankName,
+        },
+        {
+          name: "routingno",
+          value: "nil",
+        },
+        {
+          name: "accountno",
+          value: gonanaAccountNumber,
+        },
+        {
+          name: "expirydate",
+          value: "nil",
+        },
+        {
+          name: "accountname",
+          value: accountName,
+        },
+        {
+          name: "recipientstate",
+          value: "nil",
+        },
+        {
+          name: "recipientzip",
+          value: "nil",
+        },
+        {
+          name: "recipientphone",
+          value: "nil",
+        },
+      ],
+    };
+
+    console.log(data);
+
+    const res = await axios.post(`${toronetBaseUrl}/payment/toro/`, data, {
+      headers: toronetHeaders,
+    });
+    console.log(res.data);
+    if (res.data.result !== true) {
+      throw new BadRequestException(res.data.error);
+    }
+    return res.data.data;
+  }
+
+  async transferFromEscrowToUser(userId: string, amount: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) return;
+    const resolve = await this.resolveAccountNumber(
+      user.virtual_account_number,
+      user.virtual_account_bank_name,
+    );
+    const toroData = {
+      op: "updatevirtualwallettransactions",
+      params: [
+        {
+          name: "walletaddress",
+          value: gonanaAccountNumber, //blockchain address
+        },
+      ],
+    };
+    await axios.post(`${toronetBaseUrl}/payment`, toroData, {
+      headers: toronetHeaders,
+    });
+    
+    const accountName = resolve.data.data.accountName;
+    const narration = "Order Settlement from Gonana";
+    const data = {
+      op: "recordfiatwithdrawal",
+      params: [
+        {
+          name: "addr",
+          value: gonanaAdminAddress,
+        },
+        {
+          name: "pwd",
+          value: gonanaAdminPassword,
+        },
+        {
+          name: "currency",
+          value: "NGN",
+        },
+        {
+          name: "token",
+          value: "NGN",
+        },
+        {
+          name: "payername",
+          value: gonanaAccountName,
+        },
+        {
+          name: "payeremail",
+          value: gonanaAdminPassword,
+        },
+        {
+          name: "payeraddress",
+          value: "nil",
+        },
+        {
+          name: "payercity",
+          value: "nil",
+        },
+        {
+          name: "payerstate",
+          value: "nil",
+        },
+        {
+          name: "payercountry",
+          value: "NG",
+        },
+        {
+          name: "payerzipcode",
+          value: "nil",
+        },
+        {
+          name: "payerphone",
+          value: gonanaAdminPhoneNumber,
+        },
+        {
+          name: "description",
+          value: narration,
+        },
+        {
+          name: "amount",
+          value: amount.toString(),
+        },
+        {
+          name: "accounttype",
+          value: "ach",
+        },
+        {
+          name: "bankname",
+          value: user.virtual_account_bank_name,
+        },
+        {
+          name: "routingno",
+          value: "nil",
+        },
+        {
+          name: "accountno",
+          value: user.virtual_account_number,
+        },
+        {
+          name: "expirydate",
+          value: "nil",
+        },
+        {
+          name: "accountname",
+          value: accountName,
+        },
+        {
+          name: "recipientstate",
+          value: "nil",
+        },
+        {
+          name: "recipientzip",
+          value: "nil",
+        },
+        {
+          name: "recipientphone",
+          value: "nil",
+        },
+      ],
+    };
+
+    console.log(data);
+
+    const res = await axios.post(`${toronetBaseUrl}/payment/toro/`, data, {
+      headers: toronetHeaders,
+    });
+    console.log(res.data);
+    if (res.data.result !== true) {
+      throw new BadRequestException(res.data.error);
+    }
+    return res.data;
   }
 
   async verifyTransaction(data: any) {
@@ -887,7 +1145,9 @@ export class UserService extends GenericService<UserDocument> {
     try {
       const banks = (await this.getBanks()).data;
       const bank = banks.find(
-        (bank: any) => bank.bankName.toLowerCase() === bank_name.toLowerCase(),
+        (bank: any) =>
+          bank.bankName.toLowerCase() === bank_name.toLowerCase() ||
+          bank.bankShortName.toLowerCase() === bank_name.toLowerCase(),
       );
       if (!bank) {
         throw new NotFoundException("Bank Not Found");
@@ -1005,6 +1265,8 @@ export class UserService extends GenericService<UserDocument> {
           400,
         );
       }
+      console.log(response.data.data.accountName);
+
       return {success: true, data: response.data, bankCode: bankCode};
     } catch (error: any) {
       console.log(error);
@@ -1142,6 +1404,16 @@ export class UserService extends GenericService<UserDocument> {
       if (res.data.result === false) {
         throw new BadRequestException(res.data.error);
       }
+      if (res.data.data.passed === false) {
+        throw new HttpException(
+          {
+            success: false,
+            message: "Validation failed",
+            data: res.data.data,
+          },
+          400,
+        );
+      }
       user.date_of_birth = dob;
       if (!user.bvn && bvn) {
         user.bvn = bvn as string;
@@ -1153,11 +1425,12 @@ export class UserService extends GenericService<UserDocument> {
         message: "Kyc completed",
       };
     } catch (error: any) {
-      console.log(error);
+      console.log("error:", error);
       throw new HttpException(
         {
           success: false,
           message: error.message,
+          data: error.response.data,
         },
         error.status,
       );
@@ -1227,16 +1500,6 @@ export class UserService extends GenericService<UserDocument> {
       }
       const resolve = await this.resolveAccountNumber(accountNumber, bankName);
       const bankCode = resolve.bankCode;
-      const generateRandomString = () => {
-        const characters =
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        let result = "";
-        for (let i = 0; i < 12; i++) {
-          const randomIndex = Math.floor(Math.random() * characters.length);
-          result += characters.charAt(randomIndex);
-        }
-        return result;
-      };
 
       const data = {
         op: "recordfiatwithdrawal",
