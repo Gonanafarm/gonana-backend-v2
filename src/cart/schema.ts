@@ -17,14 +17,13 @@ export class CartItem {
 
   @ApiProperty()
   @IsMongoId()
-  @Prop({type: mongoose.SchemaTypes.Array, })
+  @Prop({type: mongoose.SchemaTypes.Array})
   product_id: string[];
 
   @ApiProperty()
   @IsNumber()
   @Prop({type: mongoose.SchemaTypes.Number, default: 1})
   quantity: number;
-
 }
 
 export const CartItemSchema = SchemaFactory.createForClass(CartItem);

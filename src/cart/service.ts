@@ -24,8 +24,15 @@ import {LogisticsService} from "../user/logistics.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {ethers, providers} from "ethers";
 import {TransactionDocument} from "src/user/transaction.schema";
+import axios from "axios";
 const abi = require("../../abi.json");
 
+const key = process.env.SHIPBUBBLE_API_KEY;
+const base_url = process.env.SHIPBUBBLE_BASE_URL;
+const Headers = {
+  Authorization: `Bearer ${key}`,
+  "Content-Type": "application/json",
+};
 export const getAbbreviation = (inputString: string): string => {
   // Convert the input string to uppercase
   const upperCaseString = inputString.toUpperCase();
@@ -415,7 +422,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const total_shipping_cost_in_usd = await this.userService.convertNgntoUsd(
         (totalAmount + total_shipping_cost).toString(),
       );
-console.log("Rates Gotten");
+      console.log("Rates Gotten");
 
       return {
         product_cost: totalAmount,
@@ -457,7 +464,7 @@ console.log("Rates Gotten");
       }
 
       const balance = (await this.userService.getUserBalance(user_id)).balance;
-console.log("Balance Gotten");
+      console.log("Balance Gotten");
 
       if (balance < totalCost) {
         throw new BadRequestException(
@@ -925,6 +932,74 @@ console.log("Balance Gotten");
           message: error.reason || error.message,
         },
         HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async validateUserAddressForItemsInCart(
+    name: string,
+    email: string,
+    phone: string,
+    address: string,
+    userId: string,
+  ) {
+    try {
+      const cartItems = await this.cartItemsModel.findOne({
+        publisher_id: userId,
+      });
+      if (!cartItems) throw new BadRequestException("Cart is empty");
+      const selfShippingProducts = [];
+      const productIds = cartItems.product_id;
+      const numOfproducts = productIds.length;
+
+      for (const productId of productIds) {
+        const product = await this.productModel.findById(productId);
+        if (!product) return;
+        if (product.self_shipping === true) {
+          selfShippingProducts.push(productId);
+        }
+      }
+      if (numOfproducts === selfShippingProducts.length) {
+        return {
+          success: true,
+          message: "Validation Success",
+        };
+      }
+      const url = `${base_url}/shipping/address/validate`;
+      const data = {name: name, email: email, phone: phone, address: address};
+      console.log(data);
+
+      const res = await axios.post(url, data, {headers: Headers});
+      if (res.data.status !== "success") {
+        throw new BadRequestException(`${res.data.message}`);
+      }
+      const response = res.data.data;
+
+      const user = await this.userModel.findOne({email: email});
+
+      const addressExists = user?.address.find(
+        (address: any) => address.address === response.formatted_address,
+      );
+      const addressData = {
+        address: response.formatted_address,
+        code: response.address_code,
+      };
+
+      if (!addressExists) {
+        user?.address.push(addressData);
+        await user?.save();
+      }
+
+      return {success: true, data: response};
+    } catch (error: any) {
+      console.log(error);
+
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.message || error.message,
+        },
+        error.response.status || error.status,
       );
     }
   }

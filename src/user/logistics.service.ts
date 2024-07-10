@@ -86,6 +86,7 @@ export class LogisticsService {
       );
     }
   }
+
   async getAvailableCouriers() {
     const url = `${base_url}/shipping/couriers`;
     try {
