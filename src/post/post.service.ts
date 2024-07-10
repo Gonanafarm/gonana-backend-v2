@@ -229,7 +229,7 @@ export class PostService extends GenericService<PostDocument> {
       if (type !== undefined) {
         query.type = type;
       }
-      if (title !== undefined) query.title = new RegExp(title, "i");
+      if (title !== undefined) query.title = new RegExp(title, "i"); //Case Insensitivity
       const productsPerPage = 15;
       let limitToNumber;
       let pagToNumber;
@@ -256,6 +256,7 @@ export class PostService extends GenericService<PostDocument> {
       if (products.length < 1) {
         throw new NotFoundException("Products Not Found");
       }
+      
    
       const productPromises = products.map(async (product: any) => {
         const id = product.publisher_id;

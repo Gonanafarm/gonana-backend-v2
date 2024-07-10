@@ -289,7 +289,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const farmer = await this.userModel.findById(product.publisher_id);
         if (!farmer) throw new BadRequestException("Farmer does not exist");
         if (
-          farmer.virtual_account_number ||
+          !farmer.virtual_account_number ||
           farmer.virtual_account_number.length < 1
         ) {
           throw new BadRequestException("Farmer has not validated bvn");
@@ -415,6 +415,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const total_shipping_cost_in_usd = await this.userService.convertNgntoUsd(
         (totalAmount + total_shipping_cost).toString(),
       );
+console.log("Rates Gotten");
 
       return {
         product_cost: totalAmount,
@@ -456,6 +457,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
 
       const balance = (await this.userService.getUserBalance(user_id)).balance;
+console.log("Balance Gotten");
 
       if (balance < totalCost) {
         throw new BadRequestException(

@@ -96,28 +96,28 @@ export class PostEventHandlers {
       await Promise.all(patronFunc);
     }
 
-    const provider = new providers.JsonRpcProvider(
-      "https://rpc.sepolia-api.lisk.com",
-    );
+    // const provider = new providers.JsonRpcProvider(
+    //   "https://rpc.sepolia-api.lisk.com",
+    // );
 
-    //wallet instance of the contract admin
-    const admin = new ethers.Wallet(
-      "b72cb42b3319abb30fc17f7e20ea58165a84de90c9afd90fcb80382062e01382",
-      provider,
-    );
-    const marketplaceAddr = "0x686690ef4a57F11A4980e0053E2D1EdD69782F35";
-    const contract = new ethers.Contract(marketplaceAddr, abi, admin);
+    // //wallet instance of the contract admin
+    // const admin = new ethers.Wallet(
+    //   "b72cb42b3319abb30fc17f7e20ea58165a84de90c9afd90fcb80382062e01382",
+    //   provider,
+    // );
+    // const marketplaceAddr = "0x686690ef4a57F11A4980e0053E2D1EdD69782F35";
+    // const contract = new ethers.Contract(marketplaceAddr, abi, admin);
 
-    const list_product = await contract.createProduct(
-      payload.product_id,
-      payload.amount,
-      payload.farmer_id,
-      farmer.wallet_address,
-      {gasLimit: 100000},
-    );
-    console.log(list_product);
+    // const list_product = await contract.createProduct(
+    //   payload.product_id,
+    //   payload.amount,
+    //   payload.farmer_id,
+    //   farmer.wallet_address,
+    //   {gasLimit: 100000},
+    // );
+    // console.log(list_product);
 
-    const tx = await list_product.wait();
+    // const tx = await list_product.wait();
   }
   // @OnEvent("Unlike")
   // async handleUnlikeEvent(payload: any) {
