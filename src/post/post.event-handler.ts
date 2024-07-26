@@ -113,7 +113,7 @@ export class PostEventHandlers {
       payload.amount,
       payload.farmer_id,
       farmer.wallet_address,
-      {gasLimit: 100000},
+
     );
     console.log(list_product);
 
