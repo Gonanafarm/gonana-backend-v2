@@ -779,6 +779,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               {
                 value: parsedEthAmount,
+                gasLimit:500000
               },
             );
 
@@ -865,6 +866,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               {
                 value: parsedEthAmount,
+                gasLimit:500000
               },
             );
 
