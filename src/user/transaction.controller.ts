@@ -178,6 +178,11 @@ export class TransactionController {
     return this.userService.convertNgntoUsd(data);
   }
 
+  @Post("/ngn-arb")
+  ngnToArb(@Body("ngn") data: string) {
+    return this.userService.convertNgntoArb(data);
+  }
+
   @Post("test")
   test(@Body() data: any) {
     console.log(data);

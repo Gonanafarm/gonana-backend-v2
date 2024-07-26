@@ -473,7 +473,7 @@ export class UserService extends GenericService<UserDocument> {
 
   async getUserData(id: string) {
     const user = await this.userModel.findById(id);
-    const url = "https://rpc.sepolia-api.lisk.com";
+    const url = "https://sepolia-rollup.arbitrum.io/rpc";
     const provider = new providers.JsonRpcProvider(url);
     if (!user) {
       return null;
@@ -1697,7 +1697,7 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found");
       }
-      const url = "https://rpc.sepolia-api.lisk.com";
+      const url = "https://sepolia-rollup.arbitrum.io/rpc";
       const provider = new providers.JsonRpcProvider(url);
 
       if (user.wallet_address === undefined) {
@@ -1775,6 +1775,22 @@ export class UserService extends GenericService<UserDocument> {
     const roundedEth = this.roundToSignificantFigures(eth, 9);
     return roundedEth.toString();
   }
+
+  async convertNgntoArb(xNgn: string) {
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=ARB&convert=NGN",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const arb = parseInt(xNgn) / Math.round(response.data.data.quote.NGN.price);
+    const roundedEth = this.roundToSignificantFigures(arb, 9);
+    return roundedEth.toString();
+  }
+
   roundToSignificantFigures(number: number, significantFigures: number) {
     if (number === 0) {
       return 0;
@@ -1825,7 +1841,7 @@ export class UserService extends GenericService<UserDocument> {
 
   async sendEth(id: string, amount: string, toAddress: string) {
     try {
-      const url = "https://rpc.sepolia-api.lisk.com";
+      const url = "https://sepolia-rollup.arbitrum.io/rpc";
       const provider = new providers.JsonRpcProvider(url);
 
       const user = await this.userModel.findById(id);

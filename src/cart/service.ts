@@ -718,11 +718,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
         );
       }
       const provider = new providers.JsonRpcProvider(
-        "https://rpc.sepolia-api.lisk.com",
+        "https://sepolia-rollup.arbitrum.io/rpc",
       );
 
       const buyerWallet = new ethers.Wallet(user.privateKey, provider);
-      const marketplaceAddr = "0x686690ef4a57F11A4980e0053E2D1EdD69782F35";
+      const marketplaceAddr = "0x99fdeB581d61FDfCF19df461937B9Cc01c18bc2B";
       const contract = new ethers.Contract(marketplaceAddr, abi, buyerWallet);
 
       const newBalance = ethBalanceInNgn - totalCostInNgn;
