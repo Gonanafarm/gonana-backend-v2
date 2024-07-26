@@ -862,7 +862,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
 
             const order = await contract.orderProduct(
               product.id,
-              parsedEthAmount,
+              product.amount,
               user_id,
               {
                 value: parsedEthAmount,
