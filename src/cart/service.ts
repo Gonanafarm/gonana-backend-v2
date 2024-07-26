@@ -722,7 +722,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       );
 
       const buyerWallet = new ethers.Wallet(user.privateKey, provider);
-      const marketplaceAddr = "0x99fdeB581d61FDfCF19df461937B9Cc01c18bc2B";
+      const marketplaceAddr = "0x4E4B760e06cbF0b0760279a08b6B836244bc9910";
       const contract = new ethers.Contract(marketplaceAddr, abi, buyerWallet);
 
       const newBalance = ethBalanceInNgn - totalCostInNgn;
