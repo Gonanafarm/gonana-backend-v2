@@ -293,6 +293,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const amountInUsd = await this.userService.convertNgntoUsd(
           amount.toString(),
         );
+        const amountInEth = await this.userService.convertNgntoEth(
+          amount.toString(),
+        );
         const farmer = await this.userModel.findById(product.publisher_id);
         if (!farmer) throw new BadRequestException("Farmer does not exist");
         if (
@@ -305,6 +308,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
           success: true,
           product_cost: amount,
           product_cost_in_usd: amountInUsd,
+          product_cost_in_eth: amountInEth,
         };
       }
 
@@ -422,6 +426,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const total_shipping_cost_in_usd = await this.userService.convertNgntoUsd(
         (totalAmount + total_shipping_cost).toString(),
       );
+
+      const total_shipping_cost_in_eth = await this.userService.convertEthToNgn(
+        (totalAmount + total_shipping_cost).toString(),
+      );
       console.log("Rates Gotten");
 
       return {
@@ -431,6 +439,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         total_shipping_cost: total_shipping_cost,
         courier_id: courier_id,
         total_shipping_cost_in_usd: total_shipping_cost_in_usd,
+        total_shipping_cost_in_eth: total_shipping_cost_in_eth,
       };
     } catch (error: any) {
       throw new HttpException(
@@ -779,7 +788,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               {
                 value: parsedEthAmount,
-                gasLimit:500000
+                gasLimit: 500000,
               },
             );
 
@@ -866,7 +875,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               {
                 value: parsedEthAmount,
-                gasLimit:500000
+                gasLimit: 500000,
               },
             );
 
