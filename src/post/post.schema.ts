@@ -82,6 +82,12 @@ export class Post {
 
   @ApiProperty()
   @Prop({
+    type: mongoose.SchemaTypes.String,
+  })
+  eth_price: string;
+  
+  @ApiProperty()
+  @Prop({
     type: [String],
   })
   categories: string[];

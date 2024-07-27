@@ -112,6 +112,11 @@ export class PostController {
     const usd_price = parseFloat(
       await this.userService.convertNgntoUsd(amount.toString()),
     );
+
+    const eth_price = parseFloat(
+      await this.userService.convertNgntoEth(amount.toString()),
+    );
+
     let publisher_id = "";
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
@@ -139,6 +144,7 @@ export class PostController {
       address,
       self_shipping,
       usd_price,
+      eth_price,
     };
     const createPost = await this.dataService.create(publisher_id, payload);
     this.eventEmmiter.emit("PostCreated", {
@@ -147,7 +153,7 @@ export class PostController {
       farmer_id: createPost.publisher_id,
       wallet: "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
       images: createPost.images,
-      title: createPost.title
+      title: createPost.title,
     });
     return createPost;
   }

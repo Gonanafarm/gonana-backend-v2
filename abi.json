@@ -6,7 +6,17 @@
   },
   {
     "inputs": [],
-    "name": "DepositDoesNotMatchAmount",
+    "name": "InsufficientFunds",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPrice",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidProductState",
     "type": "error"
   },
   {
@@ -16,7 +26,17 @@
   },
   {
     "inputs": [],
+    "name": "ProductAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "TransacationWasNotSuccessful",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WrongSignature",
     "type": "error"
   },
   {
@@ -121,6 +141,19 @@
     "type": "event"
   },
   {
+    "inputs": [],
+    "name": "Owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "string",
@@ -142,19 +175,6 @@
       }
     ],
     "name": "changeOwner",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "_productID",
-        "type": "string"
-      }
-    ],
-    "name": "confirmOrder",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -245,6 +265,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "string",
@@ -271,11 +304,6 @@
       },
       {
         "internalType": "string",
-        "name": "hash",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
         "name": "merchantID",
         "type": "string"
       },
@@ -296,7 +324,20 @@
         "type": "string"
       }
     ],
-    "name": "unlistProduct",
+    "name": "releaseEscrow",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_productID",
+        "type": "string"
+      }
+    ],
+    "name": "removeProduct",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -368,11 +409,6 @@
             "internalType": "address",
             "name": "wallet",
             "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "hash",
-            "type": "string"
           },
           {
             "internalType": "string",
