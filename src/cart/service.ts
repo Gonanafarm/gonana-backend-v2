@@ -703,7 +703,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
   ) {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
-      console.log(rates);
       let totalCostInNgn: number;
       if (!rates.total_shipping_cost) {
         totalCostInNgn = rates.product_cost;
@@ -836,6 +835,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               buyer_id: user_id,
               amount: product.amount.toString(),
             });
+            
             return shipment.data;
           } else {
             return null;
