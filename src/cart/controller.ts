@@ -6,19 +6,17 @@ import {
   Param,
   Post,
   Put,
-
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { ApiResponse, ApiTags} from "@nestjs/swagger";
+import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {CartItemService} from "./service";
 import {CartItem as CartItemModel} from "./schema";
-import { Request } from "express";
+import {Request} from "express";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {AddToCartDto, PlaceOrderDto, UpdateCartItemDto} from "./dto";
 import {Order} from "../order/outgoing.order.schema";
-
 
 @ApiTags("cart-controller")
 @UseGuards(JwtAuthGuard)
@@ -108,19 +106,45 @@ export class CartItemController {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
-    return this.dataService.getRates(body.orders, publisher_id, body.service_code);
+    return this.dataService.getRates(
+      body.orders,
+      publisher_id,
+      body.service_code,
+    );
   }
 
   @Post("place-order")
-  async placeOrder(@Body() body:PlaceOrderDto, @Req() req: Request){
+  async placeOrder(@Body() body: PlaceOrderDto, @Req() req: Request) {
     //@ts-ignore
-    const user_id = req.user?.id
-    return this.dataService.placeOrder(body.orders, user_id,body.service_code)
+    const user_id = req.user?.id;
+    return this.dataService.placeOrder(body.orders, user_id, body.service_code);
   }
   @Post("pay-with-eth")
-  async placeOrderEth(@Body() body:PlaceOrderDto, @Req() req: Request){
+  async placeOrderEth(@Body() body: PlaceOrderDto, @Req() req: Request) {
     //@ts-ignore
-    const user_id = req.user?.id
-    return this.dataService.payWithEth(body.orders, user_id,body.service_code)
+    const user_id = req.user?.id;
+    return this.dataService.payWithEth(body.orders, user_id, body.service_code);
+  }
+
+  @Post("validate-user-address-by-cart")
+  async validateUserAddressForItemsInCart(
+    @Req() req: Request,
+    @Body("address") address: string,
+  ) {
+    //@ts-ignore
+    const email = req.user.email;
+    //@ts-ignore
+    const phone = req.user.phone;
+    //@ts-ignore
+    const name = `${req.user.last_name} ${req.user.first_name}`;
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.dataService.validateUserAddressForItemsInCart(
+      name,
+      email,
+      phone,
+      address,
+      user_id,
+    );
   }
 }

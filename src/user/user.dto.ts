@@ -2,12 +2,14 @@ import {ApiProperty} from "@nestjs/swagger";
 import {
   IsEmail,
   IsEnum,
+  isNotEmpty,
   IsNotEmpty,
   IsNumber,
   IsNumberString,
   IsOptional,
   IsString,
   Length,
+  Matches,
 } from "class-validator";
 import {AccountStatus} from "../common/enums";
 
@@ -177,6 +179,10 @@ export class TransferFundsDto {
 
   @ApiProperty({})
   @IsString()
+  accountName: string;
+
+  @ApiProperty({})
+  @IsString()
   @IsOptional()
   narration: string;
 
@@ -228,4 +234,18 @@ export interface ShipmentData {
   service_code: string;
   courier_id: string;
   insurance_code?: string;
+}
+
+export class KycVerification {
+  @IsString()
+  @Length(11)
+  @IsNotEmpty()
+  bvn: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^[0-9]{2}-[A-Z]{3}-[0-9]{4}$/, {
+    message: "DOB must be in the format DD-MMM-YYYY (e.g., 30-OCT-2001)",
+  })
+  dob: string;
 }

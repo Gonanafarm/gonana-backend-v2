@@ -4,7 +4,6 @@ export enum AccountStatus {
   DISABLED = "DISABLED",
 }
 
-
 export enum AccountType {
   ADMIN = "ADMIN",
   DRIVER = "FARMER",
@@ -23,6 +22,20 @@ export enum ApprovalStatus {
   DISAPPROVED = "DISAPPROVED",
 }
 
+export const gonanaAccountName = process.env.GONANA_ACCOUNT_NAME as string;
+export const gonanaAccountBankName = process.env
+  .GONANA_ACCOUNT_BANK_NAME as string;
+export const gonanaAccountNumber = process.env
+  .GONANA_VIRTUAL_ACCOUNT_NUMBER as string;
+export const gonanaAdminAddress = process.env.GONANA_ADMIN_ADDRESS;
+export const gonanaAdminPassword = process.env.GONANA_ADMIN_ADDRESS_PASSWORD;
+export const gonanaAdminPhoneNumber= process.env.GONANA_ADMIN_PHONE_NUMBER
+
+export const toronetHeaders = {
+  admin: process.env.TORONET_ADMIN_ADDRESS,
+  adminpwd: process.env.TORONET_ADMIN_PASSWORD,
+};
+export const toronetBaseUrl = process.env.TORONET_BASE_URL;
 export enum PaymentStatus {
   PENDING = "PENDING",
   COMPLETED = "COMPLETED",

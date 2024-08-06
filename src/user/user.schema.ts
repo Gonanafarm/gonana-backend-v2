@@ -103,6 +103,9 @@ export class User {
   bvn: string;
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
+  date_of_birth: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   virtual_account_number: string;
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
@@ -131,6 +134,9 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.String})
   cryptoWalletBalanceInNgn: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
+  fiat_wallet_address: string;
 
   @Prop({type: mongoose.SchemaTypes.String})
   cryptoWalletBalanceInUsd: string;

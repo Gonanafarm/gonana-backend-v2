@@ -269,10 +269,10 @@ export class OrderService {
 
         const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
 
-        const newBalance = farmer.balance + reducedProductCost;
-
-        farmer.balance = newBalance;
-        await farmer.save();
+        await this.userService.transferFromEscrowToUser(
+          farmer.id,
+          reducedProductCost.toString(),
+        );
 
         console.log(customer.onesignal_id);
 
@@ -467,10 +467,11 @@ export class OrderService {
     );
     const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
 
-    const newBalance = farmer.balance + reducedProductCost;
-
-    farmer.balance = newBalance;
-    await farmer.save();
+    await this.userService.transferFromEscrowToUser(
+      farmer.id,
+      reducedProductCost.toString(),
+    );
+    
     const customerOnesignalId = [];
     const farmerOnesignalId = [];
 

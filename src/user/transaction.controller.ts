@@ -13,6 +13,7 @@ import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {
   GetUserTransactonsDto,
+  KycVerification,
   ResolveAccountNumber,
   TransferEthDto,
   TransferFundsDto,
@@ -25,11 +26,11 @@ export class TransactionController {
 
   @UseGuards(JwtAuthGuard)
   @Post("/create-virtual-account")
-  virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
+  virtualAccount(@Req() req: Request) {
     //@ts-ignore
     const user_id = req.user?.id;
 
-    return this.userService.virtualAccount(bvn, user_id);
+    return this.userService.virtualAccount(user_id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -41,6 +42,20 @@ export class TransactionController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post("/transferToEscrow")
+  sendToEscrow(@Body("amount") amount: string, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.transferToEscrowFromUser(amount, user_id);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Post("/transferFromEscrow")
+  sendFromEscrow(@Body("amount") amount: string, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.transferFromEscrowToUser(user_id, amount);
+  }
   @UseGuards(JwtAuthGuard)
   @Post("recover-virtual-account")
   recoverVirtualAccount(@Body("bvn") bvn: string, @Req() req: Request) {
@@ -92,6 +107,7 @@ export class TransactionController {
       body.accountNumber,
       body.bankName,
       body.amount,
+      body.accountName,
       body?.narration,
     );
   }
@@ -118,6 +134,14 @@ export class TransactionController {
     //@ts-ignore
     const user_id = req.user?.id;
     return this.userService.getUserTransactions(user_id, body.page, body.limit);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("/kyc")
+  verify(@Req() req: Request, @Body() data: KycVerification) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.kycVerification(user_id, data.dob, data.bvn);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -152,6 +176,11 @@ export class TransactionController {
   @Post("/ngn-usd")
   ngnToUsd(@Body("ngn") data: string) {
     return this.userService.convertNgntoUsd(data);
+  }
+
+  @Post("/ngn-arb")
+  ngnToArb(@Body("ngn") data: string) {
+    return this.userService.convertNgntoArb(data);
   }
 
   @Post("test")

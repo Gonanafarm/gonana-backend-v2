@@ -24,8 +24,15 @@ import {LogisticsService} from "../user/logistics.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {ethers, providers} from "ethers";
 import {TransactionDocument} from "src/user/transaction.schema";
+import axios from "axios";
 const abi = require("../../abi.json");
 
+const key = process.env.SHIPBUBBLE_API_KEY;
+const base_url = process.env.SHIPBUBBLE_BASE_URL;
+const Headers = {
+  Authorization: `Bearer ${key}`,
+  "Content-Type": "application/json",
+};
 export const getAbbreviation = (inputString: string): string => {
   // Convert the input string to uppercase
   const upperCaseString = inputString.toUpperCase();
@@ -286,17 +293,42 @@ export class CartItemService extends GenericService<CartItemDocument> {
         const amountInUsd = await this.userService.convertNgntoUsd(
           amount.toString(),
         );
+        const amountInEth = await this.userService.convertNgntoEth(
+          amount.toString(),
+        );
+        const farmer = await this.userModel.findById(product.publisher_id);
+        if (!farmer) throw new BadRequestException("Farmer does not exist");
+        if (
+          !farmer.virtual_account_number ||
+          farmer.virtual_account_number.length < 1
+        ) {
+          throw new BadRequestException("Farmer has not validated bvn");
+        }
         return {
           success: true,
           product_cost: amount,
           product_cost_in_usd: amountInUsd,
+          product_cost_in_eth: amountInEth,
         };
       }
 
       const itemsToShip = [];
       for (const item of orderItems) {
         const product = await this.productModel.findById(item.id);
+
         if (product?.self_shipping === false) {
+          const farmer = await this.userModel.findById(product.publisher_id);
+          if (!farmer)
+            throw new BadRequestException(
+              `Owner of product ${product.title} does not exist`,
+            );
+          if (
+            !farmer.virtual_account_number ||
+            farmer.virtual_account_number.length < 1
+          )
+            throw new BadRequestException(
+              `Farmer ${farmer.first_name} ${farmer.last_name} has not validated bvn`,
+            );
           itemsToShip.push(item);
         }
       }
@@ -395,6 +427,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
         (totalAmount + total_shipping_cost).toString(),
       );
 
+      const total_shipping_cost_in_eth = await this.userService.convertEthToNgn(
+        (totalAmount + total_shipping_cost).toString(),
+      );
+      console.log("Rates Gotten");
+
       return {
         product_cost: totalAmount,
         shipping_req_token: request_tokens,
@@ -402,6 +439,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         total_shipping_cost: total_shipping_cost,
         courier_id: courier_id,
         total_shipping_cost_in_usd: total_shipping_cost_in_usd,
+        total_shipping_cost_in_eth: total_shipping_cost_in_eth,
       };
     } catch (error: any) {
       throw new HttpException(
@@ -422,7 +460,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
   ) {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
-      //@ts-ignore
       let totalCost: number;
       if (!rates.total_shipping_cost) {
         totalCost = rates.product_cost;
@@ -434,23 +471,47 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (!user) {
         throw new BadRequestException(`User Not found`);
       }
-      //@ts-ignore
-      const balance = parseInt(user.balance);
+
+      const balance = (await this.userService.getUserBalance(user_id)).balance;
+      console.log("Balance Gotten");
 
       if (balance < totalCost) {
         throw new BadRequestException(
           `Insufficient balance fund wallet and try again`,
         );
       }
-      const newBalance = balance - totalCost;
-      user.balance = newBalance;
-      await user.save();
+      for (const item of orderItems) {
+        const product = await this.productModel.findById(item.id);
+        if (!product)
+          throw new BadRequestException(`Item ${item.id} not found`);
+
+        const farmer = await this.userModel.findById(product.publisher_id);
+        if (!farmer)
+          throw new BadRequestException(
+            `Farmer ${product.publisher_id} not found`,
+          );
+        if (!farmer)
+          throw new BadRequestException(
+            `Owner of product ${product.title} does not exist`,
+          );
+        if (
+          !farmer.virtual_account_number ||
+          farmer.virtual_account_number.length < 1
+        )
+          throw new BadRequestException(
+            `Farmer ${farmer.first_name} ${farmer.last_name} has not validated bvn`,
+          );
+      }
 
       const getIds = (data: Array<{id: string; units: number}>): string => {
         const ids = data.map(item => item.id);
         return ids.join(", ");
       };
 
+      await this.userService.transferToEscrowFromUser(
+        totalCost.toString(),
+        user_id,
+      );
       const transactions = await this.transactionsModel.findOne({
         userId: user.id,
       });
@@ -642,7 +703,6 @@ export class CartItemService extends GenericService<CartItemDocument> {
   ) {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
-      console.log(rates);
       let totalCostInNgn: number;
       if (!rates.total_shipping_cost) {
         totalCostInNgn = rates.product_cost;
@@ -666,11 +726,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
         );
       }
       const provider = new providers.JsonRpcProvider(
-        "https://rpc.sepolia-api.lisk.com",
+        "https://sepolia-rollup.arbitrum.io/rpc",
       );
 
       const buyerWallet = new ethers.Wallet(user.privateKey, provider);
-      const marketplaceAddr = "0x686690ef4a57F11A4980e0053E2D1EdD69782F35";
+      const marketplaceAddr = "0x4E4B760e06cbF0b0760279a08b6B836244bc9910";
       const contract = new ethers.Contract(marketplaceAddr, abi, buyerWallet);
 
       const newBalance = ethBalanceInNgn - totalCostInNgn;
@@ -727,6 +787,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               {
                 value: parsedEthAmount,
+                gasLimit: 500000,
               },
             );
 
@@ -774,6 +835,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               buyer_id: user_id,
               amount: product.amount.toString(),
             });
+            
             return shipment.data;
           } else {
             return null;
@@ -809,11 +871,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
 
             const order = await contract.orderProduct(
               product.id,
-              parsedEthAmount,
+              product.amount,
               user_id,
               {
                 value: parsedEthAmount,
-                gasLimit: 50000,
+                gasLimit: 500000,
               },
             );
 
@@ -880,6 +942,74 @@ export class CartItemService extends GenericService<CartItemDocument> {
           message: error.reason || error.message,
         },
         HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async validateUserAddressForItemsInCart(
+    name: string,
+    email: string,
+    phone: string,
+    address: string,
+    userId: string,
+  ) {
+    try {
+      const cartItems = await this.cartItemsModel.findOne({
+        publisher_id: userId,
+      });
+      if (!cartItems) throw new BadRequestException("Cart is empty");
+      const selfShippingProducts = [];
+      const productIds = cartItems.product_id;
+      const numOfproducts = productIds.length;
+
+      for (const productId of productIds) {
+        const product = await this.productModel.findById(productId);
+        if (!product) return;
+        if (product.self_shipping === true) {
+          selfShippingProducts.push(productId);
+        }
+      }
+      if (numOfproducts === selfShippingProducts.length) {
+        return {
+          success: true,
+          message: "Validation Success",
+        };
+      }
+      const url = `${base_url}/shipping/address/validate`;
+      const data = {name: name, email: email, phone: phone, address: address};
+      console.log(data);
+
+      const res = await axios.post(url, data, {headers: Headers});
+      if (res.data.status !== "success") {
+        throw new BadRequestException(`${res.data.message}`);
+      }
+      const response = res.data.data;
+
+      const user = await this.userModel.findOne({email: email});
+
+      const addressExists = user?.address.find(
+        (address: any) => address.address === response.formatted_address,
+      );
+      const addressData = {
+        address: response.formatted_address,
+        code: response.address_code,
+      };
+
+      if (!addressExists) {
+        user?.address.push(addressData);
+        await user?.save();
+      }
+
+      return {success: true, data: response};
+    } catch (error: any) {
+      console.log(error);
+
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.message || error.message,
+        },
+        error.response.status || error.status,
       );
     }
   }
