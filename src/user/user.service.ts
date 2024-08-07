@@ -42,6 +42,7 @@ import {
   toronetBaseUrl,
   toronetHeaders,
 } from "../common/enums";
+import {ConcordiumService} from "./concordium.service";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -61,6 +62,7 @@ export class UserService extends GenericService<UserDocument> {
     private readonly jwtService: JwtService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
+    private readonly ccdService: ConcordiumService,
     private eventEmitter: EventEmitter2,
   ) {
     super(userModel);
@@ -473,8 +475,8 @@ export class UserService extends GenericService<UserDocument> {
 
   async getUserData(id: string) {
     const user = await this.userModel.findById(id);
-    const url = "https://sepolia-rollup.arbitrum.io/rpc";
-    const provider = new providers.JsonRpcProvider(url);
+    // const url = "https://sepolia-rollup.arbitrum.io/rpc";
+    // const provider = new providers.JsonRpcProvider(url);
     if (!user) {
       return null;
     }
@@ -504,11 +506,10 @@ export class UserService extends GenericService<UserDocument> {
     }
 
     if (user.wallet_address === undefined) {
-      const wallet = Wallet.createRandom();
-      const address = wallet.address;
-      const balance = await provider.getBalance(address);
+      const wallet = await this.ccdService.getOrCreateConcordiumKeyPairs(id);
+      const address = wallet.publicKey;
+      const balance = await this.ccdService.ccdBalanceOf(id);
       const privateKey = wallet.privateKey;
-      console.log(privateKey);
 
       user.wallet = balance.toString();
       user.wallet_address = address;
@@ -518,7 +519,7 @@ export class UserService extends GenericService<UserDocument> {
     const userData = user?.getPublicData();
 
     if (userData) {
-      user.cryptoWalletBalanceInNgn = await this.convertEthToNgn(user.wallet);
+      user.cryptoWalletBalanceInNgn = await this.convertCcdtoNgn(user.wallet);
       console.log(user.cryptoWalletBalanceInNgn);
 
       await user.save();
@@ -1697,39 +1698,49 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found");
       }
-      const url = "https://sepolia-rollup.arbitrum.io/rpc";
-      const provider = new providers.JsonRpcProvider(url);
+      // const url = "https://sepolia-rollup.arbitrum.io/rpc";
+      // const provider = new providers.JsonRpcProvider(url);
 
       if (user.wallet_address === undefined) {
-        const wallet = Wallet.createRandom();
-        const address = wallet.address;
-        const balance = await provider.getBalance(address);
-        const privateKey = wallet.privateKey;
+        // const wallet = Wallet.createRandom();
+        // const address = wallet.address;
+        // const balance = await provider.getBalance(address);
+        // const privateKey = wallet.privateKey;
 
+        // user.wallet = balance.toString();
+        // user.wallet_address = address;
+        // user.privateKey = privateKey;
+        // await user.save();
+        // const ngn = await this.convertEthToNgn(user.wallet);
+        // return {
+        //   success: true,
+        //   cryptoWalletBalanceInNgn: ngn,
+        //   cryptoWalletBalanceInEth: user.wallet,
+        // };
+
+        await this.ccdService.getOrCreateConcordiumKeyPairs(id);
+        const balance = await this.ccdService.ccdBalanceOf(id);
         user.wallet = balance.toString();
-        user.wallet_address = address;
-        user.privateKey = privateKey;
-        await user.save();
-        const ngn = await this.convertEthToNgn(user.wallet);
+        const ngn = await this.convertCcdtoNgn(user.wallet);
         return {
           success: true,
           cryptoWalletBalanceInNgn: ngn,
-          cryptoWalletBalanceInEth: user.wallet,
+          cryptoWalletBalanceInCcd: user.wallet,
         };
       }
-      const address = user.wallet_address;
-      const balance = await provider.getBalance(address);
-      const ethBalance = ethers.utils.formatEther(balance);
-      user.wallet = ethBalance.toString();
-      await user.save();
-      const ngn = await this.convertEthToNgn(user.wallet);
+      const balance = await this.ccdService.ccdBalanceOf(id);
+
+      user.wallet = balance.toString();
+
+      const ngn = await this.convertCcdtoNgn(user.wallet);
       const usd = await this.convertNgntoUsd(ngn);
+      user.cryptoWalletBalanceInNgn = ngn
       user.cryptoWalletBalanceInUsd = usd;
       await user.save();
       return {
         success: true,
         cryptoWalletBalanceInNgn: ngn,
-        cryptoWalletBalanceInEth: user.wallet,
+        cryptoWalletBalanceInCcd: user.wallet,
       };
     } catch (error: any) {
       console.log(error);
@@ -1758,6 +1769,23 @@ export class UserService extends GenericService<UserDocument> {
 
     const numEth = parseFloat(xEth);
     const ngn = numEth * oneEth;
+    return ngn.toString();
+  }
+  async convertArbToNgn(xARB: string) {
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=ARB&convert=NGN",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const oneARB = Math.round(response.data.data.quote.NGN.price);
+    console.log(oneARB);
+
+    const numARB = parseFloat(xARB);
+    const ngn = numARB * oneARB;
     return ngn.toString();
   }
 
@@ -1789,6 +1817,36 @@ export class UserService extends GenericService<UserDocument> {
     const arb = parseInt(xNgn) / Math.round(response.data.data.quote.NGN.price);
     const roundedEth = this.roundToSignificantFigures(arb, 9);
     return roundedEth.toString();
+  }
+
+  async convertNgntoCcd(xNgn: string) {
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=CCD&convert=NGN",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const ccd = parseInt(xNgn) / Math.round(response.data.data.quote.NGN.price);
+    const roundedCcd = this.roundToSignificantFigures(ccd, 9);
+    return roundedCcd.toString();
+  }
+
+  async convertCcdtoNgn(xCcd: string) {
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=NGN&convert=CCD",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const ngn = parseInt(xCcd) * Math.round(response.data.data.quote.CCD.price);
+    const roundedNgn = this.roundToSignificantFigures(ngn, 9);
+    return roundedNgn.toString();
   }
 
   roundToSignificantFigures(number: number, significantFigures: number) {
@@ -2010,6 +2068,36 @@ export class UserService extends GenericService<UserDocument> {
         error.response.status,
       );
     }
+  }
+
+  async transferCcd(amount: number, recipient: string, id: string) {
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new BadRequestException("Invalid Token");
+    }
+    const transfer = await this.ccdService.transferCcd(amount, recipient, id);
+    if (!transfer) {
+      throw new BadRequestException("Transfer failed");
+    }
+    return {
+      success: true,
+      message: "Transfer completed",
+    };
+  }
+
+  async withdrawCcd(amount: number, recipient: string, id: string) {
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new BadRequestException("Invalid Token");
+    }
+    const withdraw = await this.ccdService.withdrawCcd(amount, recipient, id);
+    if (!withdraw) {
+      throw new BadRequestException("Withdraw failed");
+    }
+    return {
+      success: true,
+      message: "Withdrawal completed",
+    };
   }
 
   async isPlayerIdValid(playerId: string): Promise<boolean> {

@@ -18,6 +18,7 @@ import {
 import {credentials} from "@grpc/grpc-js";
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -37,8 +38,8 @@ export class ConcordiumService {
     //@ts-ignore
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
   ) {
-    const address = "grpc.mainnet.concordium.software"; // mainnet
-    // const address = "node.testnet.concordium.com" // testnet
+    //const address = "grpc.mainnet.concordium.software"; // mainnet
+    const address = "node.testnet.concordium.com"; // testnet
 
     const port = 20000;
     // const security = environment.concordiumAdmin.environment === 'Mainnet' ? credentials.createSsl() : credentials.createInsecure();
@@ -95,6 +96,8 @@ export class ConcordiumService {
 
   async ccdBalanceOf(id: string) {
     const wallet = await this.getOrCreateConcordiumKeyPairs(id);
+
+
     const invoker = new AccountAddress(this.sender);
     try {
       const contractAddress = {
@@ -115,6 +118,7 @@ export class ConcordiumService {
         [wallet.publicKey],
         schema,
       );
+
       // Invoke the contract
       const result = await this.client.invokeContract({
         contract: unwrap(contractAddress),
@@ -123,7 +127,6 @@ export class ConcordiumService {
         parameter: serializedParams,
       });
 
-      console.log({result});
       // Deserialize the response
 
       const decodedResult = deserializeReceiveReturnValue(
@@ -133,11 +136,20 @@ export class ConcordiumService {
         "gonana_smart_wallet",
         "ccdBalanceOf",
       );
+  
+      const fakeBalance = parseInt(decodedResult[0]);
+      const balance = fakeBalance / 1e6;
 
-      console.log({decodedResult});
-      return decodedResult;
+      return balance;
     } catch (error) {
       console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status || 400,
+      );
     }
   }
 
@@ -263,7 +275,7 @@ export class ConcordiumService {
 
     const updateHeader: AccountTransactionHeader = {
       // @ts-ignore
-      expiry: this.getDefaultTransactionExpiry(),
+      expiry: await this.getDefaultTransactionExpiry(),
       nonce: (await this.client.getNextAccountNonce(sender)).nonce,
       sender,
     };
@@ -368,7 +380,7 @@ export class ConcordiumService {
 
     const updateHeader: AccountTransactionHeader = {
       // @ts-ignore
-      expiry: this.getDefaultTransactionExpiry(),
+      expiry: await this.getDefaultTransactionExpiry(),
       nonce: (await this.client.getNextAccountNonce(sender)).nonce,
       sender,
     };

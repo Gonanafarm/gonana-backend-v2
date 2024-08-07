@@ -183,6 +183,31 @@ export class TransactionController {
     return this.userService.convertNgntoArb(data);
   }
 
+  @Post("/ngn-ccd")
+  ngnToCcd(@Body("ngn") data: string) {
+    return this.userService.convertNgntoCcd(data);
+  }
+
+  @Post("/ccd-ngn")
+  ccdToNgn(@Body("ccd") data: string) {
+    return this.userService.convertCcdtoNgn(data);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("/sendCcd")
+  sendCcd(@Body() data: any, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.transferCcd(data.amount, data.recipient, user_id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("/withdraw-ccd")
+  withdrawCcd(@Body() data: any, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.withdrawCcd(data.amount, data.recipient, user_id);
+  }
   @Post("test")
   test(@Body() data: any) {
     console.log(data);

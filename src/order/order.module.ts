@@ -18,6 +18,7 @@ import {JwtModule} from "@nestjs/jwt";
 import config from "../config";
 import {CloudinaryService} from "../post/cloudinary.service";
 import { NotificationModel } from "../user/notification.model";
+import { ConcordiumService } from "../user/concordium.service";
 
 @Module({
   providers: [
@@ -25,6 +26,7 @@ import { NotificationModel } from "../user/notification.model";
     PostModule,
     UserModule,
     UserService,
+    ConcordiumService,
     CloudinaryService,
     UserMailerService,
     OrderCronJob,

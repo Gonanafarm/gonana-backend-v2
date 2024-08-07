@@ -20,6 +20,7 @@ import {TransactionModel} from "./transaction.model";
 import {NotificationModel} from "./notification.model";
 import {ScheduleModule} from "@nestjs/schedule";
 import {UserCronJob} from "./user.cron";
+import {ConcordiumService} from "./concordium.service";
 
 @Module({
   imports: [
@@ -48,9 +49,16 @@ import {UserCronJob} from "./user.cron";
     UserEventHanders,
     CloudinaryService,
     LogisticsService,
+    ConcordiumService,
     UserCronJob,
   ],
-  exports: [UserService, UserModel, LogisticsService, UserMailerService],
+  exports: [
+    UserService,
+    UserModel,
+    LogisticsService,
+    UserMailerService,
+    ConcordiumService,
+  ],
 })
 export class UserModule {}
 

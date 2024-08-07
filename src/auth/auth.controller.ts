@@ -97,7 +97,7 @@ export class AuthController {
   @ApiResponse({type: UserProfileResponse})
   async getProfile(@Req() req: Request): Promise<UserProfileResponse> {
     //@ts-ignore
-    let profileDoc = await this.userService.findById(req.user?.id);
+    const profileDoc = await this.userService.findById(req.user?.id);
     return {
       user: profileDoc.getPublicData(),
     };
@@ -107,7 +107,7 @@ export class AuthController {
   @ApiResponse({type: User})
   updateUser(@Req() req: Request, @Body() body: UpdateUserDto) {
     //@ts-ignore
-    let publisher_id = req?.user?.id;
+    const publisher_id = req?.user?.id;
 
     return this.userService.updateItem(publisher_id, body);
   }
@@ -134,7 +134,7 @@ export class AuthController {
   @Post("resend-activation-credentials")
   resendActivationToken(@Req() req: Request) {
     //@ts-ignore
-    let user_id = req.user?.id ?? "";
+    const user_id = req.user?.id ?? "";
     console.log(user_id, "user id");
     this.userService.resendActivation(user_id, getOriginHeader(req));
   }

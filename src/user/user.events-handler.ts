@@ -4,12 +4,14 @@ import {UserMailerService} from "./user.mailer.service";
 import {UserService} from "./user.service";
 import {providers, Wallet} from "ethers";
 import axios from "axios";
-import { toronetHeaders } from "../common/enums";
+import {toronetHeaders} from "../common/enums";
+import {ConcordiumService} from "./concordium.service";
 @Injectable()
 export class UserEventHanders {
   constructor(
     private readonly userMailer: UserMailerService,
     private userService: UserService,
+    private ccdService: ConcordiumService,
   ) {}
   @OnEvent("account.created")
   async handleAccountCreatedEvent(payload: any) {
@@ -21,15 +23,15 @@ export class UserEventHanders {
     this.userMailer.sendOTP(payload.user.email, otp);
     console.log("mail sent");
 
-    const url = "https://mainnet.infura.io/v3/613c483e28cf4d338959ca31e1582b56";
-    const provider = new providers.JsonRpcProvider(url);
-    const wallet = Wallet.createRandom();
+    const data = await this.userService.findByEmail(payload.user.email);
+    const wallet = await this.ccdService.getOrCreateConcordiumKeyPairs(
+      data.user.id,
+    );
+    const address = wallet.publicKey;
+    const balance = await this.ccdService.ccdBalanceOf(data.user.id);
+    console.log(balance);
     const privateKey = wallet.privateKey;
 
-    const address = wallet.address;
-    const balance = await provider.getBalance(address);
-
-    const data = await this.userService.findByEmail(payload.user.email);
     data.user.privateKey = privateKey;
     data.user.wallet = balance.toString();
     data.user.wallet_address = address;
@@ -54,7 +56,7 @@ export class UserEventHanders {
     data.user.fiat_wallet_address = fiat_wallet_address;
     await data.user.save();
 
-    console.log("Wallet Address:", address);
+    
     console.log("Balance:", balance.toString());
   }
 
