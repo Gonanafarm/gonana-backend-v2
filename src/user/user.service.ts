@@ -1807,6 +1807,22 @@ export class UserService extends GenericService<UserDocument> {
     return ngn.toString();
   }
 
+  async convertCcdtoUsd(xCcd: string) {
+    if (xCcd === "0") {
+      return "0";
+    }
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xCcd}&symbol=CCD&convert=USD`,
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const usd = response.data.data.quote.USD.price;
+    return usd;
+  }
   async convertNgntoEth(xNgn: string) {
     if (xNgn === "0") {
       return "0";

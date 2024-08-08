@@ -193,6 +193,11 @@ export class TransactionController {
     return this.userService.convertCcdtoNgn(data);
   }
 
+  @Post("/ccd-usd")
+  ccdToUsd(@Body("ccd") data: string) {
+    return this.userService.convertCcdtoUsd(data);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post("/transfer-ccd")
   sendCcd(@Body() data: any, @Req() req: Request) {
