@@ -474,57 +474,69 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async getUserData(id: string) {
-    const user = await this.userModel.findById(id);
-    // const url = "https://sepolia-rollup.arbitrum.io/rpc";
-    // const provider = new providers.JsonRpcProvider(url);
-    if (!user) {
-      return null;
-    }
-    if (
-      user.fiat_wallet_address === undefined ||
-      user.fiat_wallet_address.length < 1
-    ) {
-      const data = {
-        op: "createkey",
-        params: [
+    try {
+      const user = await this.userModel.findById(id);
+      // const url = "https://sepolia-rollup.arbitrum.io/rpc";
+      // const provider = new providers.JsonRpcProvider(url);
+      if (!user) {
+        return null;
+      }
+      if (
+        user.fiat_wallet_address === undefined ||
+        user.fiat_wallet_address.length < 1
+      ) {
+        const data = {
+          op: "createkey",
+          params: [
+            {
+              name: "pwd",
+              value: `${user.email}`,
+            },
+          ],
+        };
+        const toronetResponse = await axios.post(
+          `${process.env.TORONET_BASE_URL}/keystore`,
+          data,
           {
-            name: "pwd",
-            value: `${user.email}`,
+            headers: toronetHeaders,
           },
-        ],
-      };
-      const toronetResponse = await axios.post(
-        `${process.env.TORONET_BASE_URL}/keystore`,
-        data,
+        );
+        const fiat_wallet_address = toronetResponse.data.address;
+        user.fiat_wallet_address = fiat_wallet_address;
+        await user.save();
+      }
+
+      if (user.wallet_address === undefined) {
+        const wallet = await this.ccdService.getOrCreateConcordiumKeyPairs(id);
+        const address = wallet.publicKey;
+        const balance = await this.ccdService.ccdBalanceOf(id);
+        const privateKey = wallet.privateKey;
+
+        user.wallet = balance.toString();
+        user.wallet_address = address;
+        user.privateKey = privateKey;
+        await user.save();
+      }
+      const userData = user?.getPublicData();
+
+      if (userData) {
+        user.cryptoWalletBalanceInNgn = await this.convertCcdtoNgn(user.wallet);
+        console.log(user.cryptoWalletBalanceInNgn);
+
+        await user.save();
+      }
+      return userData;
+    } catch (error: any) {
+      console.error(error);
+
+      throw new HttpException(
         {
-          headers: toronetHeaders,
+          success: false,
+          message: error.message,
         },
+        error.status,
       );
-      const fiat_wallet_address = toronetResponse.data.address;
-      user.fiat_wallet_address = fiat_wallet_address;
-      await user.save();
     }
-
-    if (user.wallet_address === undefined) {
-      const wallet = await this.ccdService.getOrCreateConcordiumKeyPairs(id);
-      const address = wallet.publicKey;
-      const balance = await this.ccdService.ccdBalanceOf(id);
-      const privateKey = wallet.privateKey;
-
-      user.wallet = balance.toString();
-      user.wallet_address = address;
-      user.privateKey = privateKey;
-      await user.save();
-    }
-    const userData = user?.getPublicData();
-
-    if (userData) {
-      user.cryptoWalletBalanceInNgn = await this.convertCcdtoNgn(user.wallet);
-      console.log(user.cryptoWalletBalanceInNgn);
-
-      await user.save();
-    }
-    return userData;
   }
 
   async getByEmail(email: string) {
@@ -1821,6 +1833,9 @@ export class UserService extends GenericService<UserDocument> {
 
   async convertNgntoCcd(xNgn: string) {
     try {
+      if (xNgn === "0") {
+        return "0";
+      }
       const key = process.env.COINMARKETCAP_API_KEY;
       const response = await axios.get(
         `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xNgn}&symbol=NGN&convert=CCD`,
@@ -1874,6 +1889,9 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async convertCcdtoNgn(xCcd: string) {
+    if (xCcd === "0") {
+      return "0";
+    }
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
       `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xCcd}&symbol=CCD&convert=NGN`,
