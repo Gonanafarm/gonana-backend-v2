@@ -117,6 +117,10 @@ export class PostController {
       await this.userService.convertNgntoEth(amount.toString()),
     );
 
+    const ccd_price = parseFloat(
+      await this.userService.convertNgntoCcd(amount.toString()),
+    );
+
     let publisher_id = "";
     //@ts-ignore
     publisher_id = req.user?.sub ?? "";
@@ -145,6 +149,7 @@ export class PostController {
       self_shipping,
       usd_price,
       eth_price,
+      ccd_price
     };
     const createPost = await this.dataService.create(publisher_id, payload);
     this.eventEmmiter.emit("PostCreated", {

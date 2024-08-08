@@ -1734,7 +1734,7 @@ export class UserService extends GenericService<UserDocument> {
 
       const ngn = await this.convertCcdtoNgn(user.wallet);
       const usd = await this.convertNgntoUsd(ngn);
-      user.cryptoWalletBalanceInNgn = ngn
+      user.cryptoWalletBalanceInNgn = ngn;
       user.cryptoWalletBalanceInUsd = usd;
       await user.save();
       return {
@@ -1820,33 +1820,71 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async convertNgntoCcd(xNgn: string) {
-    const key = process.env.COINMARKETCAP_API_KEY;
-    const response = await axios.get(
-      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=CCD&convert=NGN",
-      {
-        headers: {
-          "X-CMC_PRO_API_KEY": key,
+    try {
+      const key = process.env.COINMARKETCAP_API_KEY;
+      const response = await axios.get(
+        `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xNgn}&symbol=NGN&convert=CCD`,
+        {
+          headers: {
+            "X-CMC_PRO_API_KEY": key,
+          },
         },
-      },
-    );
-    const ccd = parseInt(xNgn) / Math.round(response.data.data.quote.NGN.price);
-    const roundedCcd = this.roundToSignificantFigures(ccd, 9);
-    return roundedCcd.toString();
+      );
+      const ccd = response.data.data.quote.CCD.price;
+      return ccd;
+    } catch (error: any) {
+      showObjectProperties(error.response.data.status);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+  async payWithCCd(amount: number, recipientId: string, userId: string) {
+    try {
+      if (recipientId === userId) {
+        throw new BadRequestException("You cannot transfer CCD to yourself");
+      }
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new BadRequestException("Invalid Token");
+      }
+      const recipient = await this.userModel.findById(recipientId);
+      if (!recipient) {
+        throw new BadRequestException("Recipient not found");
+      }
+      if (!recipient.wallet_address) {
+        throw new BadRequestException(
+          "Recipient does not have a wallet address",
+        );
+      }
+      await this.ccdService.pay(amount, recipient.wallet_address, userId);
+    } catch (error: any) {
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status || 500,
+      );
+    }
   }
 
   async convertCcdtoNgn(xCcd: string) {
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
-      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=NGN&convert=CCD",
+      `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xCcd}&symbol=CCD&convert=NGN`,
       {
         headers: {
           "X-CMC_PRO_API_KEY": key,
         },
       },
     );
-    const ngn = parseInt(xCcd) * Math.round(response.data.data.quote.CCD.price);
-    const roundedNgn = this.roundToSignificantFigures(ngn, 9);
-    return roundedNgn.toString();
+    const ngn = response.data.data.quote.NGN.price;
+    return ngn;
   }
 
   roundToSignificantFigures(number: number, significantFigures: number) {
@@ -1885,16 +1923,15 @@ export class UserService extends GenericService<UserDocument> {
   async convertUsdtoNgn(xUsd: string) {
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
-      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=USD&convert=NGN",
+      `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xUsd}&symbol=USD&convert=NGN`,
       {
         headers: {
           "X-CMC_PRO_API_KEY": key,
         },
       },
     );
-    const ngn = parseInt(xUsd) * Math.round(response.data.data.quote.NGN.price);
-    const roundedNgn = this.roundToSignificantFigures(ngn, 9);
-    return roundedNgn.toString();
+    const ngn = response.data.data.quote.NGN.price;
+    return ngn;
   }
 
   async sendEth(id: string, amount: string, toAddress: string) {
@@ -2070,12 +2107,27 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async transferCcd(amount: number, recipient: string, id: string) {
+  async transferCcd(amount: number, recipientId: string, id: string) {
+    if (recipientId === id) {
+      throw new BadRequestException("You cannot transfer CCD to yourself");
+    }
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new BadRequestException("Invalid Token");
     }
-    const transfer = await this.ccdService.transferCcd(amount, recipient, id);
+    const recipient = await this.userModel.findById(recipientId);
+    if (!recipient) {
+      throw new BadRequestException("Recipient not found");
+    }
+    if (!recipient.wallet_address) {
+      throw new BadRequestException("Recipient does not have a wallet address");
+    }
+
+    const transfer = await this.ccdService.transferCcd(
+      amount,
+      recipient.wallet_address,
+      id,
+    );
     if (!transfer) {
       throw new BadRequestException("Transfer failed");
     }

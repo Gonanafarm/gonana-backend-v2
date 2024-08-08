@@ -194,11 +194,11 @@ export class TransactionController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post("/sendCcd")
+  @Post("/transfer-ccd")
   sendCcd(@Body() data: any, @Req() req: Request) {
     //@ts-ignore
     const user_id = req.user?.id;
-    return this.userService.transferCcd(data.amount, data.recipient, user_id);
+    return this.userService.transferCcd(data.amount, data.recipientId, user_id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -207,6 +207,14 @@ export class TransactionController {
     //@ts-ignore
     const user_id = req.user?.id;
     return this.userService.withdrawCcd(data.amount, data.recipient, user_id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("/pay-with-ccd")
+  payWithCCd(@Body() data: any, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.payWithCCd(data.amount, data.recipientId, user_id);
   }
   @Post("test")
   test(@Body() data: any) {

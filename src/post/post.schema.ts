@@ -85,7 +85,7 @@ export class Post {
     type: mongoose.SchemaTypes.String,
   })
   eth_price: string;
-  
+
   @ApiProperty()
   @Prop({
     type: [String],
@@ -127,6 +127,10 @@ export class Post {
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.Number})
   usd_price: number;
+
+  @ApiProperty()
+  @Prop({type: mongoose.SchemaTypes.Number})
+  ccd_price: number;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

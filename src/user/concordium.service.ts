@@ -97,7 +97,6 @@ export class ConcordiumService {
   async ccdBalanceOf(id: string) {
     const wallet = await this.getOrCreateConcordiumKeyPairs(id);
 
-
     const invoker = new AccountAddress(this.sender);
     try {
       const contractAddress = {
@@ -136,7 +135,7 @@ export class ConcordiumService {
         "gonana_smart_wallet",
         "ccdBalanceOf",
       );
-  
+
       const fakeBalance = parseInt(decodedResult[0]);
       const balance = fakeBalance / 1e6;
 
@@ -215,105 +214,125 @@ export class ConcordiumService {
   }
 
   async transferCcd(amount: number, recipient: string, id: string) {
-    const contractAddress = {
-      index: this.contractIndex,
-      subindex: this.contractSubindex,
-    };
-    const sender = new AccountAddress(this.sender);
-    const signer = buildBasicAccountSigner(this.signingKey);
-    const moduleRef = new ModuleReference(this.moduleRef);
-    const schema = await this.client.getEmbeddedSchema(moduleRef);
+    try {
+      const contractAddress = {
+        index: this.contractIndex,
+        subindex: this.contractSubindex,
+      };
+      const sender = new AccountAddress(this.sender);
+      const signer = buildBasicAccountSigner(this.signingKey);
+      const moduleRef = new ModuleReference(this.moduleRef);
+      const schema = await this.client.getEmbeddedSchema(moduleRef);
 
-    const maxCost = BigInt(30000);
-    const contractName = "gonana_smart_wallet";
-    const receiveName = "gonana_smart_wallet.transferCcd";
+      const maxCost = BigInt(30000);
+      const contractName = "gonana_smart_wallet";
+      const receiveName = "gonana_smart_wallet.transferCcd";
 
-    // const wallet = {
-    //     publicKey: "a6c22f4e0d5e48ddd5166a992773e2d12e0891727884859d32fcaeae72ba4c9a",
-    //     privateKey: "ab3f16cf72ca060c50daf5b6dbc927b48aa306274c88f4681b529648f6ce1614a6c22f4e0d5e48ddd5166a992773e2d12e0891727884859d32fcaeae72ba4c9a"
-    // }
-    const wallet = await this.getOrCreateConcordiumKeyPairs(id);
-    const nonce = (await this.nonceOf(wallet.publicKey))[0];
+      // const wallet = {
+      //     publicKey: "a6c22f4e0d5e48ddd5166a992773e2d12e0891727884859d32fcaeae72ba4c9a",
+      //     privateKey: "ab3f16cf72ca060c50daf5b6dbc927b48aa306274c88f4681b529648f6ce1614a6c22f4e0d5e48ddd5166a992773e2d12e0891727884859d32fcaeae72ba4c9a"
+      // }
+      const wallet = await this.getOrCreateConcordiumKeyPairs(id);
+      const nonce = (await this.nonceOf(wallet.publicKey))[0];
 
-    console.log({nonce});
-    const expiry_time = await this.getExpiryTime();
-    const message = {
-      entry_point: "transferCcd",
-      expiry_time,
-      nonce,
-      service_fee_amount: new CcdAmount(0),
-      service_fee_recipient:
-        "b288c8518c8be158e5e22cb1ee8c748b1992a2cb3572643a7b6ceb1ccd6bf3ec",
-      simple_transfers: [
+      console.log({nonce});
+      const expiry_time = await this.getExpiryTime();
+      const message = {
+        entry_point: "transferCcd",
+        expiry_time,
+        nonce,
+        service_fee_amount: new CcdAmount(0),
+        service_fee_recipient:
+          "b288c8518c8be158e5e22cb1ee8c748b1992a2cb3572643a7b6ceb1ccd6bf3ec",
+        simple_transfers: [
+          {
+            to: recipient,
+            transfer_amount: new CcdAmount(amount * 10 ** 6),
+          },
+        ],
+      };
+
+      const messageHash = await this.getCcdTransferMessageHash(message);
+      console.log({messageHash});
+      console.log(wallet);
+
+      const messageHashBin = this.hexToUint8Array(messageHash);
+      const privateKeyBin = this.hexToUint8Array(wallet.privateKey);
+
+      const signatureUint8 = sodium.crypto_sign_detached(
+        messageHashBin,
+        privateKeyBin,
+      );
+      console.log({signatureUint8});
+      const signature = sodium.to_hex(signatureUint8);
+      console.log({signature});
+      const paramJson = [
         {
-          to: recipient,
-          transfer_amount: new CcdAmount(amount * 10 ** 6),
+          message,
+          signature,
+          signer: wallet.publicKey,
         },
-      ],
-    };
+      ];
 
-    const messageHash = await this.getCcdTransferMessageHash(message);
-    console.log({messageHash});
+      const updateHeader: AccountTransactionHeader = {
+        // @ts-ignore
+        expiry: await this.getDefaultTransactionExpiry(),
+        nonce: (await this.client.getNextAccountNonce(sender)).nonce,
+        sender,
+      };
 
-    const messageHashBin = this.hexToUint8Array(messageHash);
-    const privateKeyBin = this.hexToUint8Array(wallet.privateKey);
+      const updateParams = serializeUpdateContractParameters(
+        contractName,
+        "transferCcd",
+        paramJson,
+        schema,
+      );
+      console.log({updateHeader, updateParams});
+      const updatePayload: UpdateContractPayload = {
+        amount: new CcdAmount(0),
+        address: unwrap(contractAddress),
+        receiveName,
+        message: updateParams,
+        maxContractExecutionEnergy: maxCost,
+      };
 
-    const signatureUint8 = sodium.crypto_sign_detached(
-      messageHashBin,
-      privateKeyBin,
-    );
-    console.log({signatureUint8});
-    const signature = sodium.to_hex(signatureUint8);
-    console.log({signature});
-    const paramJson = [
-      {
-        message,
-        signature,
-        signer: wallet.publicKey,
-      },
-    ];
+      console.log({updatePayload});
+      const updateTransaction: AccountTransaction = {
+        header: updateHeader,
+        payload: updatePayload,
+        type: AccountTransactionType.Update,
+      };
 
-    const updateHeader: AccountTransactionHeader = {
-      // @ts-ignore
-      expiry: await this.getDefaultTransactionExpiry(),
-      nonce: (await this.client.getNextAccountNonce(sender)).nonce,
-      sender,
-    };
+      const updateSignature = await signTransaction(updateTransaction, signer);
+      const updateTrxHash = await this.client.sendAccountTransaction(
+        updateTransaction,
+        updateSignature,
+      );
+      console.log("Transaction submitted, waiting for finalization...");
+      const updateStatus = await this.client.waitForTransactionFinalization(
+        updateTrxHash,
+      );
+      //  console.dir(updateStatus, {depth: null, colors: true});
+      if (
+        //@ts-ignore
+        updateStatus.summary.transactionType &&
+        //@ts-ignore
+        updateStatus.summary.transactionType === "failed"
+      ) {
+        throw new BadRequestException("Transaction failed");
+      }
 
-    const updateParams = serializeUpdateContractParameters(
-      contractName,
-      "transferCcd",
-      paramJson,
-      schema,
-    );
-    console.log({updateHeader, updateParams});
-    const updatePayload: UpdateContractPayload = {
-      amount: new CcdAmount(0),
-      address: unwrap(contractAddress),
-      receiveName,
-      message: updateParams,
-      maxContractExecutionEnergy: maxCost,
-    };
-
-    console.log({updatePayload});
-    const updateTransaction: AccountTransaction = {
-      header: updateHeader,
-      payload: updatePayload,
-      type: AccountTransactionType.Update,
-    };
-
-    const updateSignature = await signTransaction(updateTransaction, signer);
-    const updateTrxHash = await this.client.sendAccountTransaction(
-      updateTransaction,
-      updateSignature,
-    );
-    console.log("Transaction submitted, waiting for finalization...");
-    const updateStatus = await this.client.waitForTransactionFinalization(
-      updateTrxHash,
-    );
-    console.dir(updateStatus, {depth: null, colors: true});
-
-    return updateTrxHash;
+      return updateTrxHash;
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status || 400,
+      );
+    }
   }
 
   async withdrawCcd(amount: number, recipient: string, id: string) {
@@ -417,9 +436,146 @@ export class ConcordiumService {
     const updateStatus = await this.client.waitForTransactionFinalization(
       updateTrxHash,
     );
-    console.dir(updateStatus, {depth: null, colors: true});
+
+    if (
+      //@ts-ignore
+      updateStatus.summary.transactionType &&
+      //@ts-ignore
+      updateStatus.summary.transactionType === "failed"
+    ) {
+      throw new BadRequestException("Transaction failed");
+    }
 
     return updateTrxHash;
+  }
+
+  async pay(amount: number, recipient: string, id: string) {
+    try {
+      const wallet = await this.getOrCreateConcordiumKeyPairs(id);
+      const contractAddress = {
+        index: this.contractIndex,
+        subindex: this.contractSubindex,
+      };
+      const sender = new AccountAddress(this.sender);
+      const signer = buildBasicAccountSigner(this.signingKey);
+      const moduleRef = new ModuleReference(this.moduleRef);
+      const schema = await this.client.getEmbeddedSchema(moduleRef);
+
+      const maxCost = BigInt(30000);
+      const contractName = "gonana_smart_wallet";
+      const receiveName = "gonana_smart_wallet.withdrawCcd";
+
+      const nonce = (await this.nonceOf(wallet.publicKey))[0];
+
+      console.log({nonce});
+      const expiry_time = await this.getExpiryTime();
+      const data = {
+        id: "uyf",
+        payer: wallet.publicKey,
+        receiver: recipient,
+      };
+      const hash = sodium.crypto_generichash(64, JSON.stringify(data));
+
+      const message = {
+        entry_point: "withdrawCcd",
+        expiry_time,
+        nonce,
+        service_fee_amount: new CcdAmount(0),
+        service_fee_recipient:
+          "b288c8518c8be158e5e22cb1ee8c748b1992a2cb3572643a7b6ceb1ccd6bf3ec",
+        simple_withdraws: [
+          {
+            data: data,
+            to: {
+              Contract: [
+                {
+                  index: 9832,
+                  subindex: 0,
+                },
+                "pay",
+              ],
+            },
+            withdraw_amount: new CcdAmount(amount * 10 ** 6),
+          },
+        ],
+      };
+
+      const messageHash = await this.getCcdWithdrawMessageHash(message);
+      console.log({messageHash});
+      // const privateKeyUint = sodium.from_hex(wallet.privateKey)
+      const messageHashBin = this.hexToUint8Array(messageHash);
+
+      // const messageHashBin = sodium.hex2bin();
+      const privateKeyBin = this.hexToUint8Array(wallet.privateKey);
+
+      const signatureUint8 = sodium.crypto_sign_detached(
+        messageHashBin,
+        privateKeyBin,
+      );
+      console.log({signatureUint8});
+      const signature = sodium.to_hex(signatureUint8);
+      console.log({signature});
+      console.log({timeAfter: expiry_time});
+      const paramJson = [
+        {
+          message,
+          signature,
+          signer: wallet.publicKey,
+        },
+      ];
+
+      const updateHeader: AccountTransactionHeader = {
+        // @ts-ignore
+        expiry: await this.getDefaultTransactionExpiry(),
+        nonce: (await this.client.getNextAccountNonce(sender)).nonce,
+        sender,
+      };
+
+      const updateParams = serializeUpdateContractParameters(
+        contractName,
+        "withdrawCcd",
+        paramJson,
+        schema,
+      );
+      console.log({updateHeader, updateParams});
+
+      const updatePayload: UpdateContractPayload = {
+        amount: new CcdAmount(0),
+        address: unwrap(contractAddress),
+        receiveName,
+        message: updateParams,
+        maxContractExecutionEnergy: maxCost,
+      };
+
+      console.log({updatePayload});
+      const updateTransaction: AccountTransaction = {
+        header: updateHeader,
+        payload: updatePayload,
+        type: AccountTransactionType.Update,
+      };
+
+      const updateSignature = await signTransaction(updateTransaction, signer);
+      const updateTrxHash = await this.client.sendAccountTransaction(
+        updateTransaction,
+        updateSignature,
+      );
+      console.log("Transaction submitted, waiting for finalization...");
+      const updateStatus = await this.client.waitForTransactionFinalization(
+        updateTrxHash,
+      );
+      console.dir(updateStatus, {depth: null, colors: true});
+
+      return updateTrxHash;
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
   }
   ///////////////////////////////////*****HELPER FUNCTIONS*****/////////////////////////////////////////////
   hexToUint8Array(hexString: string) {
