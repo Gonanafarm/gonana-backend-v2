@@ -1767,6 +1767,9 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
   async convertEthToNgn(xEth: string) {
+    if (xEth === "0") {
+      return "0";
+    }
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
       "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=ETH&convert=NGN",
@@ -1784,6 +1787,9 @@ export class UserService extends GenericService<UserDocument> {
     return ngn.toString();
   }
   async convertArbToNgn(xARB: string) {
+    if (xARB === "0") {
+      return "0";
+    }
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
       "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=ARB&convert=NGN",
@@ -1802,6 +1808,9 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async convertNgntoEth(xNgn: string) {
+    if (xNgn === "0") {
+      return "0";
+    }
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
       "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=ETH&convert=NGN",
@@ -1817,6 +1826,9 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async convertNgntoArb(xNgn: string) {
+    if (xNgn === "0") {
+      return "0";
+    }
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
       "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=ARB&convert=NGN",
@@ -1922,6 +1934,9 @@ export class UserService extends GenericService<UserDocument> {
     return roundedNumber.toFixed(significantFigures);
   }
   async convertNgntoUsd(xNgn: string) {
+    if (xNgn === "0") {
+      return "0";
+    }
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
       "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=USD&convert=NGN",
@@ -1939,6 +1954,9 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async convertUsdtoNgn(xUsd: string) {
+    if (xUsd === "0") {
+      return "0";
+    }
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
       `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xUsd}&symbol=USD&convert=NGN`,
