@@ -38,23 +38,23 @@ export class ConcordiumService {
     //@ts-ignore
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
   ) {
-    //const address = "grpc.mainnet.concordium.software"; // mainnet
-    const address = "node.testnet.concordium.com"; // testnet
+    const address = "grpc.mainnet.concordium.software"; // mainnet
+    //const address = "node.testnet.concordium.com"; // testnet
 
     const port = 20000;
     // const security = environment.concordiumAdmin.environment === 'Mainnet' ? credentials.createSsl() : credentials.createInsecure();
-    // const security = credentials.createSsl() //mainnet
-    const security = credentials.createInsecure(); //testnet
+    const security = credentials.createSsl(); //mainnet
+    // const security = credentials.createInsecure(); //testnet
     this.client = createConcordiumClient(address, Number(port), security, {
       timeout: 15000000,
     });
 
-    this.sender = "3DBHuPUv244AeXL2QJPn6LQwdG75U8dMykSYFdXqpnAMQCBH7o";
+    this.sender = "4Csb9ANHnt8Kqy5WLgbFQyyJSBb9wuW7QXLweQ2A6zDBgHpyV3";
     this.signingKey =
-      "f4b62724c9340fffb19d1e0d544100a95689be47382de6ae5c2e2d9f35804943";
+      "c85e8bd69b3f592c69d4c4a36a74e8c2c315cb48b63baa35e141e5566ba516ad";
     this.moduleRef =
-      "767fdab70af7ce22efa88a6796ec675620e18f3324bab4aacaabbfe7023dc583";
-    this.contractIndex = BigInt(9522);
+      "9c41b5b9dbca53667839e041c9ede71ded569752196411e0bfa5648cad821c94";
+    this.contractIndex = BigInt(9645);
     this.contractSubindex = BigInt(0);
   }
 
@@ -106,7 +106,7 @@ export class ConcordiumService {
       const receiveName = "gonana_smart_wallet.ccdBalanceOf";
 
       const moduleRef = new ModuleReference(
-        "767fdab70af7ce22efa88a6796ec675620e18f3324bab4aacaabbfe7023dc583",
+        "9c41b5b9dbca53667839e041c9ede71ded569752196411e0bfa5648cad821c94",
       );
       const schema = await this.client.getEmbeddedSchema(moduleRef);
 
