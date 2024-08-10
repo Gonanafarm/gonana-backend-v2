@@ -45,10 +45,10 @@ export class AuthService {
 
   // user jwt decode obj
   async login(user?: any) {
-    this.eventEmitter.emit("account.login", user);
+    this.eventEmitter.emit("", user);
 
     console.log(user?.getPublicData(), " On Login user ");
-    const userData = await this.userService.getUserData(user.id)
+    const userData = await this.userService.getUserData(user.id);
     return {
       token: this.jwtService.sign(
         {...user?.getPublicData()},

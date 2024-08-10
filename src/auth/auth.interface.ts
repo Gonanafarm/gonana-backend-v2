@@ -67,6 +67,7 @@ export class SignUpDto {
 export class LoginDto {
   @ApiProperty({example: "email@email.com", maxLength: 255})
   @IsEmail()
+  
   readonly email!: string;
 
   @ApiProperty({example: "password", minLength: 8})

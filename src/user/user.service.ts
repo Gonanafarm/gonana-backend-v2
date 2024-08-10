@@ -506,7 +506,7 @@ export class UserService extends GenericService<UserDocument> {
         await user.save();
       }
 
-      if (user.wallet_address === undefined) {
+      if (user.wallet_address === undefined || user.wallet_address === null) {
         const wallet = await this.ccdService.getOrCreateConcordiumKeyPairs(id);
         const address = wallet.publicKey;
         const balance = await this.ccdService.ccdBalanceOf(id);
@@ -1713,7 +1713,7 @@ export class UserService extends GenericService<UserDocument> {
       // const url = "https://sepolia-rollup.arbitrum.io/rpc";
       // const provider = new providers.JsonRpcProvider(url);
 
-      if (user.wallet_address === undefined) {
+      if (user.wallet_address === undefined || user.wallet_address === null) {
         // const wallet = Wallet.createRandom();
         // const address = wallet.address;
         // const balance = await provider.getBalance(address);
