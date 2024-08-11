@@ -56,7 +56,6 @@ export class UserEventHanders {
     data.user.fiat_wallet_address = fiat_wallet_address;
     await data.user.save();
 
-    
     console.log("Balance:", balance.toString());
   }
 

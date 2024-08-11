@@ -77,7 +77,7 @@ export class ConcordiumService {
     if (!user) {
       throw new NotFoundException("User not found");
     }
-    if (user.wallet_address === undefined) {
+    if (user.wallet_address === undefined || user.wallet_address === null) {
       const keys = await this.generateKeyPair();
       user.wallet_address = keys.publicKey;
       user.privateKey = keys.privateKey;
