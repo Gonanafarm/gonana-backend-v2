@@ -1736,7 +1736,7 @@ export class UserService extends GenericService<UserDocument> {
         const ngn = await this.convertCcdtoNgn(user.wallet);
         return {
           success: true,
-          cryptoWalletBalanceInNgn: ngn,
+          cryptoWalletBalanceInNgn: ngn.toString(),
           cryptoWalletBalanceInCcd: user.wallet,
         };
       }
@@ -1751,7 +1751,7 @@ export class UserService extends GenericService<UserDocument> {
       await user.save();
       return {
         success: true,
-        cryptoWalletBalanceInNgn: ngn,
+        cryptoWalletBalanceInNgn: ngn.toString(),
         cryptoWalletBalanceInCcd: user.wallet,
       };
     } catch (error: any) {
