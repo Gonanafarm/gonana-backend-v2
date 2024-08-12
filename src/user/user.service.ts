@@ -1656,7 +1656,19 @@ export class UserService extends GenericService<UserDocument> {
       console.log(transactionArrayObject);
       transaction.transactions.push(transactionArrayObject);
       await transaction.save();
-
+      const debitMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `₦${amount} has been debited from your account`,
+        },
+        headings: {en: "Debit Notification"},
+        included_segments: ["include_player_ids"],
+        include_player_ids: [user.onesignal_id],
+        content_available: true,
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+      };
+      await this.sendNotificationToDevice(debitMessage, user.id);
       return {success: true, data: res.data.data.data};
     } catch (error: any) {
       console.log(error);
@@ -1677,6 +1689,10 @@ export class UserService extends GenericService<UserDocument> {
     narration?: string,
   ) {
     try {
+      const crediter = await this.userModel.findById(user_id);
+      if (!crediter) {
+        throw new BadRequestException("Invalid Token");
+      }
       const user = await this.getByEmail(email);
       if (!user) {
         throw new BadRequestException("User Not Found");
@@ -1689,6 +1705,20 @@ export class UserService extends GenericService<UserDocument> {
         user.virtual_account_name,
         narration,
       );
+
+      const creditMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `You have received ₦${amount} from ${crediter.first_name} ${crediter.last_name}`,
+        },
+        headings: {en: "Credit Notification"},
+        included_segments: ["include_player_ids"],
+        include_player_ids: [user.onesignal_id],
+        content_available: true,
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+      };
+      await this.sendNotificationToDevice(creditMessage, user.id);
       return {success: true, data: res.data};
     } catch (error: any) {
       console.log(error);
@@ -2183,6 +2213,19 @@ export class UserService extends GenericService<UserDocument> {
     if (!transfer) {
       throw new BadRequestException("Transfer failed");
     }
+    const debitMessage = {
+      app_id: process.env.ONESIGNAL_APP_ID,
+      contents: {
+        en: `${amount}ccd has been debited from your wallet`,
+      },
+      headings: {en: "Debit Notification"},
+      included_segments: ["include_player_ids"],
+      include_player_ids: [user.onesignal_id],
+      content_available: true,
+      small_icon:
+        "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+    };
+    await this.sendNotificationToDevice(debitMessage, user.id);
     return {
       success: true,
       message: "Transfer completed",
