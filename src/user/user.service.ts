@@ -2209,7 +2209,7 @@ export class UserService extends GenericService<UserDocument> {
     const debitMessage = {
       app_id: process.env.ONESIGNAL_APP_ID,
       contents: {
-        en: `${amount}ccd has been debited from your wallet`,
+        en: `${amount} ccd has been debited from your wallet`,
       },
       headings: {en: "Debit Notification"},
       included_segments: ["include_player_ids"],
@@ -2222,7 +2222,7 @@ export class UserService extends GenericService<UserDocument> {
     const creditMessage = {
       app_id: process.env.ONESIGNAL_APP_ID,
       contents: {
-        en: `${amount}ccd has been credited into your wallet`,
+        en: `${amount} ccd has been credited into your wallet`,
       },
       headings: {en: "Credit Notification"},
       included_segments: ["include_player_ids"],
