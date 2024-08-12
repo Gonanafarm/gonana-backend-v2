@@ -2189,25 +2189,18 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async transferCcd(amount: number, recipientId: string, id: string) {
-    if (recipientId === id) {
-      throw new BadRequestException("You cannot transfer CCD to yourself");
-    }
+  async transferCcd(amount: number, recipientWallet: string, id: string) {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new BadRequestException("Invalid Token");
     }
-    const recipient = await this.userModel.findById(recipientId);
-    if (!recipient) {
-      throw new BadRequestException("Recipient not found");
-    }
-    if (!recipient.wallet_address) {
-      throw new BadRequestException("Recipient does not have a wallet address");
-    }
+    const recipient = await this.userModel.findOne({
+      wallet_address: recipientWallet,
+    });
 
     const transfer = await this.ccdService.transferCcd(
       amount,
-      recipient.wallet_address,
+      recipient.wallet_address || recipientWallet,
       id,
     );
     if (!transfer) {
@@ -2226,6 +2219,19 @@ export class UserService extends GenericService<UserDocument> {
         "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
     };
     await this.sendNotificationToDevice(debitMessage, user.id);
+    const creditMessage = {
+      app_id: process.env.ONESIGNAL_APP_ID,
+      contents: {
+        en: `${amount}ccd has been credited into your wallet`,
+      },
+      headings: {en: "Credit Notification"},
+      included_segments: ["include_player_ids"],
+      include_player_ids: [recipient.onesignal_id],
+      content_available: true,
+      small_icon:
+        "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+    };
+    await this.sendNotificationToDevice(creditMessage, recipient.onesignal_id);
     return {
       success: true,
       message: "Transfer completed",
