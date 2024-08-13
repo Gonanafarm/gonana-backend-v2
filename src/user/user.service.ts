@@ -2231,7 +2231,12 @@ export class UserService extends GenericService<UserDocument> {
       small_icon:
         "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
     };
-    await this.sendNotificationToDevice(creditMessage, recipient.onesignal_id);
+    if (recipient) {
+      await this.sendNotificationToDevice(
+        creditMessage,
+        recipient.onesignal_id,
+      );
+    }
     return {
       success: true,
       message: "Transfer completed",
