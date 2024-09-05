@@ -717,7 +717,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
 
       const ethBalanceInNgn = parseInt(
-        await this.userService.convertEthToNgn(user.wallet),
+        await this.userService.convertEthToNgn(user.arbitrum_wallet),
       );
 
       if (ethBalanceInNgn < totalCostInNgn) {
@@ -729,7 +729,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         "https://sepolia-rollup.arbitrum.io/rpc",
       );
 
-      const buyerWallet = new ethers.Wallet(user.privateKey, provider);
+      const buyerWallet = new ethers.Wallet(user.arbitrumPrivateKey, provider);
       const marketplaceAddr = "0x4E4B760e06cbF0b0760279a08b6B836244bc9910";
       const contract = new ethers.Contract(marketplaceAddr, abi, buyerWallet);
 
@@ -737,7 +737,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const newEthBalance = await this.userService.convertNgntoEth(
         newBalance.toString(),
       );
-      user.wallet = newEthBalance;
+      user.arbitrum_wallet = newEthBalance;
       await user.save();
       const shipping_req_token = rates.shipping_req_token || [];
       const service_codes = rates.service_code || [];

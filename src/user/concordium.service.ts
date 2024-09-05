@@ -77,20 +77,23 @@ export class ConcordiumService {
     if (!user) {
       throw new NotFoundException("User not found");
     }
-    if (user.wallet_address === undefined || user.wallet_address === null) {
+    if (
+      user.ccd_wallet_address === undefined ||
+      user.ccd_wallet_address === null
+    ) {
       const keys = await this.generateKeyPair();
-      user.wallet_address = keys.publicKey;
-      user.privateKey = keys.privateKey;
+      user.ccd_wallet_address = keys.publicKey;
+      user.ccdPrivateKey = keys.privateKey;
       await user.save();
       // console.log({keys})
       return {
-        publicKey: user.wallet_address,
-        privateKey: user.privateKey,
+        publicKey: user.ccd_wallet_address,
+        privateKey: user.ccdPrivateKey,
       };
     }
     return {
-      publicKey: user.wallet_address,
-      privateKey: user.privateKey,
+      publicKey: user.ccd_wallet_address,
+      privateKey: user.ccdPrivateKey,
     };
   }
 

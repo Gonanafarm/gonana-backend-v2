@@ -130,22 +130,37 @@ export class User {
   country: string;
 
   @Prop({type: mongoose.SchemaTypes.String})
-  wallet: string;
+  ccd_wallet: string;
 
   @Prop({type: mongoose.SchemaTypes.String})
-  cryptoWalletBalanceInNgn: string;
+  arbitrum_wallet: string;
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  ccdWalletBalanceInNgn: string;
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  arbitrumWalletBalanceInNgn: string;
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   fiat_wallet_address: string;
 
   @Prop({type: mongoose.SchemaTypes.String})
-  cryptoWalletBalanceInUsd: string;
+  ccdWalletBalanceInUsd: string;
 
   @Prop({type: mongoose.SchemaTypes.String})
-  wallet_address: string;
+  arbitrumWalletBalanceInUsd: string;
 
   @Prop({type: mongoose.SchemaTypes.String})
-  privateKey: string;
+  ccd_wallet_address: string;
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  arbitrum_wallet_address: string;
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  ccdPrivateKey: string;
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  arbitrumPrivateKey: string;
 
   @Prop({type: mongoose.SchemaTypes.Array})
   patrons: string[];
@@ -180,8 +195,10 @@ UserSchema.methods.getPublicData = function () {
     virtual_account_name,
     address,
     wallet,
-    cryptoWalletBalanceInNgn,
-    wallet_address,
+    arbitrumWalletBalanceInNgn,
+    arbitrum_wallet_address,
+    ccd_wallet_address,
+    ccdWalletBalanceInNgn,
     country,
     onesignal_id,
   } = this;
@@ -202,8 +219,10 @@ UserSchema.methods.getPublicData = function () {
     virtual_account_name,
     address,
     wallet,
-    cryptoWalletBalanceInNgn,
-    wallet_address,
+    arbitrumWalletBalanceInNgn,
+    arbitrum_wallet_address,
+    ccd_wallet_address,
+    ccdWalletBalanceInNgn,
     country,
     onesignal_id,
   };

@@ -476,8 +476,8 @@ export class UserService extends GenericService<UserDocument> {
   async getUserData(id: string) {
     try {
       const user = await this.userModel.findById(id);
-      // const url = "https://sepolia-rollup.arbitrum.io/rpc";
-      // const provider = new providers.JsonRpcProvider(url);
+       const url = "https://sepolia-rollup.arbitrum.io/rpc";
+       const provider = new providers.JsonRpcProvider(url);
       if (!user) {
         return null;
       }
@@ -505,23 +505,48 @@ export class UserService extends GenericService<UserDocument> {
         user.fiat_wallet_address = fiat_wallet_address;
         await user.save();
       }
+      if (
+        user.arbitrum_wallet_address === undefined ||
+        user.arbitrum_wallet_address === null
+      ) {
+        const wallet = Wallet.createRandom();
+        const address = wallet.address;
+        const balance = await provider.getBalance(address);
+        const privateKey = wallet.privateKey;
 
-      if (user.wallet_address === undefined || user.wallet_address === null) {
+        user.arbitrum_wallet = balance.toString();
+        user.arbitrum_wallet_address = address;
+        user.arbitrumPrivateKey = privateKey;
+
+        const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
+        const usd = await this.convertNgntoUsd(ngn);
+        user.arbitrumWalletBalanceInUsd = usd;
+        user.arbitrumWalletBalanceInNgn = ngn;
+        await user.save();
+
+      }
+
+      if (
+        user.ccd_wallet_address === undefined ||
+        user.ccd_wallet_address === null
+      ) {
         const wallet = await this.ccdService.getOrCreateConcordiumKeyPairs(id);
         const address = wallet.publicKey;
         const balance = await this.ccdService.ccdBalanceOf(id);
         const privateKey = wallet.privateKey;
 
-        user.wallet = balance.toString();
-        user.wallet_address = address;
-        user.privateKey = privateKey;
+        user.ccd_wallet = balance.toString();
+        user.ccd_wallet_address = address;
+        user.ccdPrivateKey = privateKey;
         await user.save();
       }
       const userData = user?.getPublicData();
 
       if (userData) {
-        user.cryptoWalletBalanceInNgn = await this.convertCcdtoNgn(user.wallet);
-        console.log(user.cryptoWalletBalanceInNgn);
+        user.ccdWalletBalanceInNgn = await this.convertCcdtoNgn(
+          user.ccd_wallet,
+        );
+        console.log(user.ccdWalletBalanceInNgn);
 
         await user.save();
       }
@@ -1701,7 +1726,61 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
   }
-  async getCryptoWalletBalance(id: string) {
+  async getArbitrumWalletBalance(id: string) {
+    try {
+      if (!id) {
+        throw new BadRequestException("Login and Try again");
+      }
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
+      const url = "https://sepolia-rollup.arbitrum.io/rpc";
+      const provider = new providers.JsonRpcProvider(url);
+      const balance = await provider.getBalance(user.arbitrum_wallet_address);
+      if (
+        user.arbitrum_wallet_address === undefined ||
+        user.arbitrum_wallet_address === null
+      ) {
+        const wallet = Wallet.createRandom();
+        const address = wallet.address;
+        const balance = await provider.getBalance(address);
+        const privateKey = wallet.privateKey;
+
+        user.arbitrum_wallet = balance.toString();
+        user.arbitrum_wallet_address = address;
+        user.arbitrumPrivateKey = privateKey;
+
+        const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
+        const usd = await this.convertNgntoUsd(ngn);
+        user.arbitrumWalletBalanceInUsd = usd;
+        user.arbitrumWalletBalanceInNgn = ngn;
+        await user.save();
+        return {
+          success: true,
+          cryptoWalletBalanceInNgn: ngn,
+          cryptoWalletBalanceInEth: user.arbitrum_wallet,
+        };
+      }
+      user.arbitrum_wallet = balance.toString();
+      await user.save();
+      return {
+        success: true,
+        cryptoWalletBalanceInNgn: user.arbitrumWalletBalanceInNgn,
+        cryptoWalletBalanceInEth: user.arbitrum_wallet,
+      };
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+  async getCcdWalletBalance(id: string) {
     try {
       if (!id) {
         throw new BadRequestException("Login and Try again");
@@ -1713,7 +1792,10 @@ export class UserService extends GenericService<UserDocument> {
       // const url = "https://sepolia-rollup.arbitrum.io/rpc";
       // const provider = new providers.JsonRpcProvider(url);
 
-      if (user.wallet_address === undefined || user.wallet_address === null) {
+      if (
+        user.ccd_wallet_address === undefined ||
+        user.ccd_wallet_address === null
+      ) {
         // const wallet = Wallet.createRandom();
         // const address = wallet.address;
         // const balance = await provider.getBalance(address);
@@ -1732,27 +1814,27 @@ export class UserService extends GenericService<UserDocument> {
 
         await this.ccdService.getOrCreateConcordiumKeyPairs(id);
         const balance = await this.ccdService.ccdBalanceOf(id);
-        user.wallet = balance.toString();
-        const ngn = await this.convertCcdtoNgn(user.wallet);
+        user.ccd_wallet = balance.toString();
+        const ngn = await this.convertCcdtoNgn(user.ccd_wallet);
         return {
           success: true,
           cryptoWalletBalanceInNgn: ngn,
-          cryptoWalletBalanceInCcd: user.wallet,
+          cryptoWalletBalanceInCcd: user.ccd_wallet,
         };
       }
       const balance = await this.ccdService.ccdBalanceOf(id);
 
-      user.wallet = balance.toString();
+      user.ccd_wallet = balance.toString();
 
-      const ngn = await this.convertCcdtoNgn(user.wallet);
+      const ngn = await this.convertCcdtoNgn(user.ccd_wallet);
       const usd = await this.convertNgntoUsd(ngn);
-      user.cryptoWalletBalanceInNgn = ngn;
-      user.cryptoWalletBalanceInUsd = usd;
+      user.ccdWalletBalanceInNgn = ngn;
+      user.ccdWalletBalanceInUsd = usd;
       await user.save();
       return {
         success: true,
         cryptoWalletBalanceInNgn: ngn,
-        cryptoWalletBalanceInCcd: user.wallet,
+        cryptoWalletBalanceInCcd: user.ccd_wallet,
       };
     } catch (error: any) {
       console.log(error);
@@ -1899,12 +1981,12 @@ export class UserService extends GenericService<UserDocument> {
       if (!recipient) {
         throw new BadRequestException("Recipient not found");
       }
-      if (!recipient.wallet_address) {
+      if (!recipient.ccd_wallet_address) {
         throw new BadRequestException(
           "Recipient does not have a wallet address",
         );
       }
-      await this.ccdService.pay(amount, recipient.wallet_address, userId);
+      await this.ccdService.pay(amount, recipient.ccd_wallet_address, userId);
     } catch (error: any) {
       throw new HttpException(
         {
@@ -1996,7 +2078,7 @@ export class UserService extends GenericService<UserDocument> {
         throw new NotFoundException("User not found");
       }
 
-      const privateKey = user.privateKey;
+      const privateKey = user.arbitrumPrivateKey;
       if (privateKey === undefined || privateKey.length < 1) {
         throw new BadRequestException(
           "You have not been assigned a private key. To get one check you crypto wallet balance",
@@ -2171,13 +2253,13 @@ export class UserService extends GenericService<UserDocument> {
     if (!recipient) {
       throw new BadRequestException("Recipient not found");
     }
-    if (!recipient.wallet_address) {
+    if (!recipient.ccd_wallet_address) {
       throw new BadRequestException("Recipient does not have a wallet address");
     }
 
     const transfer = await this.ccdService.transferCcd(
       amount,
-      recipient.wallet_address,
+      recipient.ccd_wallet_address,
       id,
     );
     if (!transfer) {

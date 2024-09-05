@@ -27,14 +27,26 @@ export class UserEventHanders {
     const wallet = await this.ccdService.getOrCreateConcordiumKeyPairs(
       data.user.id,
     );
+    const url = "https://mainnet.infura.io/v3/613c483e28cf4d338959ca31e1582b56";
+    const provider = new providers.JsonRpcProvider(url);
+    const arbitrumWallet = Wallet.createRandom();
+    const arbitrumPrivateKey = arbitrumWallet.privateKey;
+
+    const arbitrumAddress = arbitrumWallet.address;
+    const arbitrumWalletBalance = await provider.getBalance(arbitrumAddress);
+
+    data.user.arbitrum_wallet_address = arbitrumAddress;
+    data.user.arbitrumPrivateKey = arbitrumPrivateKey;
+    data.user.arbitrum_wallet = arbitrumWalletBalance.toString();
+
     const address = wallet.publicKey;
     const balance = await this.ccdService.ccdBalanceOf(data.user.id);
     console.log(balance);
     const privateKey = wallet.privateKey;
 
-    data.user.privateKey = privateKey;
-    data.user.wallet = balance.toString();
-    data.user.wallet_address = address;
+    data.user.ccdPrivateKey = privateKey;
+    data.user.ccd_wallet = balance.toString();
+    data.user.ccd_wallet_address = address;
 
     const torodata = {
       op: "createkey",

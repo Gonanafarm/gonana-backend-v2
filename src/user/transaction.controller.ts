@@ -145,11 +145,19 @@ export class TransactionController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("/crypto-balance")
+  @Get("/ccd-balance")
   getCryptoWalletBalance(@Req() req: Request) {
     //@ts-ignore
     const user_id = req.user?.id;
-    return this.userService.getCryptoWalletBalance(user_id);
+    return this.userService.getCcdWalletBalance(user_id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("/arbitrum-balance")
+  getArbitrumBalance(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.getArbitrumWalletBalance(user_id);
   }
 
   @UseGuards(JwtAuthGuard)
