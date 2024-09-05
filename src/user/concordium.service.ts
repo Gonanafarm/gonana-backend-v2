@@ -446,6 +446,8 @@ export class ConcordiumService {
       //@ts-ignore
       updateStatus.summary.transactionType === "failed"
     ) {
+      console.log(updateStatus.summary);
+
       throw new BadRequestException("Transaction failed");
     }
 
