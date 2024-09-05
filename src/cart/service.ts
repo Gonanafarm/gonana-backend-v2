@@ -835,7 +835,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               buyer_id: user_id,
               amount: product.amount.toString(),
             });
-            
+
             return shipment.data;
           } else {
             return null;
