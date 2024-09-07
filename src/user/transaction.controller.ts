@@ -201,6 +201,12 @@ export class TransactionController {
     return this.userService.convertCcdtoNgn(data);
   }
 
+  
+  @Post("/eth-usd")
+  ethToUsd(@Body("eth") data: string) {
+    return this.userService.convertEthToUsd(data);
+  }
+
   @Post("/ccd-usd")
   ccdToUsd(@Body("ccd") data: string) {
     return this.userService.convertCcdtoUsd(data);

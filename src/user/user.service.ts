@@ -476,8 +476,8 @@ export class UserService extends GenericService<UserDocument> {
   async getUserData(id: string) {
     try {
       const user = await this.userModel.findById(id);
-       const url = "https://sepolia-rollup.arbitrum.io/rpc";
-       const provider = new providers.JsonRpcProvider(url);
+      const url = "https://sepolia-rollup.arbitrum.io/rpc";
+      const provider = new providers.JsonRpcProvider(url);
       if (!user) {
         return null;
       }
@@ -523,7 +523,6 @@ export class UserService extends GenericService<UserDocument> {
         user.arbitrumWalletBalanceInUsd = usd;
         user.arbitrumWalletBalanceInNgn = ngn;
         await user.save();
-
       }
 
       if (
@@ -1897,6 +1896,23 @@ export class UserService extends GenericService<UserDocument> {
     const numEth = parseFloat(xEth);
     const ngn = numEth * oneEth;
     return ngn.toString();
+  }
+  async convertEthToUsd(xEth: string) {
+    if (xEth === "0") {
+      return "0";
+    }
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xEth}&symbol=ETH&convert=USD`,
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const USD = response.data.data.quote.USD.price;
+
+    return USD;
   }
   async convertArbToNgn(xARB: string) {
     if (xARB === "0") {
