@@ -13,10 +13,10 @@ cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_NAME,
 });
 
-  var serviceAccountFile = require("../firebase-service.json");
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccountFile),
-  });
-  export const db = admin.firestore()
+var serviceAccountFile = require("../firebase-service.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccountFile),
+});
+export const db = admin.firestore();
 
 bootstrap();
