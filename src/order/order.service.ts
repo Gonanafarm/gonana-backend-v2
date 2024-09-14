@@ -14,7 +14,9 @@ import {UserDocument} from "../user/user.schema";
 import {IncomingOrderDocument} from "./incoming.order.schema";
 import {UserMailerService} from "../user/user.mailer.service";
 import {UserService} from "../user/user.service";
+import {ethers, providers} from "ethers";
 import {PostService} from "../post/post.service";
+const abi = require("../../abi.json");
 import * as moment from "moment";
 const now = new Date(); // Get the current date and time in UTC
 @Injectable()
@@ -266,7 +268,24 @@ export class OrderService {
 
         this.userMailerService.farmerOrderCompletedMail(farmerEmail, orderId);
         const farmerPatrons = farmer.patrons;
+        const provider = new providers.JsonRpcProvider(
+          "https://sepolia-rollup.arbitrum.io/rpc",
+        );
 
+        //wallet instance of the contract admin
+        const admin = new ethers.Wallet(
+          "b72cb42b3319abb30fc17f7e20ea58165a84de90c9afd90fcb80382062e01382",
+          provider,
+        );
+        const marketplaceAddr = "0x4E4B760e06cbF0b0760279a08b6B836244bc9910";
+        const contract = new ethers.Contract(marketplaceAddr, abi, admin);
+
+        const releaseEscrow = await contract.releaseEscrow(
+          incomingOrder.product_id || outgoingOrder.product_id,
+        );
+        console.log(releaseEscrow);
+
+        const tx = await releaseEscrow.wait();
         const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
 
         await this.userService.transferFromEscrowToUser(
@@ -471,7 +490,24 @@ export class OrderService {
       farmer.id,
       reducedProductCost.toString(),
     );
-    
+    const provider = new providers.JsonRpcProvider(
+      "https://sepolia-rollup.arbitrum.io/rpc",
+    );
+
+    //wallet instance of the contract admin
+    const admin = new ethers.Wallet(
+      "b72cb42b3319abb30fc17f7e20ea58165a84de90c9afd90fcb80382062e01382",
+      provider,
+    );
+    const marketplaceAddr = "0x4E4B760e06cbF0b0760279a08b6B836244bc9910";
+    const contract = new ethers.Contract(marketplaceAddr, abi, admin);
+
+    const releaseEscrow = await contract.releaseEscrow(
+      incomingOrder.product_id || outgoingOrder.product_id,
+    );
+    console.log(releaseEscrow);
+
+    const tx = await releaseEscrow.wait();
     const customerOnesignalId = [];
     const farmerOnesignalId = [];
 

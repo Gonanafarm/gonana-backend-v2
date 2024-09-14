@@ -518,7 +518,7 @@ export class UserService extends GenericService<UserDocument> {
         user.arbitrum_wallet_address = address;
         user.arbitrumPrivateKey = privateKey;
 
-        const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
+        const ngn = await this.convertArbitrumToNgn(user.arbitrum_wallet);
         const usd = await this.convertNgntoUsd(ngn);
         user.arbitrumWalletBalanceInUsd = usd;
         user.arbitrumWalletBalanceInNgn = ngn;
