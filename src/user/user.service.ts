@@ -1766,7 +1766,7 @@ export class UserService extends GenericService<UserDocument> {
       }
       const url = "https://sepolia-rollup.arbitrum.io/rpc";
       const provider = new providers.JsonRpcProvider(url);
-      const balance = await provider.getBalance(user.arbitrum_wallet_address);
+
       if (
         user.arbitrum_wallet_address === undefined ||
         user.arbitrum_wallet_address === null
@@ -1774,13 +1774,14 @@ export class UserService extends GenericService<UserDocument> {
         const wallet = Wallet.createRandom();
         const address = wallet.address;
         const balance = await provider.getBalance(address);
+        const ethValue = ethers.utils.formatEther(balance);
         const privateKey = wallet.privateKey;
 
-        user.arbitrum_wallet = balance.toString();
+        user.arbitrum_wallet = ethValue;
         user.arbitrum_wallet_address = address;
         user.arbitrumPrivateKey = privateKey;
-
-        const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
+        console.log(balance.toString());
+        const ngn = await this.convertArbitrumToNgn(user.arbitrum_wallet);
         const usd = await this.convertNgntoUsd(ngn);
         user.arbitrumWalletBalanceInUsd = usd;
         user.arbitrumWalletBalanceInNgn = ngn;
@@ -1791,7 +1792,15 @@ export class UserService extends GenericService<UserDocument> {
           cryptoWalletBalanceInEth: user.arbitrum_wallet,
         };
       }
-      user.arbitrum_wallet = balance.toString();
+      const balance = await provider.getBalance(user.arbitrum_wallet_address);
+
+      const ethValue = ethers.utils.formatEther(balance);
+      console.log(ethValue);
+      const ngn = await this.convertArbitrumToNgn(ethValue);
+      const usd = await this.convertNgntoUsd(ngn);
+      user.arbitrum_wallet = ethValue;
+      user.arbitrumWalletBalanceInNgn = ngn;
+      user.arbitrumWalletBalanceInUsd = usd;
       await user.save();
       return {
         success: true,
@@ -1876,6 +1885,21 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+  }
+  async convertArbitrumToNgn(xArb: string) {
+    if (xArb === "0") {
+      return "0";
+    }
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xArb}&symbol=ARB&convert=NGN`,
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    return response.data.data.quote.NGN.price;
   }
   async convertEthToNgn(xEth: string) {
     if (xEth === "0") {
