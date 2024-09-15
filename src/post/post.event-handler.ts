@@ -105,7 +105,7 @@ export class PostEventHandlers {
       "b72cb42b3319abb30fc17f7e20ea58165a84de90c9afd90fcb80382062e01382",
       provider,
     );
-    const marketplaceAddr = "0x4E4B760e06cbF0b0760279a08b6B836244bc9910";
+    const marketplaceAddr = "0x523E1E3E3c052cf87ac12D08d58F59b22f2852F2";
     const contract = new ethers.Contract(marketplaceAddr, abi, admin);
 
     const list_product = await contract.createProduct(

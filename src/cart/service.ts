@@ -730,7 +730,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       );
 
       const buyerWallet = new ethers.Wallet(user.arbitrumPrivateKey, provider);
-      const marketplaceAddr = "0x4E4B760e06cbF0b0760279a08b6B836244bc9910";
+      const marketplaceAddr = "0x523E1E3E3c052cf87ac12D08d58F59b22f2852F2";
       const contract = new ethers.Contract(marketplaceAddr, abi, buyerWallet);
 
       const newBalance = ethBalanceInNgn - totalCostInNgn;
@@ -811,7 +811,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               item.units,
               shipment.data.order_id,
-              "WEB2",
+              "WEB3",
             );
             await this.orderService.createIncomingOrder(
               item.id,
@@ -819,7 +819,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user.id,
               item.units,
               shipment.data.order_id,
-              "WEB2",
+              "WEB3",
             );
             this.userMailerService.notSelfShipmentMail(
               farmer.email,
@@ -902,7 +902,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               item.units,
               `${abbr}${rn}`,
-              "WEB2",
+              "WEB3",
             );
             await this.orderService.createIncomingOrder(
               item.id,
@@ -910,7 +910,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user.id,
               item.units,
               `${abbr}${rn}`,
-              "WEB2",
+              "WEB3",
             );
             this.userMailerService.selfShipmentMail(
               farmer.email,
