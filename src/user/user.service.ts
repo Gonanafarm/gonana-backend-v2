@@ -518,7 +518,7 @@ export class UserService extends GenericService<UserDocument> {
         user.arbitrum_wallet_address = address;
         user.arbitrumPrivateKey = privateKey;
 
-        const ngn = await this.convertArbitrumToNgn(user.arbitrum_wallet);
+        const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
         const usd = await this.convertNgntoUsd(ngn);
         user.arbitrumWalletBalanceInUsd = usd;
         user.arbitrumWalletBalanceInNgn = ngn;
@@ -1781,7 +1781,7 @@ export class UserService extends GenericService<UserDocument> {
         user.arbitrum_wallet_address = address;
         user.arbitrumPrivateKey = privateKey;
         console.log(balance.toString());
-        const ngn = await this.convertArbitrumToNgn(user.arbitrum_wallet);
+        const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
         const usd = await this.convertNgntoUsd(ngn);
         user.arbitrumWalletBalanceInUsd = usd;
         user.arbitrumWalletBalanceInNgn = ngn;
@@ -1796,7 +1796,7 @@ export class UserService extends GenericService<UserDocument> {
 
       const ethValue = ethers.utils.formatEther(balance);
       console.log(ethValue);
-      const ngn = await this.convertArbitrumToNgn(ethValue);
+      const ngn = await this.convertEthToNgn(ethValue);
       const usd = await this.convertNgntoUsd(ngn);
       user.arbitrum_wallet = ethValue;
       user.arbitrumWalletBalanceInNgn = ngn;

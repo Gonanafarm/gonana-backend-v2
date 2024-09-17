@@ -734,7 +734,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const contract = new ethers.Contract(marketplaceAddr, abi, buyerWallet);
 
       const newBalance = ethBalanceInNgn - totalCostInNgn;
-      const newEthBalance = await this.userService.convertNgntoEth(
+      const newEthBalance = await this.userService.convertNgntoArb(
         newBalance.toString(),
       );
       user.arbitrum_wallet = newEthBalance;
