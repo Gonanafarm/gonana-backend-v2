@@ -97,9 +97,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
           "The Owner of the Product may have deleted their account",
         );
       }
-      // if (product.quantity < 1) {
-      //   return { success: false, message: "Product is out of stock"};
-      // }
+      if (product.quantity < 1) {
+        return {success: false, message: "Product is out of stock"};
+      }
       const cartModel = await this.cartItemsModel.findOne({
         publisher_id: publisher_id,
       });
@@ -616,6 +616,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
               shipment.data.order_id,
               "WEB2",
             );
+            product.quantity -= 1;
+            await product.save();
             console.log(shipment.data.order_id);
             console.log(shipment.data);
 
@@ -678,6 +680,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
             `${abbr}${rn}`,
             "WEB2",
           );
+          product.quantity -= 1;
+          await product.save();
         });
       }
 
@@ -805,6 +809,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const farmer = await this.userModel.findById(farmerId);
             if (!farmer) return;
             await this.reomoveCartItem(user_id, item.id);
+            product.quantity -= 1;
+            await product.save();
             await this.orderService.createOutgoingOrder(
               item.id,
               farmer.id,
@@ -884,7 +890,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
             console.log(tx);
 
             await this.reomoveCartItem(user_id, item.id);
-
+            product.quantity -= 1;
+            await product.save();
             this.eventEmitter.emit("Products Not Shipped", {
               product_id: product.id,
               buyer_address:
