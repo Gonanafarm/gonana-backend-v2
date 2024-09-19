@@ -1981,16 +1981,14 @@ export class UserService extends GenericService<UserDocument> {
     }
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
-      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=ETH&convert=NGN",
+      `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xNgn}&symbol=NGN&convert=ETH`,
       {
         headers: {
           "X-CMC_PRO_API_KEY": key,
         },
       },
     );
-    const eth = parseInt(xNgn) / Math.round(response.data.data.quote.NGN.price);
-    const roundedEth = this.roundToSignificantFigures(eth, 9);
-    return roundedEth.toString();
+    return response.data.data.quote.ETH.price
   }
 
   async convertNgntoArb(xNgn: string) {

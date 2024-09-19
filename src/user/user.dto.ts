@@ -10,8 +10,30 @@ import {
   IsString,
   Length,
   Matches,
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
 } from "class-validator";
 import {AccountStatus} from "../common/enums";
+
+export function Trim(validationOptions?: ValidationOptions) {
+  return function (object: Record<any, any>, propertyName: string) {
+    registerDecorator({
+      name: "trim",
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          if (typeof value === "string") {
+            args.object[propertyName] = value.trim();
+          }
+          return true;
+        },
+      },
+    });
+  };
+}
 
 export class UserPublicData {
   @ApiProperty({})
@@ -70,41 +92,49 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   @ApiProperty({})
+  @Trim()
   first_name: string;
 
   @ApiProperty({})
   @IsString()
   @IsOptional()
+  @Trim()
   last_name: string;
 
   @IsString()
   @IsOptional()
   @ApiProperty({})
+  @Trim()
   bio: string;
 
   @IsString()
   @IsOptional()
+  @Trim()
   @ApiProperty({})
   phone: string;
 
   @IsString()
   @IsOptional()
+  @Trim()
   @ApiProperty({})
   profile_photo: string;
 
   @IsString()
+  @Trim()
   @IsOptional()
   @ApiProperty({})
   cover_photo: string;
 
   @IsString()
   @IsOptional()
+  @Trim()
   @ApiProperty({})
   @Length(11)
   bvn: string;
 
   @IsString()
   @IsOptional()
+  @Trim()
   @IsNotEmpty()
   country: string;
 }
@@ -122,9 +152,11 @@ export class GetUserTransactonsDto {
 export class sendNotificationDto {
   @IsString()
   @IsNotEmpty()
+  @Trim()
   title: string;
 
   @IsString()
+  @Trim()
   @IsNotEmpty()
   body: string;
 }
@@ -144,9 +176,13 @@ export class UpdateTransferReceipient {
 export class ResolveAccountNumber {
   @ApiProperty({})
   @IsString()
+  @Trim()
   @Length(10)
   account_number: string;
+
+
   @ApiProperty({})
+  @Trim()
   @IsString()
   bank: string;
 }
@@ -154,11 +190,13 @@ export class ResolveAccountNumber {
 export class TransferToUser {
   @ApiProperty({})
   @IsString()
+  @Trim()
   @IsEmail()
   email: string;
 
   @ApiProperty({})
   @IsString()
+  @Trim()
   @IsOptional()
   narration: string;
 
@@ -170,19 +208,23 @@ export class TransferToUser {
 export class TransferFundsDto {
   @ApiProperty({})
   @IsString()
+  @Trim()
   @Length(10)
   accountNumber: string;
 
   @ApiProperty({})
+  @Trim()
   @IsString()
   bankName: string;
 
   @ApiProperty({})
   @IsString()
+  @Trim()
   accountName: string;
 
   @ApiProperty({})
   @IsString()
+  @Trim()
   @IsOptional()
   narration: string;
 
@@ -205,26 +247,34 @@ export class UpdateDriverAccountStatus {
 
 export class ValidatePostAdress {
   @IsString()
+  @Trim()
   address: string;
+
   @IsString()
+  @Trim()
   productId: string;
 }
 
 export class TransferEthDto {
   @IsNumberString()
+  @Trim()
   @IsNotEmpty()
   amount: string;
 
   @IsString()
+  @Trim()
   @IsNotEmpty()
   address: string;
 }
 
 export class VerifyPasscodeOtpDto {
   @IsString()
+  @Trim()
   @Length(4)
   otp: string;
+
   @IsString()
+  @Trim()
   @Length(4)
   passcode: string;
 }
