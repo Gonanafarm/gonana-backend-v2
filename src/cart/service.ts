@@ -723,7 +723,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const ethBalanceInNgn = parseInt(
         await this.userService.convertEthToNgn(user.arbitrum_wallet),
       );
-
+      console.log(`ethbalanceinngng:${ethBalanceInNgn}`);
       if (ethBalanceInNgn < totalCostInNgn) {
         throw new BadRequestException(
           `Insufficient eth balance, fund wallet and try again`,
@@ -783,8 +783,12 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const ethAmount = await this.userService.convertNgntoEth(
               product.amount.toString(),
             );
-            const decimals = (ethAmount.split(".")[1] || []).length;
-            const parsedEthAmount = ethers.utils.parseEther(ethAmount);
+            const roundedEthAmount = this.userService.roundToSignificantFigures(
+              parseFloat(ethAmount),
+              4,
+            );
+            // const decimals = (ethAmount.split(".")[1] || []).length;
+            const parsedEthAmount = ethers.utils.parseEther(roundedEthAmount.toString());
             const order = await contract.orderProduct(
               product.id,
               parsedEthAmount,
@@ -870,9 +874,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const ethAmount = await this.userService.convertNgntoEth(
               product.amount.toString(),
             );
-            const decimals = (ethAmount.split(".")[1] || []).length;
+            const roundedEthAmount = this.userService.roundToSignificantFigures(
+              parseFloat(ethAmount),
+              4,
+            );
+            console.log(`eth AMounttoship:${roundedEthAmount}`);
+            //  const decimals = (ethAmount.split(".")[1] || []).length;
             const parsedEthAmount = ethers.utils.parseEther(
-              ethAmount as string,
+              roundedEthAmount.toString(),
             );
 
             const order = await contract.orderProduct(
