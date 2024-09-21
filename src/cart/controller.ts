@@ -15,6 +15,7 @@ import {CartItem as CartItemModel} from "./schema";
 import {Request} from "express";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
+import {ConcordiumService} from "../user/concordium.service";
 import {AddToCartDto, PlaceOrderDto, UpdateCartItemDto} from "./dto";
 import {Order} from "../order/outgoing.order.schema";
 
@@ -24,7 +25,10 @@ import {Order} from "../order/outgoing.order.schema";
 @Controller("api/catalog/cart")
 // @ApiHeader({ name: 'Bypass-Tunnel-Reminder', required: true })
 export class CartItemController {
-  constructor(private readonly dataService: CartItemService) {}
+  constructor(
+    private readonly dataService: CartItemService,
+    private readonly concordiumService: ConcordiumService,
+  ) {}
   @Get("")
   @ApiResponse({
     status: 200,
@@ -124,6 +128,15 @@ export class CartItemController {
     //@ts-ignore
     const user_id = req.user?.id;
     return this.dataService.payWithEth(body.orders, user_id, body.service_code);
+  }
+  @Post("pay-with-ccd")
+  async placeOrdedCcd(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return {
+      success: false,
+      message: "Invalid ccd balance",
+    };
   }
 
   @Post("validate-user-address-by-cart")
