@@ -315,7 +315,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const itemsToShip = [];
       for (const item of orderItems) {
         const product = await this.productModel.findById(item.id);
-
+        if (product.quantity < 1) {
+          throw new BadRequestException(
+            `Product: ${product.title} is out of stock`,
+          );
+        }
         if (product?.self_shipping === false) {
           const farmer = await this.userModel.findById(product.publisher_id);
           if (!farmer)
@@ -751,6 +755,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const itemsNotToShip = [];
       for (const item of orderItems) {
         const product = await this.productModel.findById(item.id);
+        if (product.quantity < 1) {
+          throw new BadRequestException(
+            `Product: ${product.title} is out of stock`,
+          );
+        }
         if (product?.self_shipping === false) {
           itemsToShip.push(item);
         } else {
@@ -788,7 +797,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
               4,
             );
             // const decimals = (ethAmount.split(".")[1] || []).length;
-            const parsedEthAmount = ethers.utils.parseEther(roundedEthAmount.toString());
+            const parsedEthAmount = ethers.utils.parseEther(
+              roundedEthAmount.toString(),
+            );
             const order = await contract.orderProduct(
               product.id,
               parsedEthAmount,
