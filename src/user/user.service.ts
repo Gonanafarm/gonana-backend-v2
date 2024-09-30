@@ -1988,7 +1988,7 @@ export class UserService extends GenericService<UserDocument> {
         },
       },
     );
-    return response.data.data.quote.ETH.price
+    return response.data.data.quote.ETH.price;
   }
 
   async convertNgntoArb(xNgn: string) {
@@ -2145,6 +2145,9 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found");
       }
+      console.log(
+        `${user.first_name} attempst send ${amount} eth to ${toAddress}`,
+      );
 
       const privateKey = user.arbitrumPrivateKey;
       if (privateKey === undefined || privateKey.length < 1) {
@@ -2154,15 +2157,16 @@ export class UserService extends GenericService<UserDocument> {
       }
 
       const wallet = new Wallet(privateKey, provider);
-
+      console.log("wallet gotten");
       // Validate the toAddress
       if (!utils.isAddress(toAddress)) {
         throw new BadRequestException("Invalid Ethereum address");
       }
+      console.log("Adress valid");
 
       // Convert amount to Wei (1 Ether = 1e18 Wei)
       const amountWei = utils.parseEther(amount);
-
+      console.log("wei converted");
       // Create a transaction
       const transaction = {
         to: toAddress,
@@ -2172,8 +2176,8 @@ export class UserService extends GenericService<UserDocument> {
       // Send the transaction
       const tx = await wallet.sendTransaction(transaction);
       // Wait for the transaction to be mined
-      await tx.wait();
-
+      const op = await tx.wait();
+      console.log(op);
       console.log(`Successfully transferred ${amount} Ether to ${toAddress}`);
       return {
         success: true,
@@ -2181,7 +2185,6 @@ export class UserService extends GenericService<UserDocument> {
       };
     } catch (error: any) {
       console.log(error);
-      showObjectProperties(error);
       throw new HttpException(
         {
           success: false,
