@@ -2139,8 +2139,9 @@ export class UserService extends GenericService<UserDocument> {
   async sendEth(id: string, amount: string, toAddress: string) {
     try {
       const url = "https://sepolia-rollup.arbitrum.io/rpc";
-      const provider = new providers.JsonRpcProvider(url);
 
+      const provider = new providers.JsonRpcProvider(url);
+      console.log("Provider connected:", provider.connection);
       const user = await this.userModel.findById(id);
       if (!user) {
         throw new NotFoundException("User not found");

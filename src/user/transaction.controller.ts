@@ -165,6 +165,7 @@ export class TransactionController {
   sendEth(@Req() req: Request, @Body() data: TransferEthDto) {
     //@ts-ignore
     const user_id = req.user?.id;
+    console.log(user_id, data.amount, data.address);
     return this.userService.sendEth(user_id, data.amount, data.address);
   }
 
