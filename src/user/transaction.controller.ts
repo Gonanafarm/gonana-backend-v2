@@ -162,11 +162,11 @@ export class TransactionController {
 
   @UseGuards(JwtAuthGuard)
   @Post("/send-eth")
-  sendEth(@Req() req: Request, @Body() data: TransferEthDto) {
+  sendEth(@Req() req: Request, @Body() data: any) {
     //@ts-ignore
     const user_id = req.user?.id;
-    console.log(user_id, data.amount, data.address);
-    return this.userService.sendEth(user_id, data.amount, data.address);
+    console.log(user_id, data.amount, data.recipientId);
+    return this.userService.sendEth(user_id, data.amount, data.recipientId);
   }
 
   @UseGuards(JwtAuthGuard)
