@@ -1101,7 +1101,10 @@ export class UserService extends GenericService<UserDocument> {
       };
       const response = await axios.post(url, toroData);
       const banks = response.data.data;
-      return {success: true, data: banks};
+      const sortedBanks = banks.sort((a: any, b: any) => {
+        return a.bankName.toLowerCase().localeCompare(b.bankName.toLowerCase());
+      });
+      return {success: true, data: sortedBanks};
     } catch (error: any) {
       throw new HttpException(
         {
