@@ -157,6 +157,7 @@ export class sendNotificationDto {
 
   @IsString()
   @Trim()
+  @IsOptional()
   @IsNotEmpty()
   body: string;
 }
