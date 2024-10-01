@@ -1157,11 +1157,15 @@ export class UserService extends GenericService<UserDocument> {
   async getBankCode(bank_name: string) {
     try {
       const banks = (await this.getBanks()).data;
-      const bank = banks.find(
-        (bank: any) =>
-          bank.bankName.toLowerCase() === bank_name.toLowerCase() ||
-          bank.bankShortName.toLowerCase() === bank_name.toLowerCase(),
-      );
+      const bank = banks.find((bank: any) => {
+        console.log(bank);
+        const bankNameLower = bank_name.toLowerCase();
+        return (
+          bank.bankName.toLowerCase() === bankNameLower ||
+          (bank.bankShortName &&
+            bank.bankShortName.toLowerCase() === bankNameLower)
+        );
+      });
       if (!bank) {
         throw new NotFoundException("Bank Not Found");
       }
@@ -1659,7 +1663,7 @@ export class UserService extends GenericService<UserDocument> {
       const debitMessage = {
         app_id: process.env.ONESIGNAL_APP_ID,
         contents: {
-          en: `₦${amount} has been debited from your account`,
+          en: `₦${res.data.data.data.amount} has been debited from your account`,
         },
         headings: {en: "Debit Notification"},
         included_segments: ["include_player_ids"],
