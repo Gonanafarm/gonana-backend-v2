@@ -1635,10 +1635,10 @@ export class UserService extends GenericService<UserDocument> {
       }
 
       const transactionObject: Record<string, any> = {
-        Session_id: res.data.data.data.sessionID,
+        Session_id: res.data.data.data.sessionID || res.data.transactionid,
         userId: user.id,
         Type: "DEBIT" as const,
-        AmountSettled: res.data.data.data.amount,
+        AmountSettled: res.data.data.data.amount || amount,
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString(),
       };
 
@@ -1653,10 +1653,10 @@ export class UserService extends GenericService<UserDocument> {
         return {success: true, data: res.data};
       }
       const transactionArrayObject = {
-        Session_id: res.data.data.data.sessionID,
+        Session_id: res.data.data.data.sessionID || res.data.transactionid,
         Type: "DEBIT" as const,
-        AmountSettled: res.data.data.data.amount,
-        AmountSent: res.data.data.data.amount,
+        AmountSettled: res.data.data.data.amount || amount,
+        AmountSent: res.data.data.data.amount || amount,
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString(),
       };
       console.log(transactionArrayObject);
@@ -1665,7 +1665,9 @@ export class UserService extends GenericService<UserDocument> {
       const debitMessage = {
         app_id: process.env.ONESIGNAL_APP_ID,
         contents: {
-          en: `₦${res.data.data.data.amount} has been debited from your account`,
+          en: `₦${
+            res.data.data.data.amount || amount
+          } has been debited from your account`,
         },
         headings: {en: "Debit Notification"},
         included_segments: ["include_player_ids"],
@@ -1678,7 +1680,7 @@ export class UserService extends GenericService<UserDocument> {
         await this.sendNotificationToDevice(debitProperty, user.id);
       }
       await this.sendNotificationToDevice(debitMessage, user.id);
-      return {success: true, data: res.data.data.data};
+      return {success: true, data: res.data.data.data || res.data};
     } catch (error: any) {
       console.log(error);
       throw new HttpException(
