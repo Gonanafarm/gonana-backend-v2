@@ -1161,7 +1161,6 @@ export class UserService extends GenericService<UserDocument> {
     try {
       const banks = (await this.getBanks()).data;
       const bank = banks.find((bank: any) => {
-        console.log(bank);
         const bankNameLower = bank_name.toLowerCase();
         return (
           bank.bankName.toLowerCase() === bankNameLower ||
@@ -1172,6 +1171,7 @@ export class UserService extends GenericService<UserDocument> {
       if (!bank) {
         throw new NotFoundException("Bank Not Found");
       }
+      console.log(`bank gotten:`, bank)
       return bank.bankCode;
     } catch (error: any) {
       console.error(error);
@@ -1511,6 +1511,7 @@ export class UserService extends GenericService<UserDocument> {
     amount: number,
     account_name: string,
     narration?: string,
+    debitProperty?: object,
   ) {
     try {
       const user = await this.userModel.findById(user_id);
@@ -1518,7 +1519,7 @@ export class UserService extends GenericService<UserDocument> {
         throw new NotFoundException("user not found. login and try again");
       }
       //@ts-ignore
-      const balance = parseInt(user.balance);
+      const balance = parseFloat(user.balance);
       console.log(balance);
 
       if (balance < amount) {
@@ -1675,6 +1676,9 @@ export class UserService extends GenericService<UserDocument> {
         small_icon:
           "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
       };
+      if(debitProperty){
+        await this.sendNotificationToDevice(debitProperty, user.id)
+      }
       await this.sendNotificationToDevice(debitMessage, user.id);
       return {success: true, data: res.data.data.data};
     } catch (error: any) {
