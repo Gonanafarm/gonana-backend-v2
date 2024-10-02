@@ -1171,7 +1171,7 @@ export class UserService extends GenericService<UserDocument> {
       if (!bank) {
         throw new NotFoundException("Bank Not Found");
       }
-      console.log(`bank gotten:`, bank)
+      console.log(`bank gotten:`, bank);
       return bank.bankCode;
     } catch (error: any) {
       console.error(error);
@@ -1626,12 +1626,12 @@ export class UserService extends GenericService<UserDocument> {
         ],
       };
 
-      console.log(data);
+      console.log("transfer request data:", data);
 
       const res = await axios.post(`${toronetBaseUrl}/payment/toro/`, data, {
         headers: toronetHeaders,
       });
-      console.log(res.data);
+      console.log("trasnfer request response:", res.data);
       if (res.data.result !== true) {
         throw new BadRequestException(res.data.error);
       }
@@ -1676,8 +1676,8 @@ export class UserService extends GenericService<UserDocument> {
         small_icon:
           "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
       };
-      if(debitProperty){
-        await this.sendNotificationToDevice(debitProperty, user.id)
+      if (debitProperty) {
+        await this.sendNotificationToDevice(debitProperty, user.id);
       }
       await this.sendNotificationToDevice(debitMessage, user.id);
       return {success: true, data: res.data.data.data};
