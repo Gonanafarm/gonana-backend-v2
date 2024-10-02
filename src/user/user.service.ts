@@ -545,7 +545,6 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       throw new NotFoundException("User not found");
     }
-    console.log(user);
 
     return this.getUserData(user.id);
   }
@@ -556,7 +555,6 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       throw new NotFoundException("User not found");
     }
-    console.log(user);
     const token = this.jwtService.sign(
       {...user.getPublicData()},
       {subject: `${user.id}`},
