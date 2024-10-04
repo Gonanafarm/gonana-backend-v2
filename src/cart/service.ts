@@ -97,9 +97,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
           "The Owner of the Product may have deleted their account",
         );
       }
-      // if (product.quantity < 1) {
-      //   return { success: false, message: "Product is out of stock"};
-      // }
+      if (product.quantity < 1) {
+        return {success: false, message: "Product is out of stock"};
+      }
       const cartModel = await this.cartItemsModel.findOne({
         publisher_id: publisher_id,
       });
@@ -315,7 +315,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const itemsToShip = [];
       for (const item of orderItems) {
         const product = await this.productModel.findById(item.id);
-
+        if (product.quantity < 1) {
+          throw new BadRequestException(
+            `Product: ${product.title} is out of stock`,
+          );
+        }
         if (product?.self_shipping === false) {
           const farmer = await this.userModel.findById(product.publisher_id);
           if (!farmer)
@@ -616,6 +620,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
               shipment.data.order_id,
               "WEB2",
             );
+            product.quantity -= 1;
+            await product.save();
             console.log(shipment.data.order_id);
             console.log(shipment.data);
 
@@ -678,6 +684,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
             `${abbr}${rn}`,
             "WEB2",
           );
+          product.quantity -= 1;
+          await product.save();
         });
       }
 
@@ -717,9 +725,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
 
       const ethBalanceInNgn = parseInt(
-        await this.userService.convertEthToNgn(user.wallet),
+        await this.userService.convertEthToNgn(user.arbitrum_wallet),
       );
-
+      console.log(`ethbalanceinngng:${ethBalanceInNgn}`);
       if (ethBalanceInNgn < totalCostInNgn) {
         throw new BadRequestException(
           `Insufficient eth balance, fund wallet and try again`,
@@ -729,15 +737,15 @@ export class CartItemService extends GenericService<CartItemDocument> {
         "https://sepolia-rollup.arbitrum.io/rpc",
       );
 
-      const buyerWallet = new ethers.Wallet(user.privateKey, provider);
-      const marketplaceAddr = "0x4E4B760e06cbF0b0760279a08b6B836244bc9910";
+      const buyerWallet = new ethers.Wallet(user.arbitrumPrivateKey, provider);
+      const marketplaceAddr = "0x523E1E3E3c052cf87ac12D08d58F59b22f2852F2";
       const contract = new ethers.Contract(marketplaceAddr, abi, buyerWallet);
 
       const newBalance = ethBalanceInNgn - totalCostInNgn;
-      const newEthBalance = await this.userService.convertNgntoEth(
+      const newEthBalance = await this.userService.convertNgntoArb(
         newBalance.toString(),
       );
-      user.wallet = newEthBalance;
+      user.arbitrum_wallet = newEthBalance;
       await user.save();
       const shipping_req_token = rates.shipping_req_token || [];
       const service_codes = rates.service_code || [];
@@ -747,6 +755,11 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const itemsNotToShip = [];
       for (const item of orderItems) {
         const product = await this.productModel.findById(item.id);
+        if (product.quantity < 1) {
+          throw new BadRequestException(
+            `Product: ${product.title} is out of stock`,
+          );
+        }
         if (product?.self_shipping === false) {
           itemsToShip.push(item);
         } else {
@@ -779,8 +792,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const ethAmount = await this.userService.convertNgntoEth(
               product.amount.toString(),
             );
-            const decimals = (ethAmount.split(".")[1] || []).length;
-            const parsedEthAmount = ethers.utils.parseEther(ethAmount);
+            const roundedEthAmount = this.userService.roundToSignificantFigures(
+              parseFloat(ethAmount),
+              4,
+            );
+            // const decimals = (ethAmount.split(".")[1] || []).length;
+            const parsedEthAmount = ethers.utils.parseEther(
+              roundedEthAmount.toString(),
+            );
             const order = await contract.orderProduct(
               product.id,
               parsedEthAmount,
@@ -805,13 +824,15 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const farmer = await this.userModel.findById(farmerId);
             if (!farmer) return;
             await this.reomoveCartItem(user_id, item.id);
+            product.quantity -= 1;
+            await product.save();
             await this.orderService.createOutgoingOrder(
               item.id,
               farmer.id,
               user_id,
               item.units,
               shipment.data.order_id,
-              "WEB2",
+              "WEB3",
             );
             await this.orderService.createIncomingOrder(
               item.id,
@@ -819,7 +840,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user.id,
               item.units,
               shipment.data.order_id,
-              "WEB2",
+              "WEB3",
             );
             this.userMailerService.notSelfShipmentMail(
               farmer.email,
@@ -835,7 +856,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               buyer_id: user_id,
               amount: product.amount.toString(),
             });
-            
+
             return shipment.data;
           } else {
             return null;
@@ -864,9 +885,14 @@ export class CartItemService extends GenericService<CartItemDocument> {
             const ethAmount = await this.userService.convertNgntoEth(
               product.amount.toString(),
             );
-            const decimals = (ethAmount.split(".")[1] || []).length;
+            const roundedEthAmount = this.userService.roundToSignificantFigures(
+              parseFloat(ethAmount),
+              4,
+            );
+            console.log(`eth AMounttoship:${roundedEthAmount}`);
+            //  const decimals = (ethAmount.split(".")[1] || []).length;
             const parsedEthAmount = ethers.utils.parseEther(
-              ethAmount as string,
+              roundedEthAmount.toString(),
             );
 
             const order = await contract.orderProduct(
@@ -884,7 +910,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
             console.log(tx);
 
             await this.reomoveCartItem(user_id, item.id);
-
+            product.quantity -= 1;
+            await product.save();
             this.eventEmitter.emit("Products Not Shipped", {
               product_id: product.id,
               buyer_address:
@@ -902,7 +929,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               item.units,
               `${abbr}${rn}`,
-              "WEB2",
+              "WEB3",
             );
             await this.orderService.createIncomingOrder(
               item.id,
@@ -910,7 +937,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user.id,
               item.units,
               `${abbr}${rn}`,
-              "WEB2",
+              "WEB3",
             );
             this.userMailerService.selfShipmentMail(
               farmer.email,

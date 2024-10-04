@@ -14,7 +14,9 @@ import {UserDocument} from "../user/user.schema";
 import {IncomingOrderDocument} from "./incoming.order.schema";
 import {UserMailerService} from "../user/user.mailer.service";
 import {UserService} from "../user/user.service";
+import {ethers, providers} from "ethers";
 import {PostService} from "../post/post.service";
+const abi = require("../../abi.json");
 import * as moment from "moment";
 const now = new Date(); // Get the current date and time in UTC
 @Injectable()
@@ -266,7 +268,24 @@ export class OrderService {
 
         this.userMailerService.farmerOrderCompletedMail(farmerEmail, orderId);
         const farmerPatrons = farmer.patrons;
+        const provider = new providers.JsonRpcProvider(
+          "https://sepolia-rollup.arbitrum.io/rpc",
+        );
 
+        //wallet instance of the contract admin
+        const admin = new ethers.Wallet(
+          "b72cb42b3319abb30fc17f7e20ea58165a84de90c9afd90fcb80382062e01382",
+          provider,
+        );
+        const marketplaceAddr = "0x523E1E3E3c052cf87ac12D08d58F59b22f2852F2";
+        const contract = new ethers.Contract(marketplaceAddr, abi, admin);
+
+        const releaseEscrow = await contract.releaseEscrow(
+          incomingOrder.product_id || outgoingOrder.product_id,
+        );
+        console.log(releaseEscrow);
+
+        const tx = await releaseEscrow.wait();
         const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
 
         await this.userService.transferFromEscrowToUser(
@@ -429,7 +448,7 @@ export class OrderService {
       throw new BadRequestException("Farmer has not sent out this product");
     }
 
-    if (incomingOrder.customer_received === false) {
+    if (incomingOrder.customer_received === true) {
       throw new BadRequestException(
         "You have already confirmed that you recieved this product",
       );
@@ -465,13 +484,96 @@ export class OrderService {
       incomingOrder.shipbubble_id,
       farmer.phone,
     );
+    if (outgoingOrder.payment_method === "WEB3") {
+      const provider = new providers.JsonRpcProvider(
+        "https://sepolia-rollup.arbitrum.io/rpc",
+      );
+
+      //wallet instance of the contract admin
+      const admin = new ethers.Wallet(
+        "b72cb42b3319abb30fc17f7e20ea58165a84de90c9afd90fcb80382062e01382",
+        provider,
+      );
+      const marketplaceAddr = "0x523E1E3E3c052cf87ac12D08d58F59b22f2852F2";
+      const contract = new ethers.Contract(marketplaceAddr, abi, admin);
+
+      const releaseEscrow = await contract.releaseEscrow(
+        incomingOrder.product_id,
+      );
+      console.log(releaseEscrow);
+
+      const tx = await releaseEscrow.wait();
+      const customerOnesignalId = [];
+      const farmerOnesignalId = [];
+
+      if (
+        customer.onesignal_id &&
+        (await this.userService.isPlayerIdValid(customer.onesignal_id))
+      ) {
+        customerOnesignalId.push(customer.onesignal_id);
+      }
+
+      if (
+        farmer.onesignal_id &&
+        (await this.userService.isPlayerIdValid(farmer.onesignal_id))
+      ) {
+        farmerOnesignalId.push(farmer.onesignal_id);
+      }
+
+      const customerMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `Order ${incomingOrder.shipbubble_id} received`,
+        },
+        included_segments: ["include_player_ids"],
+        include_player_ids: customerOnesignalId,
+        content_available: true,
+        onesignal_notification_accent_color: "FF00FF00",
+        large_icon: incomingOrder.image[0],
+        data: {
+          PushTitle: `Products Received`,
+        },
+        headings: {
+          en: `Oder received`,
+        },
+      };
+      await this.userService.sendNotificationToDevice(
+        customerMessage,
+        customerId,
+      );
+
+      const farmerMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `Order ${incomingOrder.shipbubble_id} received by customer `,
+        },
+        included_segments: ["include_player_ids"],
+        include_player_ids: farmerOnesignalId,
+        content_available: true,
+        onesignal_notification_accent_color: "FF00FF00",
+        large_icon: incomingOrder.image[0],
+        data: {
+          PushTitle: `Products received by customer`,
+        },
+        headings: {
+          en: `Oder received by customer`,
+        },
+      };
+
+      await this.userService.sendNotificationToDevice(farmerMessage, farmer.id);
+
+      return {
+        success: true,
+        data: incomingOrder,
+      };
+    }
     const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
 
     await this.userService.transferFromEscrowToUser(
       farmer.id,
       reducedProductCost.toString(),
     );
-    
+
     const customerOnesignalId = [];
     const farmerOnesignalId = [];
 

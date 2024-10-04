@@ -63,7 +63,7 @@ export class UserController {
   @Post("send-notification-to-devices")
   sendNotifications(@Body() data: sendNotificationDto) {
     console.log(data);
-    
+
     return this.userService.sendNotificationToDevices(data.body, data.title);
   }
 

@@ -476,8 +476,8 @@ export class UserService extends GenericService<UserDocument> {
   async getUserData(id: string) {
     try {
       const user = await this.userModel.findById(id);
-      // const url = "https://sepolia-rollup.arbitrum.io/rpc";
-      // const provider = new providers.JsonRpcProvider(url);
+      const url = "https://sepolia-rollup.arbitrum.io/rpc";
+      const provider = new providers.JsonRpcProvider(url);
       if (!user) {
         return null;
       }
@@ -505,23 +505,47 @@ export class UserService extends GenericService<UserDocument> {
         user.fiat_wallet_address = fiat_wallet_address;
         await user.save();
       }
+      if (
+        user.arbitrum_wallet_address === undefined ||
+        user.arbitrum_wallet_address === null
+      ) {
+        const wallet = Wallet.createRandom();
+        const address = wallet.address;
+        const balance = await provider.getBalance(address);
+        const privateKey = wallet.privateKey;
 
-      if (user.wallet_address === undefined || user.wallet_address === null) {
+        user.arbitrum_wallet = balance.toString();
+        user.arbitrum_wallet_address = address;
+        user.arbitrumPrivateKey = privateKey;
+
+        const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
+        const usd = await this.convertNgntoUsd(ngn);
+        user.arbitrumWalletBalanceInUsd = usd;
+        user.arbitrumWalletBalanceInNgn = ngn;
+        await user.save();
+      }
+
+      if (
+        user.ccd_wallet_address === undefined ||
+        user.ccd_wallet_address === null
+      ) {
         const wallet = await this.ccdService.getOrCreateConcordiumKeyPairs(id);
         const address = wallet.publicKey;
         const balance = await this.ccdService.ccdBalanceOf(id);
         const privateKey = wallet.privateKey;
 
-        user.wallet = balance.toString();
-        user.wallet_address = address;
-        user.privateKey = privateKey;
+        user.ccd_wallet = balance.toString();
+        user.ccd_wallet_address = address;
+        user.ccdPrivateKey = privateKey;
         await user.save();
       }
       const userData = user?.getPublicData();
 
       if (userData) {
-        user.cryptoWalletBalanceInNgn = await this.convertCcdtoNgn(user.wallet);
-        console.log(user.cryptoWalletBalanceInNgn);
+        user.ccdWalletBalanceInNgn = await this.convertCcdtoNgn(
+          user.ccd_wallet,
+        );
+        console.log(user.ccdWalletBalanceInNgn);
 
         await user.save();
       }
@@ -639,14 +663,8 @@ export class UserService extends GenericService<UserDocument> {
   //       );
   //     }
   //     user.bvn = bvn;
-  //     await user.save();
-
   //     user.virtual_account_number = createAccount.data.data.accountNumber;
-  //     await user.save();
-
   //     user.virtual_account_bank_name = createAccount.data.data.bankName;
-  //     await user.save();
-
   //     user.virtual_account_name = createAccount.data.data.accountName;
   //     await user.save();
 
@@ -663,6 +681,7 @@ export class UserService extends GenericService<UserDocument> {
   //   }
   // }
 
+  ////// TORONET IMPLEMENTATION
   async virtualAccount(userId: string) {
     try {
       const user = await this.userModel.findById(userId);
@@ -1090,6 +1109,7 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async getBanks() {
+    ///TORONET IMPLEMENTATION
     try {
       const base_url = process.env.TORONET_BASE_URL;
       const url = `${base_url}/payment/toro/`;
@@ -1156,6 +1176,7 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
   async getBankCode(bank_name: string) {
+    ////TORONET IMPLEMENTATION
     try {
       const banks = (await this.getBanks()).data;
       const bank = banks.find((bank: any) => {
@@ -1181,6 +1202,35 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+
+    ////MINTYN IMPLEMENTATION
+    // try {
+    //   const token = await this.generateToken();
+    //   const bankHeaders = {
+    //     Authorization: `Bearer ${token}`,
+    //     "Content-Type": "application/json",
+    //   };
+    //   const base_url = process.env.MINTYN_BASE_URL;
+    //   const url = `${base_url}/api/v1/merchant/transfer-service/banks`;
+    //   const response = await axios.get(url, {headers: bankHeaders});
+    //   const banks = response.data.data;
+    //   const bank = banks.find(
+    //     (bank: any) => bank.name.toLowerCase() === bank_name.toLowerCase(),
+    //   );
+    //   if (!bank) {
+    //     throw new NotFoundException("Bank Not Found");
+    //   }
+    //   return bank.code;
+    // } catch (error: any) {
+    //   console.error(error);
+    //   throw new HttpException(
+    //     {
+    //       success: false,
+    //       message: error.message,
+    //     },
+    //     error.status,
+    //   );
+    // }
   }
 
   async recoverVirtualAccount(bvn: string, userId: string) {
@@ -1199,23 +1249,19 @@ export class UserService extends GenericService<UserDocument> {
         throw new NotFoundException(`User Not Found, Login and try again`);
       }
 
-      if (user.bvn !== undefined) {
-        `You have already generated a virtual account`;
-      }
+      // if (user.bvn !== undefined) {
+      //   `You have already generated a virtual account`;
+      // }
 
       if (bvn.length !== 11) {
         throw new BadRequestException("Bvn should be 11 digits");
       }
       const bvnExists = await this.userModel.findOne({bvn: bvn});
 
-      if (bvnExists?.id === userId) {
+      if (bvnExists && bvnExists?.id !== userId) {
         throw new BadRequestException(
-          `You have already generated a virtual account`,
+          `Another Gonana Account is already associated with this bvn`,
         );
-      }
-
-      if (bvnExists) {
-        throw new ConflictException(`Gonana user with this bvn exists`);
       }
 
       const base_url = process.env.MINTYN_BASE_URL;
@@ -1253,6 +1299,7 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async resolveAccountNumber(account_number: string, bank: string) {
+    ///  TORONET IMPLEMENTATION
     try {
       const bankCode = await this.getBankCode(bank);
       console.log(bankCode);
@@ -1296,6 +1343,41 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+
+    /// MINTYN IMPLEMENTATION
+    // try {
+    //   const bankCode = await this.getBankCode(bank);
+    //   console.log(bankCode);
+
+    //   const token = await this.generateToken();
+    //   const bankHeaders = {
+    //     Authorization: `Bearer ${token}`,
+    //     "Content-Type": "application/json",
+    //   };
+
+    //   const base_url = process.env.MINTYN_BASE_URL;
+    //   const url = `${base_url}/api/v1/merchant/transfer-service/resolve-account?accountNumber=${account_number}&bankCode=${bankCode}`;
+    //   const response = await axios.get(url, {headers: bankHeaders});
+    //   if (response.data.data === null) {
+    //     throw new HttpException(
+    //       {
+    //         success: false,
+    //         message: response.data.responseMessage,
+    //       },
+    //       400,
+    //     );
+    //   }
+    //   return {success: true, data: response.data, bankCode: bankCode};
+    // } catch (error: any) {
+    //   console.log(error);
+    //   throw new HttpException(
+    //     {
+    //       success: false,
+    //       message: error.message,
+    //     },
+    //     error.status,
+    //   );
+    // }
   }
 
   async getUserBalance(id: string) {
@@ -1511,6 +1593,7 @@ export class UserService extends GenericService<UserDocument> {
     narration?: string,
     debitProperty?: object,
   ) {
+    //// TORONET IMPLEMENTATION
     try {
       const user = await this.userModel.findById(user_id);
       if (!user) {
@@ -1631,7 +1714,7 @@ export class UserService extends GenericService<UserDocument> {
       });
       console.log("trasnfer request response:", res.data);
       if (res.data.result !== true) {
-        throw new BadRequestException(res.data.error);
+        throw new BadRequestException(res.data.error || res.data.message);
       }
 
       const transactionObject: Record<string, any> = {
@@ -1691,6 +1774,107 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+
+    ////MINTYN IMPLEMENTATION
+    // try {
+    //   const user = await this.userModel.findById(user_id);
+    //   if (!user) {
+    //     throw new NotFoundException("user not found. login and try again");
+    //   }
+    //   //@ts-ignore
+    //   const balance = parseInt(user.balance);
+    //   console.log(balance);
+
+    //   if (balance < amount) {
+    //     throw new BadRequestException("Insuffient balance");
+    //   }
+    //   const resolve = await this.resolveAccountNumber(accountNumber, bankName);
+    //   const bankCode = resolve.bankCode;
+    //   const generateRandomString = () => {
+    //     const characters =
+    //       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    //     let result = "";
+    //     for (let i = 0; i < 12; i++) {
+    //       const randomIndex = Math.floor(Math.random() * characters.length);
+    //       result += characters.charAt(randomIndex);
+    //     }
+    //     return result;
+    //   };
+    //   const requestReference = generateRandomString();
+    //   const nameEnquirySessionId = resolve.data.data.sessionId;
+    //   const token = await this.generateToken();
+    //   const Headers = {
+    //     Authorization: `Bearer ${token}`,
+    //     "Content-Type": "application/json",
+    //   };
+    //   const base_url = process.env.MINTYN_BASE_URL;
+    //   const url = `${base_url}/api/v1/merchant/transfer-service/transfer`;
+
+    //   const data: Record<string, any> = {
+    //     bankCode: bankCode,
+    //     requestReference: requestReference,
+    //     amount: amount,
+    //     accountNumber: accountNumber,
+    //     nameEnquirySessionId: nameEnquirySessionId,
+    //   };
+    //   if (narration !== undefined) {
+    //     data.narration = narration;
+    //   }
+    //   console.log(data);
+
+    //   const res = await axios.post(url, data, {headers: Headers});
+    //   console.log(res.data);
+
+    //   if (res.data.responseCode === "02") {
+    //     console.log(res.data);
+    //     throw new HttpException(
+    //       {
+    //         success: false,
+    //         message: res.data.responseMessage,
+    //       },
+    //       400,
+    //     );
+    //   }
+    //   const newBalance = balance - parseInt(res.data.data.totalAmount);
+    //   user.balance = newBalance;
+    //   console.log(newBalance);
+    //   await user.save();
+    //   const transactionObject = {
+    //     Session_id: res.data.data.reference,
+    //     userId: user.id,
+    //     Type: "DEBIT" as const,
+    //     AmountSettled: res.data.data.totalAmount,
+    //     AmountSent: amount,
+    //     Time: res.data.data.transactionDate,
+    //     narration: narration,
+    //   };
+    //   if (narration !== undefined) {
+    //     transactionObject.narration = narration;
+    //   }
+    //   const transaction = await this.transactionModel.findOne({
+    //     userId: user.id,
+    //   });
+    //   if (!transaction) {
+    //     await this.transactionModel.create(transactionObject);
+    //     return {success: true, data: res.data};
+    //   }
+    //   transaction.transactions.push(transactionObject);
+    //   await transaction.save();
+    //   console.log(transactionObject);
+
+    //   console.log(transaction);
+
+    //   return {success: true, data: res.data};
+    // } catch (error: any) {
+    //   console.log(error);
+    //   throw new HttpException(
+    //     {
+    //       success: false,
+    //       message: error.message,
+    //     },
+    //     error.status,
+    //   );
+    // }
   }
 
   async transferToUser(
@@ -1742,7 +1926,70 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
   }
-  async getCryptoWalletBalance(id: string) {
+  async getArbitrumWalletBalance(id: string) {
+    try {
+      if (!id) {
+        throw new BadRequestException("Login and Try again");
+      }
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
+      const url = "https://sepolia-rollup.arbitrum.io/rpc";
+      const provider = new providers.JsonRpcProvider(url);
+
+      if (
+        user.arbitrum_wallet_address === undefined ||
+        user.arbitrum_wallet_address === null
+      ) {
+        const wallet = Wallet.createRandom();
+        const address = wallet.address;
+        const balance = await provider.getBalance(address);
+        const ethValue = ethers.utils.formatEther(balance);
+        const privateKey = wallet.privateKey;
+
+        user.arbitrum_wallet = ethValue;
+        user.arbitrum_wallet_address = address;
+        user.arbitrumPrivateKey = privateKey;
+        console.log(balance.toString());
+        const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
+        const usd = await this.convertNgntoUsd(ngn);
+        user.arbitrumWalletBalanceInUsd = usd;
+        user.arbitrumWalletBalanceInNgn = ngn;
+        await user.save();
+        return {
+          success: true,
+          cryptoWalletBalanceInNgn: ngn,
+          cryptoWalletBalanceInEth: user.arbitrum_wallet,
+        };
+      }
+      const balance = await provider.getBalance(user.arbitrum_wallet_address);
+
+      const ethValue = ethers.utils.formatEther(balance);
+      console.log(ethValue);
+      const ngn = await this.convertEthToNgn(ethValue);
+      const usd = await this.convertNgntoUsd(ngn);
+      user.arbitrum_wallet = ethValue;
+      user.arbitrumWalletBalanceInNgn = ngn;
+      user.arbitrumWalletBalanceInUsd = usd;
+      await user.save();
+      return {
+        success: true,
+        cryptoWalletBalanceInNgn: user.arbitrumWalletBalanceInNgn,
+        cryptoWalletBalanceInEth: user.arbitrum_wallet,
+      };
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+  async getCcdWalletBalance(id: string) {
     try {
       if (!id) {
         throw new BadRequestException("Login and Try again");
@@ -1754,7 +2001,10 @@ export class UserService extends GenericService<UserDocument> {
       // const url = "https://sepolia-rollup.arbitrum.io/rpc";
       // const provider = new providers.JsonRpcProvider(url);
 
-      if (user.wallet_address === undefined || user.wallet_address === null) {
+      if (
+        user.ccd_wallet_address === undefined ||
+        user.ccd_wallet_address === null
+      ) {
         // const wallet = Wallet.createRandom();
         // const address = wallet.address;
         // const balance = await provider.getBalance(address);
@@ -1773,27 +2023,27 @@ export class UserService extends GenericService<UserDocument> {
 
         await this.ccdService.getOrCreateConcordiumKeyPairs(id);
         const balance = await this.ccdService.ccdBalanceOf(id);
-        user.wallet = balance.toString();
-        const ngn = await this.convertCcdtoNgn(user.wallet);
+        user.ccd_wallet = balance.toString();
+        const ngn = await this.convertCcdtoNgn(user.ccd_wallet);
         return {
           success: true,
-          cryptoWalletBalanceInNgn: ngn.toString(),
-          cryptoWalletBalanceInCcd: user.wallet,
+          cryptoWalletBalanceInNgn: ngn,
+          cryptoWalletBalanceInCcd: user.ccd_wallet,
         };
       }
       const balance = await this.ccdService.ccdBalanceOf(id);
 
-      user.wallet = balance.toString();
+      user.ccd_wallet = balance.toString();
 
-      const ngn = await this.convertCcdtoNgn(user.wallet);
+      const ngn = await this.convertCcdtoNgn(user.ccd_wallet);
       const usd = await this.convertNgntoUsd(ngn);
-      user.cryptoWalletBalanceInNgn = ngn;
-      user.cryptoWalletBalanceInUsd = usd;
+      user.ccdWalletBalanceInNgn = ngn;
+      user.ccdWalletBalanceInUsd = usd;
       await user.save();
       return {
         success: true,
-        cryptoWalletBalanceInNgn: ngn.toString(),
-        cryptoWalletBalanceInCcd: user.wallet,
+        cryptoWalletBalanceInNgn: ngn,
+        cryptoWalletBalanceInCcd: user.ccd_wallet,
       };
     } catch (error: any) {
       console.log(error);
@@ -1806,6 +2056,21 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+  }
+  async convertArbitrumToNgn(xArb: string) {
+    if (xArb === "0") {
+      return "0";
+    }
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xArb}&symbol=ARB&convert=NGN`,
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    return response.data.data.quote.NGN.price;
   }
   async convertEthToNgn(xEth: string) {
     if (xEth === "0") {
@@ -1826,6 +2091,23 @@ export class UserService extends GenericService<UserDocument> {
     const numEth = parseFloat(xEth);
     const ngn = numEth * oneEth;
     return ngn.toString();
+  }
+  async convertEthToUsd(xEth: string) {
+    if (xEth === "0") {
+      return "0";
+    }
+    const key = process.env.COINMARKETCAP_API_KEY;
+    const response = await axios.get(
+      `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xEth}&symbol=ETH&convert=USD`,
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": key,
+        },
+      },
+    );
+    const USD = response.data.data.quote.USD.price;
+
+    return USD;
   }
   async convertArbToNgn(xARB: string) {
     if (xARB === "0") {
@@ -1870,16 +2152,14 @@ export class UserService extends GenericService<UserDocument> {
     }
     const key = process.env.COINMARKETCAP_API_KEY;
     const response = await axios.get(
-      "https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=1&symbol=ETH&convert=NGN",
+      `https://pro-api.coinmarketcap.com/v1/tools/price-conversion?amount=${xNgn}&symbol=NGN&convert=ETH`,
       {
         headers: {
           "X-CMC_PRO_API_KEY": key,
         },
       },
     );
-    const eth = parseInt(xNgn) / Math.round(response.data.data.quote.NGN.price);
-    const roundedEth = this.roundToSignificantFigures(eth, 9);
-    return roundedEth.toString();
+    return response.data.data.quote.ETH.price;
   }
 
   async convertNgntoArb(xNgn: string) {
@@ -1940,12 +2220,12 @@ export class UserService extends GenericService<UserDocument> {
       if (!recipient) {
         throw new BadRequestException("Recipient not found");
       }
-      if (!recipient.wallet_address) {
+      if (!recipient.ccd_wallet_address) {
         throw new BadRequestException(
           "Recipient does not have a wallet address",
         );
       }
-      await this.ccdService.pay(amount, recipient.wallet_address, userId);
+      await this.ccdService.pay(amount, recipient.ccd_wallet_address, userId);
     } catch (error: any) {
       throw new HttpException(
         {
@@ -2030,14 +2310,18 @@ export class UserService extends GenericService<UserDocument> {
   async sendEth(id: string, amount: string, toAddress: string) {
     try {
       const url = "https://sepolia-rollup.arbitrum.io/rpc";
-      const provider = new providers.JsonRpcProvider(url);
 
+      const provider = new providers.JsonRpcProvider(url);
+      console.log("Provider connected:", provider.connection);
       const user = await this.userModel.findById(id);
       if (!user) {
         throw new NotFoundException("User not found");
       }
+      console.log(
+        `${user.first_name} attempst send ${amount} eth to ${toAddress}`,
+      );
 
-      const privateKey = user.privateKey;
+      const privateKey = user.arbitrumPrivateKey;
       if (privateKey === undefined || privateKey.length < 1) {
         throw new BadRequestException(
           "You have not been assigned a private key. To get one check you crypto wallet balance",
@@ -2045,15 +2329,16 @@ export class UserService extends GenericService<UserDocument> {
       }
 
       const wallet = new Wallet(privateKey, provider);
-
+      console.log("wallet gotten");
       // Validate the toAddress
       if (!utils.isAddress(toAddress)) {
         throw new BadRequestException("Invalid Ethereum address");
       }
+      console.log("Adress valid");
 
       // Convert amount to Wei (1 Ether = 1e18 Wei)
       const amountWei = utils.parseEther(amount);
-
+      console.log("wei converted");
       // Create a transaction
       const transaction = {
         to: toAddress,
@@ -2063,8 +2348,8 @@ export class UserService extends GenericService<UserDocument> {
       // Send the transaction
       const tx = await wallet.sendTransaction(transaction);
       // Wait for the transaction to be mined
-      await tx.wait();
-
+      const op = await tx.wait();
+      console.log(op);
       console.log(`Successfully transferred ${amount} Ether to ${toAddress}`);
       return {
         success: true,
@@ -2072,7 +2357,6 @@ export class UserService extends GenericService<UserDocument> {
       };
     } catch (error: any) {
       console.log(error);
-      showObjectProperties(error);
       throw new HttpException(
         {
           success: false,
@@ -2206,12 +2490,12 @@ export class UserService extends GenericService<UserDocument> {
       throw new BadRequestException("Invalid Token");
     }
     const recipient = await this.userModel.findOne({
-      wallet_address: recipientWallet,
+      ccd_wallet_address: recipientWallet,
     });
 
     const transfer = await this.ccdService.transferCcd(
       amount,
-      recipient.wallet_address || recipientWallet,
+      recipient.ccd_wallet_address || recipientWallet,
       id,
     );
     if (!transfer) {

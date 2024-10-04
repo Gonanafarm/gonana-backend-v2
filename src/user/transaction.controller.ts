@@ -26,10 +26,9 @@ export class TransactionController {
 
   @UseGuards(JwtAuthGuard)
   @Post("/create-virtual-account")
-  virtualAccount(@Req() req: Request) {
+  virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
     //@ts-ignore
     const user_id = req.user?.id;
-
     return this.userService.virtualAccount(user_id);
   }
 
@@ -145,19 +144,28 @@ export class TransactionController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("/crypto-balance")
+  @Get("/ccd-balance")
   getCryptoWalletBalance(@Req() req: Request) {
     //@ts-ignore
     const user_id = req.user?.id;
-    return this.userService.getCryptoWalletBalance(user_id);
+    return this.userService.getCcdWalletBalance(user_id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("/arbitrum-balance")
+  getArbitrumBalance(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.getArbitrumWalletBalance(user_id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post("/send-eth")
-  sendEth(@Req() req: Request, @Body() data: TransferEthDto) {
+  sendEth(@Req() req: Request, @Body() data: any) {
     //@ts-ignore
     const user_id = req.user?.id;
-    return this.userService.sendEth(user_id, data.amount, data.address);
+    console.log(user_id, data.amount, data.recipientId);
+    return this.userService.sendEth(user_id, data.amount, data.recipientId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -191,6 +199,11 @@ export class TransactionController {
   @Post("/ccd-ngn")
   ccdToNgn(@Body("ccd") data: string) {
     return this.userService.convertCcdtoNgn(data);
+  }
+
+  @Post("/eth-usd")
+  ethToUsd(@Body("eth") data: string) {
+    return this.userService.convertEthToUsd(data);
   }
 
   @Post("/ccd-usd")
