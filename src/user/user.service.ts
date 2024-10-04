@@ -1121,7 +1121,10 @@ export class UserService extends GenericService<UserDocument> {
       };
       const response = await axios.post(url, toroData);
       const banks = response.data.data;
-      return {success: true, data: banks};
+      const sortedBanks = banks.sort((a: any, b: any) => {
+        return a.bankName.toLowerCase().localeCompare(b.bankName.toLowerCase());
+      });
+      return {success: true, data: sortedBanks};
     } catch (error: any) {
       throw new HttpException(
         {
@@ -1294,62 +1297,28 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async resolveAccountNumber(account_number: string, bank: string) {
-    // try {
-    //   const bankCode = await this.getBankCode(bank);
-    //   console.log(bankCode);
-    //   const toroData = {
-    //     op: "verifybankaccountname_ngn",
-    //     params: [
-    //       {
-    //         name: "destinationInstitutionCode",
-    //         value: bankCode, //destinationInstitutionCode
-    //       },
-    //       {
-    //         name: "accountNumber",
-    //         value: account_number,
-    //       },
-    //     ],
-    //   };
-    //   const base_url = process.env.TORONET_BASE_URL;
-    //   const url = `${base_url}/payment/toro/`;
-    //   const response = await axios.post(url, toroData, {
-    //     headers: toronetHeaders,
-    //   });
-    //   if (response.data.data === null) {
-    //     throw new HttpException(
-    //       {
-    //         success: false,
-    //         message: response.data.responseMessage,
-    //       },
-    //       400,
-    //     );
-    //   }
-    //   console.log(response.data.data.accountName);
-
-    //   return {success: true, data: response.data, bankCode: bankCode};
-    // } catch (error: any) {
-    //   console.log(error);
-    //   throw new HttpException(
-    //     {
-    //       success: false,
-    //       message: error.message,
-    //     },
-    //     error.status,
-    //   );
-    // }
+    ///  TORONET IMPLEMENTATION
     try {
       const bankCode = await this.getBankCode(bank);
       console.log(bankCode);
-
-      const token = await this.generateToken();
-      const bankHeaders = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+      const toroData = {
+        op: "verifybankaccountname_ngn",
+        params: [
+          {
+            name: "destinationInstitutionCode",
+            value: bankCode, //destinationInstitutionCode
+          },
+          {
+            name: "accountNumber",
+            value: account_number,
+          },
+        ],
       };
-
-      const base_url = process.env.MINTYN_BASE_URL;
-      const url = `${base_url}/api/v1/merchant/transfer-service/resolve-account?accountNumber=${account_number}&bankCode=${bankCode}`;
-      const response = await axios.get(url, {headers: bankHeaders});
+      const base_url = process.env.TORONET_BASE_URL;
+      const url = `${base_url}/payment/toro/`;
+      const response = await axios.post(url, toroData, {
+        headers: toronetHeaders,
+      });
       if (response.data.data === null) {
         throw new HttpException(
           {
@@ -1359,6 +1328,8 @@ export class UserService extends GenericService<UserDocument> {
           400,
         );
       }
+      console.log(response.data.data.accountName);
+
       return {success: true, data: response.data, bankCode: bankCode};
     } catch (error: any) {
       console.log(error);
@@ -1370,6 +1341,41 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+
+    /// MINTYN IMPLEMENTATION
+    // try {
+    //   const bankCode = await this.getBankCode(bank);
+    //   console.log(bankCode);
+
+    //   const token = await this.generateToken();
+    //   const bankHeaders = {
+    //     Authorization: `Bearer ${token}`,
+    //     "Content-Type": "application/json",
+    //   };
+
+    //   const base_url = process.env.MINTYN_BASE_URL;
+    //   const url = `${base_url}/api/v1/merchant/transfer-service/resolve-account?accountNumber=${account_number}&bankCode=${bankCode}`;
+    //   const response = await axios.get(url, {headers: bankHeaders});
+    //   if (response.data.data === null) {
+    //     throw new HttpException(
+    //       {
+    //         success: false,
+    //         message: response.data.responseMessage,
+    //       },
+    //       400,
+    //     );
+    //   }
+    //   return {success: true, data: response.data, bankCode: bankCode};
+    // } catch (error: any) {
+    //   console.log(error);
+    //   throw new HttpException(
+    //     {
+    //       success: false,
+    //       message: error.message,
+    //     },
+    //     error.status,
+    //   );
+    // }
   }
 
   async getUserBalance(id: string) {
@@ -1705,7 +1711,7 @@ export class UserService extends GenericService<UserDocument> {
       });
       console.log(res.data);
       if (res.data.result !== true) {
-        throw new BadRequestException(res.data.error);
+        throw new BadRequestException(res.data.error || res.data.message);
       }
 
       const transactionObject: Record<string, any> = {
