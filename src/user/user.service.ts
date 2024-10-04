@@ -665,14 +665,8 @@ export class UserService extends GenericService<UserDocument> {
   //       );
   //     }
   //     user.bvn = bvn;
-  //     await user.save();
-
   //     user.virtual_account_number = createAccount.data.data.accountNumber;
-  //     await user.save();
-
   //     user.virtual_account_bank_name = createAccount.data.data.bankName;
-  //     await user.save();
-
   //     user.virtual_account_name = createAccount.data.data.accountName;
   //     await user.save();
 
@@ -689,6 +683,7 @@ export class UserService extends GenericService<UserDocument> {
   //   }
   // }
 
+  ////// TORONET IMPLEMENTATION
   async virtualAccount(userId: string) {
     try {
       const user = await this.userModel.findById(userId);
@@ -1116,6 +1111,7 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async getBanks() {
+    ///TORONET IMPLEMENTATION
     try {
       const base_url = process.env.TORONET_BASE_URL;
       const url = `${base_url}/payment/toro/`;
@@ -1179,6 +1175,7 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
   async getBankCode(bank_name: string) {
+    ////TORONET IMPLEMENTATION
     try {
       const banks = (await this.getBanks()).data;
       const bank = banks.find(
@@ -1200,6 +1197,35 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+
+    ////MINTYN IMPLEMENTATION
+    // try {
+    //   const token = await this.generateToken();
+    //   const bankHeaders = {
+    //     Authorization: `Bearer ${token}`,
+    //     "Content-Type": "application/json",
+    //   };
+    //   const base_url = process.env.MINTYN_BASE_URL;
+    //   const url = `${base_url}/api/v1/merchant/transfer-service/banks`;
+    //   const response = await axios.get(url, {headers: bankHeaders});
+    //   const banks = response.data.data;
+    //   const bank = banks.find(
+    //     (bank: any) => bank.name.toLowerCase() === bank_name.toLowerCase(),
+    //   );
+    //   if (!bank) {
+    //     throw new NotFoundException("Bank Not Found");
+    //   }
+    //   return bank.code;
+    // } catch (error: any) {
+    //   console.error(error);
+    //   throw new HttpException(
+    //     {
+    //       success: false,
+    //       message: error.message,
+    //     },
+    //     error.status,
+    //   );
+    // }
   }
 
   async recoverVirtualAccount(bvn: string, userId: string) {
@@ -1218,23 +1244,19 @@ export class UserService extends GenericService<UserDocument> {
         throw new NotFoundException(`User Not Found, Login and try again`);
       }
 
-      if (user.bvn !== undefined) {
-        `You have already generated a virtual account`;
-      }
+      // if (user.bvn !== undefined) {
+      //   `You have already generated a virtual account`;
+      // }
 
       if (bvn.length !== 11) {
         throw new BadRequestException("Bvn should be 11 digits");
       }
       const bvnExists = await this.userModel.findOne({bvn: bvn});
 
-      if (bvnExists?.id === userId) {
+      if (bvnExists && bvnExists?.id !== userId) {
         throw new BadRequestException(
-          `You have already generated a virtual account`,
+          `Another Gonana Account is already associated with this bvn`,
         );
-      }
-
-      if (bvnExists) {
-        throw new ConflictException(`Gonana user with this bvn exists`);
       }
 
       const base_url = process.env.MINTYN_BASE_URL;
@@ -1272,27 +1294,62 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async resolveAccountNumber(account_number: string, bank: string) {
+    // try {
+    //   const bankCode = await this.getBankCode(bank);
+    //   console.log(bankCode);
+    //   const toroData = {
+    //     op: "verifybankaccountname_ngn",
+    //     params: [
+    //       {
+    //         name: "destinationInstitutionCode",
+    //         value: bankCode, //destinationInstitutionCode
+    //       },
+    //       {
+    //         name: "accountNumber",
+    //         value: account_number,
+    //       },
+    //     ],
+    //   };
+    //   const base_url = process.env.TORONET_BASE_URL;
+    //   const url = `${base_url}/payment/toro/`;
+    //   const response = await axios.post(url, toroData, {
+    //     headers: toronetHeaders,
+    //   });
+    //   if (response.data.data === null) {
+    //     throw new HttpException(
+    //       {
+    //         success: false,
+    //         message: response.data.responseMessage,
+    //       },
+    //       400,
+    //     );
+    //   }
+    //   console.log(response.data.data.accountName);
+
+    //   return {success: true, data: response.data, bankCode: bankCode};
+    // } catch (error: any) {
+    //   console.log(error);
+    //   throw new HttpException(
+    //     {
+    //       success: false,
+    //       message: error.message,
+    //     },
+    //     error.status,
+    //   );
+    // }
     try {
       const bankCode = await this.getBankCode(bank);
       console.log(bankCode);
-      const toroData = {
-        op: "verifybankaccountname_ngn",
-        params: [
-          {
-            name: "destinationInstitutionCode",
-            value: bankCode, //destinationInstitutionCode
-          },
-          {
-            name: "accountNumber",
-            value: account_number,
-          },
-        ],
+
+      const token = await this.generateToken();
+      const bankHeaders = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       };
-      const base_url = process.env.TORONET_BASE_URL;
-      const url = `${base_url}/payment/toro/`;
-      const response = await axios.post(url, toroData, {
-        headers: toronetHeaders,
-      });
+
+      const base_url = process.env.MINTYN_BASE_URL;
+      const url = `${base_url}/api/v1/merchant/transfer-service/resolve-account?accountNumber=${account_number}&bankCode=${bankCode}`;
+      const response = await axios.get(url, {headers: bankHeaders});
       if (response.data.data === null) {
         throw new HttpException(
           {
@@ -1302,8 +1359,6 @@ export class UserService extends GenericService<UserDocument> {
           400,
         );
       }
-      console.log(response.data.data.accountName);
-
       return {success: true, data: response.data, bankCode: bankCode};
     } catch (error: any) {
       console.log(error);
@@ -1529,6 +1584,7 @@ export class UserService extends GenericService<UserDocument> {
     account_name: string,
     narration?: string,
   ) {
+    //// TORONET IMPLEMENTATION
     try {
       const user = await this.userModel.findById(user_id);
       if (!user) {
@@ -1704,6 +1760,107 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+
+    ////MINTYN IMPLEMENTATION
+    // try {
+    //   const user = await this.userModel.findById(user_id);
+    //   if (!user) {
+    //     throw new NotFoundException("user not found. login and try again");
+    //   }
+    //   //@ts-ignore
+    //   const balance = parseInt(user.balance);
+    //   console.log(balance);
+
+    //   if (balance < amount) {
+    //     throw new BadRequestException("Insuffient balance");
+    //   }
+    //   const resolve = await this.resolveAccountNumber(accountNumber, bankName);
+    //   const bankCode = resolve.bankCode;
+    //   const generateRandomString = () => {
+    //     const characters =
+    //       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    //     let result = "";
+    //     for (let i = 0; i < 12; i++) {
+    //       const randomIndex = Math.floor(Math.random() * characters.length);
+    //       result += characters.charAt(randomIndex);
+    //     }
+    //     return result;
+    //   };
+    //   const requestReference = generateRandomString();
+    //   const nameEnquirySessionId = resolve.data.data.sessionId;
+    //   const token = await this.generateToken();
+    //   const Headers = {
+    //     Authorization: `Bearer ${token}`,
+    //     "Content-Type": "application/json",
+    //   };
+    //   const base_url = process.env.MINTYN_BASE_URL;
+    //   const url = `${base_url}/api/v1/merchant/transfer-service/transfer`;
+
+    //   const data: Record<string, any> = {
+    //     bankCode: bankCode,
+    //     requestReference: requestReference,
+    //     amount: amount,
+    //     accountNumber: accountNumber,
+    //     nameEnquirySessionId: nameEnquirySessionId,
+    //   };
+    //   if (narration !== undefined) {
+    //     data.narration = narration;
+    //   }
+    //   console.log(data);
+
+    //   const res = await axios.post(url, data, {headers: Headers});
+    //   console.log(res.data);
+
+    //   if (res.data.responseCode === "02") {
+    //     console.log(res.data);
+    //     throw new HttpException(
+    //       {
+    //         success: false,
+    //         message: res.data.responseMessage,
+    //       },
+    //       400,
+    //     );
+    //   }
+    //   const newBalance = balance - parseInt(res.data.data.totalAmount);
+    //   user.balance = newBalance;
+    //   console.log(newBalance);
+    //   await user.save();
+    //   const transactionObject = {
+    //     Session_id: res.data.data.reference,
+    //     userId: user.id,
+    //     Type: "DEBIT" as const,
+    //     AmountSettled: res.data.data.totalAmount,
+    //     AmountSent: amount,
+    //     Time: res.data.data.transactionDate,
+    //     narration: narration,
+    //   };
+    //   if (narration !== undefined) {
+    //     transactionObject.narration = narration;
+    //   }
+    //   const transaction = await this.transactionModel.findOne({
+    //     userId: user.id,
+    //   });
+    //   if (!transaction) {
+    //     await this.transactionModel.create(transactionObject);
+    //     return {success: true, data: res.data};
+    //   }
+    //   transaction.transactions.push(transactionObject);
+    //   await transaction.save();
+    //   console.log(transactionObject);
+
+    //   console.log(transaction);
+
+    //   return {success: true, data: res.data};
+    // } catch (error: any) {
+    //   console.log(error);
+    //   throw new HttpException(
+    //     {
+    //       success: false,
+    //       message: error.message,
+    //     },
+    //     error.status,
+    //   );
+    // }
   }
 
   async transferToUser(
