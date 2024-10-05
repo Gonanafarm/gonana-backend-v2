@@ -5,7 +5,6 @@
   "author": "Joshua Nwafor",
   "license": "MIT",
   "scripts": {
-    "install": "npm ci --force",
     "clean": "rimraf dist logs",
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "format": "prettier --write src test --ignore-unknown",
