@@ -2042,7 +2042,7 @@ export class UserService extends GenericService<UserDocument> {
       await user.save();
       return {
         success: true,
-        cryptoWalletBalanceInNgn: ngn,
+        cryptoWalletBalanceInNgn: ngn.toString(),
         cryptoWalletBalanceInCcd: user.ccd_wallet,
       };
     } catch (error: any) {
