@@ -113,7 +113,6 @@ export class PostEventHandlers {
       payload.amount,
       payload.farmer_id,
       farmer.arbitrum_wallet_address,
-
     );
     console.log(list_product);
 

@@ -149,7 +149,7 @@ export class PostController {
       self_shipping,
       usd_price,
       eth_price,
-      ccd_price
+      ccd_price,
     };
     const createPost = await this.dataService.create(publisher_id, payload);
     this.eventEmmiter.emit("PostCreated", {
