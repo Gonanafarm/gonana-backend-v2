@@ -64,6 +64,14 @@ export class PostService extends GenericService<PostDocument> {
         await this.userService.convertNgntoUsd(product.amount.toString()),
       );
       product.usd_price = usd_price;
+      const ccd_price = parseFloat(
+        await this.userService.convertNgntoCcd(product.amount.toString()),
+      );
+      product.ccd_price = ccd_price;
+      const eth_price = parseFloat(
+        await this.userService.convertNgntoEth(product.amount.toString()),
+      );
+      product.eth_price = eth_price.toString();
       await product.save();
       return product;
     } catch (error: any) {

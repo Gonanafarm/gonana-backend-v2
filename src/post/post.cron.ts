@@ -11,13 +11,15 @@ export class ProductCronJob {
     private userService: UserService,
     @InjectModel(Post.name) private productModel: Model<PostDocument>,
   ) {}
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron(CronExpression.EVERY_12_HOURS)
   async UpdateUsdPriceCron() {
     const products = await this.productModel.find({type: "product"});
+    const oneNgnInUsd = parseFloat(await this.userService.convertNgntoUsd("1"));
+
+    // Update the USD price of each product in the database
     const newProductsPromises = products.map(async (product: PostDocument) => {
-      const usd_price = parseFloat(
-        await this.userService.convertNgntoUsd(product.amount.toString()),
-      );
+      const usd_price = product.amount * oneNgnInUsd;
+
       product.usd_price = usd_price;
       await product.save();
       return product;
