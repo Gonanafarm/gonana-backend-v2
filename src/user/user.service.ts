@@ -1454,6 +1454,10 @@ export class UserService extends GenericService<UserDocument> {
       if (!user.fiat_wallet_address) {
         throw new BadRequestException("Login and try again");
       }
+      const bvnExists = await this.userModel.findOne({bvn: bvn});
+      if (bvnExists && bvnExists.id !== user.id) {
+        throw new ConflictException(`Gonana user with this bvn exists`);
+      }
       const toroData = {
         op: "check_kyc",
         params: [
