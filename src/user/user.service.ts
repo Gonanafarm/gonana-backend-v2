@@ -1726,7 +1726,7 @@ export class UserService extends GenericService<UserDocument> {
         userId: user.id,
         Type: "DEBIT" as const,
         AmountSettled: res.data.data.data.amount || amount,
-        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString(),
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
       };
 
       if (narration !== undefined) {
@@ -1744,7 +1744,7 @@ export class UserService extends GenericService<UserDocument> {
         Type: "DEBIT" as const,
         AmountSettled: res.data.data.data.amount || amount,
         AmountSent: res.data.data.data.amount || amount,
-        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toLocaleString(),
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
       };
       console.log(transactionArrayObject);
       transaction.transactions.push(transactionArrayObject);
