@@ -125,6 +125,7 @@ export class OrderService {
         return {
           success: true,
           status: 200,
+          data: [],
           message: "No orders",
         };
       }
@@ -161,6 +162,7 @@ export class OrderService {
         return {
           success: true,
           status: 200,
+          data: [],
           message: "No orders",
         };
       }
