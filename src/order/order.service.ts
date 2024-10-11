@@ -121,9 +121,9 @@ export class OrderService {
         })
         .sort({created_at: -1}); // Add this line to sort in LIFO order
 
-      if (orders.length < 1) {
-        throw new BadRequestException("No incoming orders found");
-      }
+      // if (orders.length < 1) {
+      //   throw new BadRequestException("No incoming orders found");
+      // }
       return {
         success: true,
         data: orders,
@@ -153,9 +153,9 @@ export class OrderService {
         })
         .sort({created_at: -1}); // Add this line to sort in LIFO order
 
-      if (orders.length < 1) {
-        throw new BadRequestException("No outgoing orders found");
-      }
+      // if (orders.length < 1) {
+      //   throw new BadRequestException("No outgoing orders found");
+      // }
       return {
         success: true,
         data: orders,
