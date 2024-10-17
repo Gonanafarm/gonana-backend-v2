@@ -972,6 +972,39 @@ export class CartItemService extends GenericService<CartItemDocument> {
       );
     }
   }
+  async payWithCCd(
+    orderItems: Array<{id: string; units: number}>,
+    user_id: string,
+    service_code: string,
+  ) {
+    try {
+      const rates = await this.getRates(orderItems, user_id, service_code);
+      let totalCostInNgn: number;
+      if (!rates.total_shipping_cost) {
+        totalCostInNgn = rates.product_cost;
+      } else {
+        totalCostInNgn = rates.total_shipping_cost + rates.product_cost;
+      }
+      console.log(totalCostInNgn);
+
+      const user = await this.userModel.findById(user_id);
+      if (!user) {
+        throw new BadRequestException(`User Not found`);
+      }
+      
+    } catch (error: any) {
+      console.log(error);
+
+      throw new HttpException(
+        {
+          success: false,
+          status: error.status,
+          message: error.reason || error.message,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
 
   async validateUserAddressForItemsInCart(
     name: string,

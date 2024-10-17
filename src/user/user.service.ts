@@ -1729,6 +1729,7 @@ export class UserService extends GenericService<UserDocument> {
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
         accountNumber: accountNumber,
         accountName: account_name,
+        bank: bankName,
       };
 
       if (narration !== undefined) {
@@ -1749,6 +1750,7 @@ export class UserService extends GenericService<UserDocument> {
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
         accountNumber: accountNumber,
         accountName: account_name,
+        bank: bankName,
       };
       transaction.transactions.push(transactionArrayObject);
       await transaction.save();

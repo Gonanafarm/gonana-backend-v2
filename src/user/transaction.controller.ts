@@ -111,10 +111,10 @@ export class TransactionController {
     );
   }
 
-  @Post("/verify-transaction")
-  verifyTransaction(@Body() body: any) {
-    return this.userService.verifyTransaction(body);
-  }
+  // @Post("/verify-transaction")
+  // verifyTransaction(@Body() body: any) {
+  //   return this.userService.verifyTransaction(body);
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Get("/user-balance")

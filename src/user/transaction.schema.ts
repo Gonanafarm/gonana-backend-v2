@@ -27,6 +27,15 @@ export const tranSactionSchema = new mongoose.Schema(
         narration: {
           type: "string",
         },
+        accountNumber: {
+          type: "string",
+        },
+        accountName: {
+          type: "string",
+        },
+        bank: {
+          type: "string",
+        },
         Time: {
           type: "string",
           required: true,
@@ -56,5 +65,8 @@ export interface TransactionDocument extends Document {
     narration?: string;
     AmountSent: number;
     AmountSettled: number;
+    accountNumber?: string;
+    accountName?: string;
+    bank?: string;
   }>;
 }
