@@ -111,7 +111,7 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   virtual_account_bank_name: string;
 
-  @Prop({type: mongoose.SchemaTypes.String, default: "Gonana"})
+  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   virtual_account_name: string;
 
   @Prop({type: mongoose.SchemaTypes.Array})
@@ -162,14 +162,20 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String})
   arbitrumPrivateKey: string;
 
-  @Prop({type: mongoose.SchemaTypes.Array})
+  @Prop({type: mongoose.SchemaTypes.Array, default: []})
   patrons: string[];
 
   @Prop({type: mongoose.SchemaTypes.String})
   onesignal_id: string;
 
+  @Prop({type: mongoose.SchemaTypes.Array, default: []})
+  referredUsers: string[];
+
   @Prop({type: mongoose.SchemaTypes.Boolean})
   insurance: boolean;
+
+  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
+  referral_code: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -202,6 +208,7 @@ UserSchema.methods.getPublicData = function () {
     ccdWalletBalanceInNgn,
     country,
     onesignal_id,
+    referral_code,
   } = this;
   const publicData = {
     id,
@@ -227,6 +234,7 @@ UserSchema.methods.getPublicData = function () {
     ccdWalletBalanceInNgn,
     country,
     onesignal_id,
+    referral_code,
   };
   return publicData;
 };

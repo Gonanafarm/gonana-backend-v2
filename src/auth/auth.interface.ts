@@ -97,6 +97,12 @@ export class SignUpDto {
   @IsNotEmpty()
   @Trim()
   readonly country: string;
+
+  @Transform(({value}) => value.trim())
+  @IsString()
+  @IsOptional()
+  @IsNotEmpty()
+  readonly referral_code: string;
 }
 
 export class LoginDto {

@@ -481,6 +481,9 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         return null;
       }
+      if (!user.referral_code) {
+        user.referral_code = await this.generateUniqueReferralCode();
+      }
       if (
         user.fiat_wallet_address === undefined ||
         user.fiat_wallet_address.length < 1
@@ -503,7 +506,6 @@ export class UserService extends GenericService<UserDocument> {
         );
         const fiat_wallet_address = toronetResponse.data.address;
         user.fiat_wallet_address = fiat_wallet_address;
-        await user.save();
       }
       if (
         user.arbitrum_wallet_address === undefined ||
@@ -522,7 +524,6 @@ export class UserService extends GenericService<UserDocument> {
         const usd = await this.convertNgntoUsd(ngn);
         user.arbitrumWalletBalanceInUsd = usd;
         user.arbitrumWalletBalanceInNgn = ngn;
-        await user.save();
       }
 
       if (
@@ -537,7 +538,6 @@ export class UserService extends GenericService<UserDocument> {
         user.ccd_wallet = balance.toString();
         user.ccd_wallet_address = address;
         user.ccdPrivateKey = privateKey;
-        await user.save();
       }
       const userData = user?.getPublicData();
 
@@ -546,9 +546,8 @@ export class UserService extends GenericService<UserDocument> {
           user.ccd_wallet,
         );
         console.log(user.ccdWalletBalanceInNgn);
-
-        await user.save();
       }
+      await user.save();
       return userData;
     } catch (error: any) {
       console.error(error);
@@ -2628,5 +2627,58 @@ export class UserService extends GenericService<UserDocument> {
       success: true,
       data: notifications.notification,
     };
+  }
+  async getByReferralCode(code: string) {
+    const user = await this.userModel.findOne({
+      referral_code: {$regex: new RegExp(`^${code}$`, "i")}, // Case-insensitive match
+    });
+
+    return user;
+  }
+  generateRandomString(length = 6) {
+    const characters =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    let i = 0;
+
+    while (i < length) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      result += characters[randomIndex];
+      i++;
+    }
+
+    return result;
+  }
+  async generateUniqueReferralCode() {
+    let code: string;
+    let isUnique = false;
+
+    while (!isUnique) {
+      // Step 1: Generate a new referral code
+      code = this.generateRandomString();
+
+      // Step 2: Check if the code exists in the database
+      const existingUser = await this.getByReferralCode(code);
+
+      if (!existingUser) {
+        isUnique = true; // If no user with this referral code exists, it's unique
+      }
+    }
+
+    return code;
+  }
+  async getUsersIreferred(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new BadRequestException("Invalid Token");
+    }
+
+    const referredUsers = await this.userModel.find(
+      {
+        _id: {$in: user.referredUsers}, // Find users whose IDs are in referredUserIds
+      },
+      {id: 1, first_name: 1, last_name: 1, profile_photo: 1, cover_photo: 1},
+    );
+    return {success: true, data: referredUsers};
   }
 }

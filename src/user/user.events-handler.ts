@@ -6,6 +6,7 @@ import {providers, Wallet} from "ethers";
 import axios from "axios";
 import {toronetHeaders} from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
+import {UserDocument} from "./user.schema";
 @Injectable()
 export class UserEventHanders {
   constructor(
@@ -66,6 +67,7 @@ export class UserEventHanders {
     );
     const fiat_wallet_address = toronetResponse.data.address;
     data.user.fiat_wallet_address = fiat_wallet_address;
+    data.user.referral_code = await this.userService.generateUniqueReferralCode();
     await data.user.save();
 
     console.log("Balance:", balance.toString());
@@ -88,10 +90,9 @@ export class UserEventHanders {
   }
 
   @OnEvent("account.login")
-  handleAccountLogindEvent(payload: any) {
+  async handleAccountLogindEvent(user: UserDocument) {
     // handle and process "OrderCreatedEvent" event
-    console.log("on account login event");
-    this.userMailer.sendLoginSecurityMail(payload.email);
+
   }
 
   @OnEvent("account.activated")

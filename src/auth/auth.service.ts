@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -45,7 +46,7 @@ export class AuthService {
 
   // user jwt decode obj
   async login(user?: any) {
-    this.eventEmitter.emit("", user);
+    this.eventEmitter.emit("account.login", user);
 
     console.log(user?.getPublicData(), " On Login user ");
     const userData = await this.userService.getUserData(user.id);
@@ -59,8 +60,6 @@ export class AuthService {
   }
 
   async loginAdmin(user?: any) {
-    this.eventEmitter.emit("account.login", user);
-
     if (user.account_type !== "ADMIN") {
       throw new UnauthorizedException();
     }
@@ -75,6 +74,15 @@ export class AuthService {
   }
 
   async signUpUser(userData: SignUpDto, origin: string) {
+    let codeOwner;
+    if (userData.referral_code) {
+      codeOwner = await this.userService.getByReferralCode(
+        userData.referral_code,
+      );
+      if (!codeOwner) {
+        throw new BadRequestException("Invalid Referral Code");
+      }
+    }
     const user = await this.userService.createAccount(
       userData.first_name.trim(),
       userData.last_name.trim(),
@@ -85,7 +93,10 @@ export class AuthService {
       userData.account_type,
       userData.country,
     );
-
+    if (codeOwner) {
+      codeOwner.referredUsers.push(user.id);
+      await codeOwner.save();
+    }
     return {
       token: this.jwtService.sign(
         {...user.getPublicData()},

@@ -75,6 +75,15 @@ export class UserController {
     return this.userService.getNotifications(userId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get("/referred-users")
+  async getReferredUsers(@Req() req: Request) {
+    //@ts-ignore
+    const userId = req.user?.id;
+    console.log(userId);
+    return await this.userService.getUsersIreferred(userId);
+  }
+
   @Get("/:id")
   test(@Param("id") id: string) {
     return this.userService.isPlayerIdValid(id);
