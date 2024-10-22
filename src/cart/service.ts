@@ -985,7 +985,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       } else {
         totalCostInNgn = rates.total_shipping_cost + rates.product_cost;
       }
-    
+  
 
       const user = await this.userModel.findById(user_id);
       if (!user) {
