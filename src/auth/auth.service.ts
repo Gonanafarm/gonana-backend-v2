@@ -75,7 +75,7 @@ export class AuthService {
 
   async signUpUser(userData: SignUpDto, origin: string) {
     let codeOwner;
-    if (userData.referral_code) {
+    if (userData.referral_code && userData.referral_code.length > 1) {
       codeOwner = await this.userService.getByReferralCode(
         userData.referral_code,
       );

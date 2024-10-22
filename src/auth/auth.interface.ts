@@ -100,8 +100,8 @@ export class SignUpDto {
 
   @Transform(({value}) => value.trim())
   @IsString()
-  @IsOptional()
-  @IsNotEmpty()
+   @IsOptional()
+ // @IsNotEmpty()
   readonly referral_code: string;
 }
 
