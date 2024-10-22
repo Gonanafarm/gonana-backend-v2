@@ -296,7 +296,7 @@ export class OrderService {
         console.log(releaseEscrow);
 
         const tx = await releaseEscrow.wait();
-        const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
+        const reducedProductCost = incomingOrder.product_amount * 0.95; // reduce by 5%
 
         await this.userService.transferFromEscrowToUser(
           farmer.id,
@@ -577,7 +577,7 @@ export class OrderService {
         data: incomingOrder,
       };
     }
-    const reducedProductCost = incomingOrder.product_amount * 0.975; // reduce by 2.5%
+    const reducedProductCost = incomingOrder.product_amount * 0.95; // reduce by 5%
 
     await this.userService.transferFromEscrowToUser(
       farmer.id,
