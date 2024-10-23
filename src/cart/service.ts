@@ -23,8 +23,9 @@ import {
 import {LogisticsService} from "../user/logistics.service";
 import {EventEmitter2} from "@nestjs/event-emitter";
 import {ethers, providers} from "ethers";
-import {TransactionDocument} from "src/user/transaction.schema";
+import {TransactionDocument} from "../user/transaction.schema";
 import axios from "axios";
+import {ConcordiumService} from "../user/concordium.service";
 const abi = require("../../abi.json");
 
 const key = process.env.SHIPBUBBLE_API_KEY;
@@ -76,6 +77,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
     private readonly userMailerService: UserMailerService,
     private readonly eventEmitter: EventEmitter2,
     private readonly orderService: OrderService,
+    private readonly ccdService: ConcordiumService,
   ) {
     super(cartItemsModel);
   }
@@ -975,23 +977,82 @@ export class CartItemService extends GenericService<CartItemDocument> {
   async payWithCCd(
     orderItems: Array<{id: string; units: number}>,
     user_id: string,
-    service_code: string,
+    service_code?: string,
   ) {
     try {
-      const rates = await this.getRates(orderItems, user_id, service_code);
-      let totalCostInNgn: number;
-      if (!rates.total_shipping_cost) {
-        totalCostInNgn = rates.product_cost;
-      } else {
-        totalCostInNgn = rates.total_shipping_cost + rates.product_cost;
-      }
-  
-
+      // const rates = await this.getRates(orderItems, user_id, service_code);
+      // let totalCostInNgn: number;
+      // if (!rates.total_shipping_cost) {
+      //   totalCostInNgn = rates.product_cost;
+      // } else {
+      //   totalCostInNgn = rates.total_shipping_cost + rates.product_cost;
+      // }
       const user = await this.userModel.findById(user_id);
       if (!user) {
-        throw new BadRequestException(`User Not found`);
+        throw new BadRequestException(`Invalid Token`);
       }
-      
+      for (const item of orderItems) {
+        const product = await this.productModel.findById(item.id);
+        if (product) {
+          const farmer = await this.userModel.findById(product.publisher_id);
+          if (farmer) {
+            const ccdCost = await this.userService.convertNgntoCcd(
+              product.amount.toString(),
+            );
+            await this.ccdService.pay(
+              ccdCost,
+              farmer.ccd_wallet_address,
+              user_id,
+            );
+            await this.reomoveCartItem(user_id, item.id);
+            product.quantity -= 1;
+            await product.save();
+            this.eventEmitter.emit("Products Not Shipped", {
+              product_id: product.id,
+              buyer_address:
+                "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
+              buyer_id: user_id,
+              amount: product.amount.toString(),
+            });
+            const abbr = getAbbreviation(
+              `${farmer.first_name} ${product.title}`,
+            );
+            const rn = generateRandomSixDigitNumber();
+            await this.orderService.createOutgoingOrder(
+              item.id,
+              farmer.id,
+              user_id,
+              item.units,
+              `${abbr}${rn}`,
+              "WEB3",
+            );
+            await this.orderService.createIncomingOrder(
+              item.id,
+              farmer.id,
+              user.id,
+              item.units,
+              `${abbr}${rn}`,
+              "WEB3",
+            );
+            this.userMailerService.selfShipmentMail(
+              farmer.email,
+              product,
+              user,
+              item.units,
+            );
+            this.userMailerService.selfShipOrderSuccessMail(
+              user,
+              product,
+              item.units,
+              product.amount,
+            );
+          }
+        }
+      }
+      return {
+        success: true,
+        message: "Products Ordered",
+      };
     } catch (error: any) {
       console.log(error);
 

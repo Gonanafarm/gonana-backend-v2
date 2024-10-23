@@ -130,13 +130,10 @@ export class CartItemController {
     return this.dataService.payWithEth(body.orders, user_id, body.service_code);
   }
   @Post("pay-with-ccd")
-  async placeOrdedCcd(@Req() req: Request) {
+  async placeOrdedCcd(@Req() req: Request, body: any) {
     //@ts-ignore
     const user_id = req.user?.id;
-    return {
-      success: false,
-      message: "Invalid ccd balance",
-    };
+    return this.dataService.payWithCCd(body.orders, user_id, body.service_code);
   }
 
   @Post("validate-user-address-by-cart")
