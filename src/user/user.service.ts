@@ -481,7 +481,7 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         return null;
       }
-      if (!user.referral_code) {
+      if (!user.referral_code?.length) {
         user.referral_code = await this.generateUniqueReferralCode();
       }
       if (
