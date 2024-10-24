@@ -470,7 +470,7 @@ export class ConcordiumService {
     const receiveName = "gonana_smart_wallet.withdrawCcd";
     const pay_schema = await this.client.getEmbeddedSchema(
       new ModuleReference(
-        "a73b670db5c811d0efa71dd109a8bac8ad4de3299162a06aea3b9f99b00decef",
+        "9c41b5b9dbca53667839e041c9ede71ded569752196411e0bfa5648cad821c94",
       ),
     );
     const data_param = {
