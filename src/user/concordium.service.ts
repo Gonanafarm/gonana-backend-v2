@@ -470,7 +470,7 @@ export class ConcordiumService {
     const receiveName = "gonana_smart_wallet.withdrawCcd";
     const pay_schema = await this.client.getEmbeddedSchema(
       new ModuleReference(
-        "36b3e4ee5cb1666a029005dd284c6fd3389355b5b58a61a8d113ddacc908227",
+        "36b3e4ee5cb1666a029005dd284c6fd3389355b5b58a61a8d113ddacc908227e",
       ),
     );
     const data_param = {
@@ -588,7 +588,7 @@ export class ConcordiumService {
   }
 
   async withdrawFromEscrow(id: string) {
-    const contractAddress = {index: 9985n, subindex: 0n};
+    const contractAddress = {index: 9693n, subindex: 0n}; // testnet 9985n
 
     const sender = new AccountAddress(this.sender);
     const signer = buildBasicAccountSigner(this.signingKey);
