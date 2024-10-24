@@ -127,7 +127,10 @@ export class CartItemController {
   async placeOrderEth(@Body() body: PlaceOrderDto, @Req() req: Request) {
     //@ts-ignore
     const user_id = req.user?.id;
+    console.log(body);
     return this.dataService.payWithCCd(body.orders, user_id, body.service_code);
+    
+    
   }
   @Post("pay-with-ccd")
   async placeOrdedCcd(@Req() req: Request, body: any) {
