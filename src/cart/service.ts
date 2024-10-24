@@ -834,7 +834,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               item.units,
               shipment.data.order_id,
-              "WEB3",
+              "ETH",
             );
             await this.orderService.createIncomingOrder(
               item.id,
@@ -842,7 +842,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user.id,
               item.units,
               shipment.data.order_id,
-              "WEB3",
+              "ETH",
             );
             this.userMailerService.notSelfShipmentMail(
               farmer.email,
@@ -931,7 +931,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               item.units,
               `${abbr}${rn}`,
-              "WEB3",
+              "ETH",
             );
             await this.orderService.createIncomingOrder(
               item.id,
@@ -939,7 +939,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user.id,
               item.units,
               `${abbr}${rn}`,
-              "WEB3",
+              "ETH",
             );
             this.userMailerService.selfShipmentMail(
               farmer.email,
@@ -1024,7 +1024,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user_id,
               item.units,
               `${abbr}${rn}`,
-              "WEB3",
+              "CCD",
             );
             await this.orderService.createIncomingOrder(
               item.id,
@@ -1032,7 +1032,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               user.id,
               item.units,
               `${abbr}${rn}`,
-              "WEB3",
+              "CCD",
             );
             this.userMailerService.selfShipmentMail(
               farmer.email,

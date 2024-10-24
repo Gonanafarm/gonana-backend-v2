@@ -18,6 +18,7 @@ import {ethers, providers} from "ethers";
 import {PostService} from "../post/post.service";
 const abi = require("../../abi.json");
 import * as moment from "moment";
+import {ConcordiumService} from "../user/concordium.service";
 const now = new Date(); // Get the current date and time in UTC
 @Injectable()
 export class OrderService {
@@ -35,6 +36,7 @@ export class OrderService {
     private incomingOrderModel: Model<IncomingOrderDocument>,
     private userService: UserService,
     private userMailerService: UserMailerService,
+    private ccdService: ConcordiumService,
   ) {}
 
   async createOutgoingOrder(
@@ -43,7 +45,7 @@ export class OrderService {
     customer_id: string,
     quantity: number,
     shipbubble_id: string,
-    payment_method: "WEB2" | "WEB3",
+    payment_method: "WEB2" | "CCD" | "ETH",
   ) {
     const farmer = await this.userModel.findById(farmer_id);
     if (!farmer) {
@@ -76,7 +78,7 @@ export class OrderService {
     customer_id: string,
     quantity: number,
     shipbubble_id: string,
-    payment_method: "WEB2" | "WEB3",
+    payment_method: "WEB2" | "CCD" | "ETH",
   ) {
     const customer = await this.userModel.findById(customer_id);
     if (!customer) {
@@ -494,7 +496,7 @@ export class OrderService {
       incomingOrder.shipbubble_id,
       farmer.phone,
     );
-    if (outgoingOrder.payment_method === "WEB3") {
+    if (outgoingOrder.payment_method === "ETH") {
       const provider = new providers.JsonRpcProvider(
         "https://sepolia-rollup.arbitrum.io/rpc",
       );
@@ -544,7 +546,73 @@ export class OrderService {
           PushTitle: `Products Received`,
         },
         headings: {
-          en: `Oder received`,
+          en: `Order received`,
+        },
+      };
+      await this.userService.sendNotificationToDevice(
+        customerMessage,
+        customerId,
+      );
+
+      const farmerMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `Order ${incomingOrder.shipbubble_id} received by customer `,
+        },
+        included_segments: ["include_player_ids"],
+        include_player_ids: farmerOnesignalId,
+        content_available: true,
+        onesignal_notification_accent_color: "FF00FF00",
+        large_icon: incomingOrder.image[0],
+        data: {
+          PushTitle: `Products received by customer`,
+        },
+        headings: {
+          en: `Oder received by customer`,
+        },
+      };
+
+      await this.userService.sendNotificationToDevice(farmerMessage, farmer.id);
+
+      return {
+        success: true,
+        data: incomingOrder,
+      };
+    }
+    if (outgoingOrder.payment_method === "CCD") {
+      await this.ccdService.withdrawFromEscrow(farmer.id);
+      const customerOnesignalId = [];
+      const farmerOnesignalId = [];
+
+      if (
+        customer.onesignal_id &&
+        (await this.userService.isPlayerIdValid(customer.onesignal_id))
+      ) {
+        customerOnesignalId.push(customer.onesignal_id);
+      }
+
+      if (
+        farmer.onesignal_id &&
+        (await this.userService.isPlayerIdValid(farmer.onesignal_id))
+      ) {
+        farmerOnesignalId.push(farmer.onesignal_id);
+      }
+
+      const customerMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `Order ${incomingOrder.shipbubble_id} received`,
+        },
+        included_segments: ["include_player_ids"],
+        include_player_ids: customerOnesignalId,
+        content_available: true,
+        onesignal_notification_accent_color: "FF00FF00",
+        large_icon: incomingOrder.image[0],
+        data: {
+          PushTitle: `Products Received`,
+        },
+        headings: {
+          en: `Order received`,
         },
       };
       await this.userService.sendNotificationToDevice(

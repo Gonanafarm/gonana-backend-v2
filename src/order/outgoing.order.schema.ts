@@ -26,7 +26,7 @@ export interface OrderDocument extends Document {
     | "in_transit"
     | "completed"
     | "cancelled";
-  payment_method: "WEB2" | "WEB3";
+  payment_method: "WEB2" | "CCD" | "ETH";
   complaint: boolean;
 }
 
@@ -99,7 +99,7 @@ export class Order {
   @ApiProperty()
   @Prop({
     type: mongoose.SchemaTypes.String,
-    enum: ["WEB2", "WEB3"],
+    enum: ["WEB2", "CCD", "ETH"],
     required: true,
   })
   payment_method: string;

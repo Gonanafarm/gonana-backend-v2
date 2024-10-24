@@ -51,7 +51,7 @@ export const incomingOrderSchema = new mongoose.Schema(
     payment_method: {
       type: String,
       required: true,
-      enum: ["WEB2", "WEB3"],
+      enum: ["WEB2", "CCD", "ETH"],
     },
     self_shipping: {
       type: Boolean,
@@ -101,7 +101,7 @@ export interface IncomingOrderDocument extends Document {
     | "completed"
     | "cancelled";
   image: Array<string>;
-  payment_method: "WEB2" | "WEB3";
+  payment_method: "WEB2" | "CCD" | "ETH";
   self_shipping: boolean;
   farmer_shipped: boolean;
   customer_received: boolean;
