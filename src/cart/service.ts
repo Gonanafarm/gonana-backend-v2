@@ -996,11 +996,15 @@ export class CartItemService extends GenericService<CartItemDocument> {
         if (product) {
           const farmer = await this.userModel.findById(product.publisher_id);
           if (farmer) {
-            const ccdCost = await this.userService.convertNgntoCcd(
+            const ccdCost = parseFloat(await this.userService.convertNgntoCcd(
               product.amount.toString(),
-            );
+            ));
+            const roundedCost = Math.round(ccdCost)
+            console.log('ccd cost', ccdCost);
+            console.log('rounded cost', roundedCost);
+            
             await this.ccdService.pay(
-              ccdCost,
+              roundedCost,
               farmer.ccd_wallet_address,
               user_id,
             );
