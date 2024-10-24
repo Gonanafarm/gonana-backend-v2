@@ -593,7 +593,7 @@ export class ConcordiumService {
     const sender = new AccountAddress(this.sender);
     const signer = buildBasicAccountSigner(this.signingKey);
     const moduleRef = new ModuleReference(
-      "a73b670db5c811d0efa71dd109a8bac8ad4de3299162a06aea3b9f99b00decef",
+      "36b3e4ee5cb1666a029005dd284c6fd3389355b5b58a61a8d113ddacc908227e",
     );
     const schema = await this.client.getEmbeddedSchema(moduleRef);
     const maxCost = BigInt(30000);
