@@ -19,10 +19,14 @@ import {
   TransferFundsDto,
   TransferToUser,
 } from "./user.dto";
+import {ConcordiumService} from "./concordium.service";
 
 @Controller("api/transaction")
 export class TransactionController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly ccdService: ConcordiumService,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post("/create-virtual-account")
@@ -236,7 +240,6 @@ export class TransactionController {
   }
   @Post("test")
   test(@Body() data: any) {
-    console.log(data);
-    return;
+    return this.ccdService.withdrawFromEscrow(data.id)
   }
 }

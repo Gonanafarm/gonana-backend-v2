@@ -1006,18 +1006,18 @@ export class CartItemService extends GenericService<CartItemDocument> {
             await this.ccdService.pay(
               roundedCost,
               farmer.ccd_wallet_address,
-              user_id,
+              farmer.id,
             );
             await this.reomoveCartItem(user_id, item.id);
             product.quantity -= 1;
             await product.save();
-            this.eventEmitter.emit("Products Not Shipped", {
-              product_id: product.id,
-              buyer_address:
-                "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
-              buyer_id: user_id,
-              amount: product.amount.toString(),
-            });
+            // this.eventEmitter.emit("Products Not Shipped", {
+            //   product_id: product.id,
+            //   buyer_address:
+            //     "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
+            //   buyer_id: user_id,
+            //   amount: product.amount.toString(),
+            // });
             const abbr = getAbbreviation(
               `${farmer.first_name} ${product.title}`,
             );
