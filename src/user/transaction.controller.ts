@@ -238,8 +238,8 @@ export class TransactionController {
     const user_id = req.user?.id;
     return this.userService.payWithCCd(data.amount, data.recipientId, user_id);
   }
-  @Post("test")
-  test(@Body() data: any) {
-    return this.ccdService.withdrawFromEscrow(data.id)
-  }
+  // @Post("test")
+  // test(@Body() data: any) {
+  //   return this.ccdService.withdrawFromEscrow(data.id)
+  // }
 }

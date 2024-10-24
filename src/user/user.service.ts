@@ -2578,6 +2578,9 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       throw new BadRequestException("Invalid Token");
     }
+    if (parseFloat(user.ccd_wallet) < amount) {
+      throw new BadRequestException("Insufficient ccd balance");
+    }
     const withdraw = await this.ccdService.withdrawCcd(amount, recipient, id);
     if (!withdraw) {
       throw new BadRequestException("Withdraw failed");

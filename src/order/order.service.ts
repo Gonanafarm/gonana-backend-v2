@@ -580,7 +580,7 @@ export class OrderService {
       };
     }
     if (outgoingOrder.payment_method === "CCD") {
-      await this.ccdService.withdrawFromEscrow(farmer.id);
+      await this.ccdService.withdrawFromEscrow(customer.id);
       const customerOnesignalId = [];
       const farmerOnesignalId = [];
 

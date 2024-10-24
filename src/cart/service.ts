@@ -991,37 +991,40 @@ export class CartItemService extends GenericService<CartItemDocument> {
       if (!user) {
         throw new BadRequestException(`Invalid Token`);
       }
+      const rates = (await this.getRates(orderItems, user_id, service_code))
+        .product_cost;
+      const ccdRate = Math.round(
+        await this.userService.convertNgntoCcd(rates.toString()),
+      );
+      if (parseFloat(user.ccd_wallet) < ccdRate) {
+        throw new BadRequestException("Insufficient ccd balance");
+      }
       for (const item of orderItems) {
         const product = await this.productModel.findById(item.id);
         if (product) {
           const farmer = await this.userModel.findById(product.publisher_id);
           if (farmer) {
-            const ccdCost = parseFloat(await this.userService.convertNgntoCcd(
-              product.amount.toString(),
-            ));
-            const roundedCost = Math.round(ccdCost)
-            console.log('ccd cost', ccdCost);
-            console.log('rounded cost', roundedCost);
-            
-            await this.ccdService.pay(
-              roundedCost,
-              farmer.ccd_wallet_address,
-              farmer.id,
+            const ccdCost = parseFloat(
+              await this.userService.convertNgntoCcd(product.amount.toString()),
             );
-            await this.reomoveCartItem(user_id, item.id);
-            product.quantity -= 1;
-            await product.save();
-            // this.eventEmitter.emit("Products Not Shipped", {
-            //   product_id: product.id,
-            //   buyer_address:
-            //     "3UsPQ4MxhGNLEbYac53H7C2JHzE3Xe41zrgCdLVrp5vphx4YSe",
-            //   buyer_id: user_id,
-            //   amount: product.amount.toString(),
-            // });
+            const roundedCost = Math.round(ccdCost);
+            console.log("ccd cost", ccdCost);
+            console.log("rounded cost", roundedCost);
+
             const abbr = getAbbreviation(
               `${farmer.first_name} ${product.title}`,
             );
             const rn = generateRandomSixDigitNumber();
+            await this.ccdService.pay(
+              roundedCost,
+              farmer.ccd_wallet_address,
+              user.id,
+              `${abbr}${rn}`,
+            );
+            await this.reomoveCartItem(user_id, item.id);
+            product.quantity -= 1;
+            await product.save();
+
             await this.orderService.createOutgoingOrder(
               item.id,
               farmer.id,

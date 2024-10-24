@@ -454,7 +454,12 @@ export class ConcordiumService {
     return updateTrxHash;
   }
 
-  async pay(amount: number, recipient: string, id: string) {
+  async pay(
+    amount: number,
+    recipient: string,
+    id: string,
+    transactionId: string,
+  ) {
     const wallet = await this.getOrCreateConcordiumKeyPairs(id);
     const contractAddress = {
       index: this.contractIndex,
@@ -477,6 +482,7 @@ export class ConcordiumService {
       id: id,
       payer: wallet.publicKey,
       receiver: recipient,
+      transactionId: transactionId,
     };
     const data_buf = serializeUpdateContractParameters(
       "gonana_escrow",
@@ -490,12 +496,12 @@ export class ConcordiumService {
 
     //console.log({nonce})
     const expiry_time = await this.getExpiryTime();
-
+    const service_fee = amount * 0.95;
     const message = {
       entry_point: "withdrawCcd",
       expiry_time,
       nonce,
-      service_fee_amount: new CcdAmount(0),
+      service_fee_amount: new CcdAmount(service_fee),
       service_fee_recipient:
         "b288c8518c8be158e5e22cb1ee8c748b1992a2cb3572643a7b6ceb1ccd6bf3ec",
       simple_withdraws: [
