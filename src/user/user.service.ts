@@ -2497,13 +2497,57 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       throw new BadRequestException("Invalid Token");
     }
+    if (parseFloat(user.ccd_wallet) < amount) {
+      throw new BadRequestException("Insufficient ccd balance");
+    }
     const recipient = await this.userModel.findOne({
       ccd_wallet_address: recipientWallet,
     });
+    if (recipient) {
+      await this.ccdService.transferCcd(
+        amount,
+        recipient.ccd_wallet_address,
+        id,
+      );
+      const debitMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `${amount} ccd has been debited from your wallet`,
+        },
+        headings: {en: "Debit Notification"},
+        included_segments: ["include_player_ids"],
+        include_player_ids: [user.onesignal_id],
+        content_available: true,
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+      };
+      await this.sendNotificationToDevice(debitMessage, user.id);
+      const creditMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `${amount} ccd has been credited into your wallet`,
+        },
+        headings: {en: "Credit Notification"},
+        included_segments: ["include_player_ids"],
+        include_player_ids: [recipient.onesignal_id],
+        content_available: true,
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+      };
 
+      await this.sendNotificationToDevice(
+        creditMessage,
+        recipient.onesignal_id,
+      );
+
+      return {
+        success: true,
+        message: "Transfer completed",
+      };
+    }
     const transfer = await this.ccdService.transferCcd(
       amount,
-      recipient.ccd_wallet_address || recipientWallet,
+      recipientWallet,
       id,
     );
     if (!transfer) {
@@ -2522,24 +2566,7 @@ export class UserService extends GenericService<UserDocument> {
         "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
     };
     await this.sendNotificationToDevice(debitMessage, user.id);
-    const creditMessage = {
-      app_id: process.env.ONESIGNAL_APP_ID,
-      contents: {
-        en: `${amount} ccd has been credited into your wallet`,
-      },
-      headings: {en: "Credit Notification"},
-      included_segments: ["include_player_ids"],
-      include_player_ids: [recipient.onesignal_id],
-      content_available: true,
-      small_icon:
-        "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
-    };
-    if (recipient) {
-      await this.sendNotificationToDevice(
-        creditMessage,
-        recipient.onesignal_id,
-      );
-    }
+
     return {
       success: true,
       message: "Transfer completed",
