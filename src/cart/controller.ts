@@ -133,7 +133,7 @@ export class CartItemController {
     
   }
   @Post("pay-with-ccd")
-  async placeOrdedCcd(@Req() req: Request, body: any) {
+  async placeOrdedCcd(@Req() req: Request, @Body() body: any) {
     //@ts-ignore
     const user_id = req.user?.id;
     console.log(body);
