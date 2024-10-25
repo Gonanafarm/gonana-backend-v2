@@ -996,6 +996,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const ccdRate = Math.round(
         await this.userService.convertNgntoCcd(rates.toString()),
       );
+      await this.userService.getCcdWalletBalance(user_id);
       if (parseFloat(user.ccd_wallet) < ccdRate) {
         throw new BadRequestException("Insufficient ccd balance");
       }

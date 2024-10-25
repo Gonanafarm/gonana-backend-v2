@@ -495,7 +495,10 @@ export class ConcordiumService {
 
     //console.log({nonce})
     const expiry_time = await this.getExpiryTime();
-    const service_fee = Math.round(amount * 0.95);
+    const withdraw_amount = Math.round(amount * 0.95);
+    const service_fee = amount - withdraw_amount;
+    console.log("service_fee", service_fee);
+    console.log("withdraw ammount:", withdraw_amount);
     const message = {
       entry_point: "withdrawCcd",
       expiry_time,
@@ -515,7 +518,7 @@ export class ConcordiumService {
               "pay",
             ],
           },
-          withdraw_amount: new CcdAmount(amount * 10 ** 6),
+          withdraw_amount: new CcdAmount(withdraw_amount * 10 ** 6),
         },
       ],
     };

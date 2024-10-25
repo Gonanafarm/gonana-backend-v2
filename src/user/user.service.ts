@@ -2468,6 +2468,7 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       throw new BadRequestException("Invalid Token");
     }
+    await this.getCcdWalletBalance(id);
     if (parseFloat(user.ccd_wallet) < amount) {
       throw new BadRequestException("Insufficient ccd balance");
     }
@@ -2549,6 +2550,7 @@ export class UserService extends GenericService<UserDocument> {
     if (!user) {
       throw new BadRequestException("Invalid Token");
     }
+    await this.getCcdWalletBalance(id);
     if (parseFloat(user.ccd_wallet) < amount) {
       throw new BadRequestException("Insufficient ccd balance");
     }
