@@ -231,13 +231,6 @@ export class TransactionController {
     return this.userService.withdrawCcd(data.amount, data.recipient, user_id);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post("/pay-with-ccd")
-  payWithCCd(@Body() data: any, @Req() req: Request) {
-    //@ts-ignore
-    const user_id = req.user?.id;
-    return this.userService.payWithCCd(data.amount, data.recipientId, user_id);
-  }
   // @Post("test")
   // test(@Body() data: any) {
   //   return this.ccdService.withdrawFromEscrow(data.id)

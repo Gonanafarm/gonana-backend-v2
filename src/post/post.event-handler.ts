@@ -96,27 +96,27 @@ export class PostEventHandlers {
       await Promise.all(patronFunc);
     }
 
-    const provider = new providers.JsonRpcProvider(
-      "https://sepolia-rollup.arbitrum.io/rpc",
-    );
+    // const provider = new providers.JsonRpcProvider(
+    //   "https://sepolia-rollup.arbitrum.io/rpc",
+    // );
 
     //wallet instance of the contract admin
-    const admin = new ethers.Wallet(
-      "b72cb42b3319abb30fc17f7e20ea58165a84de90c9afd90fcb80382062e01382",
-      provider,
-    );
-    const marketplaceAddr = "0x523E1E3E3c052cf87ac12D08d58F59b22f2852F2";
-    const contract = new ethers.Contract(marketplaceAddr, abi, admin);
+    // const admin = new ethers.Wallet(
+    //   "b72cb42b3319abb30fc17f7e20ea58165a84de90c9afd90fcb80382062e01382",
+    //   provider,
+    // );
+    // const marketplaceAddr = "0x523E1E3E3c052cf87ac12D08d58F59b22f2852F2";
+    // const contract = new ethers.Contract(marketplaceAddr, abi, admin);
 
-    const list_product = await contract.createProduct(
-      payload.product_id,
-      payload.amount,
-      payload.farmer_id,
-      farmer.arbitrum_wallet_address,
-    );
-    console.log(list_product);
+    // const list_product = await contract.createProduct(
+    //   payload.product_id,
+    //   payload.amount,
+    //   payload.farmer_id,
+    //   farmer.arbitrum_wallet_address,
+    // );
+    // console.log(list_product);
 
-    const tx = await list_product.wait();
+    // const tx = await list_product.wait();
   }
   // @OnEvent("Unlike")
   // async handleUnlikeEvent(payload: any) {

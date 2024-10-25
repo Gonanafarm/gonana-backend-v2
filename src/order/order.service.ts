@@ -114,7 +114,7 @@ export class OrderService {
     try {
       const customer = await this.userModel.findById(customerId);
       if (!customer) {
-        throw new BadRequestException("User not found");
+        throw new BadRequestException("Invalid Token");
       }
 
       const orders = await this.incomingOrderModel
@@ -151,7 +151,7 @@ export class OrderService {
     try {
       const customer = await this.userModel.findById(customerId);
       if (!customer) {
-        throw new BadRequestException("User not found");
+        throw new BadRequestException("Invalid Token");
       }
 
       const orders = await this.outgoingOrderModel
@@ -390,6 +390,14 @@ export class OrderService {
     if (!orderId) {
       throw new BadRequestException("Must provide orderId");
     }
+    if (!farmerId) {
+      throw new BadRequestException("Invalid Token");
+    }
+    const farmer = await this.userModel.findById(farmerId);
+    if (!farmer) {
+      throw new BadRequestException("Invalid Token");
+    }
+
     const outgoingOrder = await this.outgoingOrderModel.findById(orderId);
     if (!outgoingOrder) {
       throw new NotFoundException("Order not found");
@@ -450,11 +458,11 @@ export class OrderService {
     }
     const customer = await this.userModel.findById(incomingOrder.customer_id);
     if (!customer) {
-      throw new BadRequestException("This is not your order");
+      throw new BadRequestException("Invalid Token");
     }
 
     if (customerId !== incomingOrder.customer_id) {
-      throw new BadRequestException("This is not your order");
+      throw new BadRequestException("Invalid Token");
     }
     if (incomingOrder.farmer_shipped === false) {
       throw new BadRequestException("Farmer has not sent out this product");
@@ -580,7 +588,7 @@ export class OrderService {
       };
     }
     if (outgoingOrder.payment_method === "CCD") {
-      await this.ccdService.withdrawFromEscrow(customer.id);
+      await this.ccdService.withdrawFromEscrow(outgoingOrder.shipbubble_id);
       const customerOnesignalId = [];
       const farmerOnesignalId = [];
 

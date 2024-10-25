@@ -479,10 +479,9 @@ export class ConcordiumService {
       ),
     );
     const data_param = {
-      id: id,
+      id: transactionId,
       payer: wallet.publicKey,
       receiver: recipient,
-      transactionId: transactionId,
     };
     const data_buf = serializeUpdateContractParameters(
       "gonana_escrow",
@@ -496,14 +495,14 @@ export class ConcordiumService {
 
     //console.log({nonce})
     const expiry_time = await this.getExpiryTime();
-    const service_fee = amount * 0.95;
+    const service_fee = Math.round(amount * 0.95);
     const message = {
       entry_point: "withdrawCcd",
       expiry_time,
       nonce,
       service_fee_amount: new CcdAmount(service_fee),
       service_fee_recipient:
-        "b288c8518c8be158e5e22cb1ee8c748b1992a2cb3572643a7b6ceb1ccd6bf3ec",
+        "9a1ecd9c95dadde885b68b52b3e5fd343f8b8439de547f71f6f1507794a293ee",
       simple_withdraws: [
         {
           data: data,

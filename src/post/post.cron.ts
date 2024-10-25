@@ -15,11 +15,17 @@ export class ProductCronJob {
   async UpdateUsdPriceCron() {
     const products = await this.productModel.find({type: "product"});
     const oneNgnInUsd = parseFloat(await this.userService.convertNgntoUsd("1"));
+    const oneNgnInCcd = parseFloat(await this.userService.convertNgntoCcd("1"));
+    const oneNgnInEth = parseFloat(await this.userService.convertNgntoEth("1"));
 
     // Update the USD price of each product in the database
     const newProductsPromises = products.map(async (product: PostDocument) => {
       const usd_price = product.amount * oneNgnInUsd;
+      const ccd_price = product.amount * oneNgnInCcd;
+      const eth_price = product.amount * oneNgnInEth;
 
+      product.ccd_price = ccd_price;
+      product.eth_price = eth_price.toString();
       product.usd_price = usd_price;
       await product.save();
       return product;

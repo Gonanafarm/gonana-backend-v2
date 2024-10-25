@@ -196,21 +196,22 @@ export class PostService extends GenericService<PostDocument> {
         .sort({_id: -1}) // Lifo order
         .skip(skipCount)
         .limit(lim);
+      const oneNgnInUsd = parseFloat(
+        await this.userService.convertNgntoUsd("1"),
+      );
+      const oneNgnInCcd = parseFloat(
+        await this.userService.convertNgntoCcd("1"),
+      );
+      const oneNgnInEth = parseFloat(
+        await this.userService.convertNgntoEth("1"),
+      );
 
       const newProductsPromises = products.map(
         async (product: PostDocument) => {
-          const usd_price = parseFloat(
-            await this.userService.convertNgntoUsd(
-              product.amount.toString() as string,
-            ),
-          );
-          const eth_price = parseFloat(
-            await this.userService.convertNgntoEth(product.amount.toString()),
-          );
+          const usd_price = product.amount * oneNgnInUsd;
+          const ccd_price = product.amount * oneNgnInCcd;
+          const eth_price = product.amount * oneNgnInEth;
 
-          const ccd_price = parseFloat(
-            await this.userService.convertNgntoCcd(product.amount.toString()),
-          );
           product.eth_price = eth_price.toString();
           product.ccd_price = ccd_price;
           product.usd_price = usd_price;
@@ -334,22 +335,23 @@ export class PostService extends GenericService<PostDocument> {
       if (products.length < 1) {
         throw new NotFoundException("Products Not Found");
       }
+      const oneNgnInUsd = parseFloat(
+        await this.userService.convertNgntoUsd("1"),
+      );
+      const oneNgnInCcd = parseFloat(
+        await this.userService.convertNgntoCcd("1"),
+      );
+      const oneNgnInEth = parseFloat(
+        await this.userService.convertNgntoEth("1"),
+      );
 
       const productPromises = products.map(async (product: PostDocument) => {
-        const usd_price = parseFloat(
-          await this.userService.convertNgntoUsd(
-            product.amount.toString() as string,
-          ),
-        );
-        const eth_price = parseFloat(
-          await this.userService.convertNgntoEth(product.amount.toString()),
-        );
+        const usd_price = product.amount * oneNgnInUsd;
+        const ccd_price = product.amount * oneNgnInCcd;
+        const eth_price = product.amount * oneNgnInEth;
 
-        const ccd_price = parseFloat(
-          await this.userService.convertNgntoCcd(product.amount.toString()),
-        );
-        product.eth_price = eth_price.toString();
         product.ccd_price = ccd_price;
+        product.eth_price = eth_price.toString();
         product.usd_price = usd_price;
         await product.save();
         const id = product.publisher_id;

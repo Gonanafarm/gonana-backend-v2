@@ -2215,35 +2215,6 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
   }
-  async payWithCCd(amount: number, recipientId: string, userId: string) {
-    try {
-      if (recipientId === userId) {
-        throw new BadRequestException("You cannot transfer CCD to yourself");
-      }
-      const user = await this.userModel.findById(userId);
-      if (!user) {
-        throw new BadRequestException("Invalid Token");
-      }
-      const recipient = await this.userModel.findById(recipientId);
-      if (!recipient) {
-        throw new BadRequestException("Recipient not found");
-      }
-      if (!recipient.ccd_wallet_address) {
-        throw new BadRequestException(
-          "Recipient does not have a wallet address",
-        );
-      }
-      await this.ccdService.pay(amount, recipient.ccd_wallet_address, userId);
-    } catch (error: any) {
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        error.status || 500,
-      );
-    }
-  }
 
   async convertCcdtoNgn(xCcd: string) {
     if (xCcd === "0") {
