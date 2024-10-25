@@ -987,6 +987,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       // } else {
       //   totalCostInNgn = rates.total_shipping_cost + rates.product_cost;
       // }
+      await this.userService.getCcdWalletBalance(user_id);
       const user = await this.userModel.findById(user_id);
       if (!user) {
         throw new BadRequestException(`Invalid Token`);
@@ -996,7 +997,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       const ccdRate = Math.round(
         await this.userService.convertNgntoCcd(rates.toString()),
       );
-      await this.userService.getCcdWalletBalance(user_id);
+
       if (parseFloat(user.ccd_wallet) < ccdRate) {
         throw new BadRequestException("Insufficient ccd balance");
       }

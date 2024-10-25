@@ -1598,15 +1598,17 @@ export class UserService extends GenericService<UserDocument> {
   ) {
     //// TORONET IMPLEMENTATION
     try {
+      await this.getUserBalance(user_id);
       const user = await this.userModel.findById(user_id);
       if (!user) {
         throw new NotFoundException("user not found. login and try again");
       }
+
       //@ts-ignore
       const balance = parseFloat(user.balance);
       console.log(balance);
-
-      if (balance < amount) {
+      const updatedAmount = amount + 10;
+      if (balance < updatedAmount) {
         throw new BadRequestException("Insuffient balance");
       }
       const resolve = await this.resolveAccountNumber(accountNumber, bankName);
@@ -1669,7 +1671,7 @@ export class UserService extends GenericService<UserDocument> {
           },
           {
             name: "amount",
-            value: amount.toString(),
+            value: updatedAmount.toString(),
           },
           {
             name: "accounttype",
@@ -1724,7 +1726,7 @@ export class UserService extends GenericService<UserDocument> {
         Session_id: res.data.data.data.sessionID || res.data.transactionid,
         userId: user.id,
         Type: "DEBIT" as const,
-        AmountSettled: res.data.data.data.amount || amount,
+        AmountSettled: res.data.data.data.amount || updatedAmount,
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
         accountNumber: accountNumber,
         accountName: account_name,
@@ -1744,8 +1746,8 @@ export class UserService extends GenericService<UserDocument> {
       const transactionArrayObject = {
         Session_id: res.data.data.data.sessionID || res.data.transactionid,
         Type: "DEBIT" as const,
-        AmountSettled: res.data.data.data.amount || amount,
-        AmountSent: res.data.data.data.amount || amount,
+        AmountSettled: res.data.data.data.amount || updatedAmount,
+        AmountSent: res.data.data.data.amount || updatedAmount,
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
         accountNumber: accountNumber,
         accountName: account_name,
@@ -1757,7 +1759,7 @@ export class UserService extends GenericService<UserDocument> {
         app_id: process.env.ONESIGNAL_APP_ID,
         contents: {
           en: `₦${
-            res.data.data.data.amount || amount
+            res.data.data.data.amount || updatedAmount
           } has been debited from your account`,
         },
         headings: {en: "Debit Notification"},
@@ -2464,11 +2466,11 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async transferCcd(amount: number, recipientWallet: string, id: string) {
+    await this.getCcdWalletBalance(id);
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new BadRequestException("Invalid Token");
     }
-    await this.getCcdWalletBalance(id);
     if (parseFloat(user.ccd_wallet) < amount) {
       throw new BadRequestException("Insufficient ccd balance");
     }
@@ -2546,11 +2548,12 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async withdrawCcd(amount: number, recipient: string, id: string) {
+    await this.getCcdWalletBalance(id);
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new BadRequestException("Invalid Token");
     }
-    await this.getCcdWalletBalance(id);
+
     if (parseFloat(user.ccd_wallet) < amount) {
       throw new BadRequestException("Insufficient ccd balance");
     }
