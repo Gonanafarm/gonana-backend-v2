@@ -33,6 +33,7 @@ import {TransactionDocument} from "./transaction.schema";
 import {NotificationDocument} from "./notification.schema";
 import {providers, Wallet, utils, ethers} from "ethers";
 import {
+  gonaAdminToken,
   gonanaAccountBankName,
   gonanaAccountName,
   gonanaAccountNumber,
@@ -2212,6 +2213,162 @@ export class UserService extends GenericService<UserDocument> {
     );
     const ngn = response.data.data.quote.NGN.price;
     return ngn;
+  }
+
+  async getGonaTokenBalance(id: string) {
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new BadRequestException("Invalid Token");
+      }
+      const balance = await this.ccdService.cis2BalanceOf(
+        user.ccd_wallet_address,
+        gonaAdminToken,
+      );
+      user.gonaTokenBalance = balance;
+      await user.save();
+      return {
+        balance: balance,
+      };
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.reason || error.message,
+        },
+        400,
+      );
+    }
+  }
+
+  async transferGonaToken(id: string, amount: number, recipientWallet: string) {
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new BadRequestException("Invalid Token");
+      }
+
+      const query = await this.getGonaTokenBalance(id);
+      if (query.balance < amount) {
+        throw new BadRequestException("Insufficient Gona Token Balance");
+      }
+      const recipient = await this.userModel.findOne({
+        ccd_wallet_address: recipientWallet,
+      });
+      if (recipient) {
+        await this.ccdService.transferCis2Token(
+          amount,
+          recipient.ccd_wallet_address,
+          id,
+          gonaAdminToken,
+        );
+        const debitMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `${amount} gona has been debited from your wallet`,
+          },
+          headings: {en: "Debit Notification"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        await this.sendNotificationToDevice(debitMessage, user.id);
+        const creditMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `${amount} gona has been credited into your wallet`,
+          },
+          headings: {en: "Credit Notification"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [recipient.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+
+        await this.sendNotificationToDevice(
+          creditMessage,
+          recipient.onesignal_id,
+        );
+
+        return {
+          success: true,
+          message: "Transfer completed",
+        };
+      }
+      const transfer = await this.ccdService.transferCis2Token(
+        amount,
+        recipientWallet,
+        id,
+        gonaAdminToken,
+      );
+      if (!transfer) {
+        throw new BadRequestException("Transfer failed");
+      }
+      const debitMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `${amount} gona has been debited from your wallet`,
+        },
+        headings: {en: "Debit Notification"},
+        included_segments: ["include_player_ids"],
+        include_player_ids: [user.onesignal_id],
+        content_available: true,
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+      };
+      await this.sendNotificationToDevice(debitMessage, user.id);
+
+      return {
+        success: true,
+        message: "Transfer completed",
+      };
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.reason || error.message,
+        },
+        error.status || 400,
+      );
+    }
+  }
+
+  async withdrawGona(id: string, amount: number, recipientWallet: string) {
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new BadRequestException("Invalid Token");
+      }
+
+      const query = await this.getGonaTokenBalance(id);
+      if (query.balance < amount) {
+        throw new BadRequestException("Insufficient Gona Token Balance");
+      }
+      const transaction = await this.ccdService.withdrawCis2Token(
+        amount,
+        recipientWallet,
+        id,
+        gonaAdminToken,
+      );
+      if (!transaction) {
+        throw new BadRequestException("Transaction Failed");
+      }
+      
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.reason || error.message,
+        },
+        error.status || 400,
+      );
+    }
   }
 
   async sendEth(id: string, amount: string, toAddress: string) {

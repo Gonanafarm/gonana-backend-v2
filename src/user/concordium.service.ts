@@ -10,6 +10,7 @@ import {
   UpdateContractPayload,
   buildBasicAccountSigner,
   createConcordiumClient,
+  ContractAddress,
   deserializeReceiveReturnValue,
   serializeUpdateContractParameters,
   signTransaction,
@@ -795,5 +796,440 @@ export class ConcordiumService {
     return new TransactionExpiry(
       new Date(Date.now() + DEFAULT_TRANSACTION_EXPIRY),
     );
+  }
+  async cis2BalanceOf(wallet: string, tokenAddress: any) {
+    const invoker = new AccountAddress(this.sender);
+    console.log(tokenAddress);
+    try {
+      const contractAddress = {
+        index: this.contractIndex,
+        subindex: this.contractSubindex,
+      };
+
+      const moduleRef = new ModuleReference(this.moduleRef);
+      const schema = await this.client.getEmbeddedSchema(moduleRef);
+      const message = {
+        token_id: "",
+        cis2_token_contract_address: tokenAddress,
+        public_key: wallet,
+      };
+      // Serialize the parameters
+      const serializedParams = serializeUpdateContractParameters(
+        "gonana_smart_wallet",
+        "cis2BalanceOfAccount",
+        message,
+        schema,
+      );
+      // Invoke the contract
+      const result = await this.client.invokeContract({
+        contract: unwrap(contractAddress),
+        invoker,
+        method: "gonana_smart_wallet.cis2BalanceOfAccount",
+        parameter: serializedParams,
+      });
+
+      // Deserialize the response
+      const decodedResult = deserializeReceiveReturnValue(
+        // @ts-ignore
+        result.returnValue,
+        schema,
+        "gonana_smart_wallet",
+        "cis2BalanceOfAccount",
+      );
+
+      const balance = parseInt(decodedResult) / 1e6;
+      return balance;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async depositCis2Token(
+    _amount: number,
+    id: string,
+    tokencontractAddress: ContractAddress,
+    tokenModuleRef: string,
+  ) {
+    const sender = new AccountAddress(this.sender);
+    const wallet = await this.getOrCreateConcordiumKeyPairs(id);
+    const signer = buildBasicAccountSigner(this.signingKey);
+    const schema = await this.client.getEmbeddedSchema(
+      new ModuleReference(tokenModuleRef),
+    );
+    const maxCost = BigInt(30000);
+    const contractName = "gona_token";
+    const amount = _amount * 10 ** 6;
+
+    const param = {
+      amount: amount.toString(),
+      data: wallet.publicKey,
+      from: {
+        Account: [sender],
+      },
+      to: {
+        Contract: [
+          {
+            index: Number(this.contractIndex),
+            subindex: 0,
+          },
+          "depositCis2Tokens",
+        ],
+      },
+      token_id: "",
+    };
+
+    const updateHeader: AccountTransactionHeader = {
+      // @ts-ignore
+      expiry: await this.getDefaultTransactionExpiry(),
+      nonce: (await this.client.getNextAccountNonce(sender)).nonce,
+      sender,
+    };
+
+    const updateParams = serializeUpdateContractParameters(
+      contractName,
+      "transfer",
+      [param],
+      schema,
+    );
+    console.log({updateHeader, updateParams});
+
+    const updatePayload: UpdateContractPayload = {
+      amount: new CcdAmount(0),
+      address: unwrap(tokencontractAddress),
+      receiveName: "gona_token.transfer",
+      message: updateParams,
+      maxContractExecutionEnergy: maxCost,
+    };
+
+    console.log({updatePayload});
+    const updateTransaction: AccountTransaction = {
+      header: updateHeader,
+      payload: updatePayload,
+      type: AccountTransactionType.Update,
+    };
+
+    const updateSignature = await signTransaction(updateTransaction, signer);
+    const updateTrxHash = await this.client.sendAccountTransaction(
+      updateTransaction,
+      updateSignature,
+    );
+    console.log("Transaction submitted, waiting for finalization...");
+    const updateStatus = await this.client.waitForTransactionFinalization(
+      updateTrxHash,
+    );
+    console.dir(updateStatus, {depth: null, colors: true});
+
+    return updateTrxHash;
+  }
+
+  async transferCis2Token(
+    amount: number,
+    recipient: string,
+    id: string,
+    cis2tokenAddress: any,
+  ) {
+    const contractAddress = {
+      index: this.contractIndex,
+      subindex: this.contractSubindex,
+    };
+    const wallet = await this.getOrCreateConcordiumKeyPairs(id);
+    const sender = new AccountAddress(this.sender);
+    const signer = buildBasicAccountSigner(this.signingKey);
+    const moduleRef = new ModuleReference(this.moduleRef);
+    const schema = await this.client.getEmbeddedSchema(moduleRef);
+
+    const maxCost = BigInt(30000);
+    const contractName = "gonana_smart_wallet";
+    const receiveName = "gonana_smart_wallet.transferCis2Tokens";
+
+    const nonce = (await this.nonceOf(wallet.publicKey))[0];
+
+    console.log({nonce});
+    const expiry_time = await this.getExpiryTime();
+    const message = {
+      entry_point: "transferCis2Tokens",
+      expiry_time,
+      nonce,
+      service_fee_recipient:
+        "b288c8518c8be158e5e22cb1ee8c748b1992a2cb3572643a7b6ceb1ccd6bf3ec",
+      service_fee_amount: {
+        token_amount: "0",
+        token_id: "",
+        cis2_token_contract_address: cis2tokenAddress,
+      },
+      simple_transfers: [
+        {
+          to: recipient,
+          transfer_amount: {
+            token_amount: (amount * 10 ** 6).toString(),
+            token_id: "",
+            cis2_token_contract_address: cis2tokenAddress,
+          },
+        },
+      ],
+    };
+
+    const messageHash = await this.getCis2TransferMessageHash(message);
+    //console.log({ messageHash });
+
+    const messageHashBin = this.hexToUint8Array(messageHash);
+    const privateKeyBin = this.hexToUint8Array(wallet.privateKey);
+
+    const signatureUint8 = sodium.crypto_sign_detached(
+      messageHashBin,
+      privateKeyBin,
+    );
+    //console.log({ signatureUint8 });
+    const signature = sodium.to_hex(signatureUint8);
+    ///console.log({ signature });
+    const paramJson = [
+      {
+        message,
+        signature,
+        signer: wallet.publicKey,
+      },
+    ];
+
+    const updateHeader: AccountTransactionHeader = {
+      // @ts-ignore
+      expiry: await this.getDefaultTransactionExpiry(),
+      nonce: (await this.client.getNextAccountNonce(sender)).nonce,
+      sender,
+    };
+
+    const updateParams = serializeUpdateContractParameters(
+      contractName,
+      "transferCis2Tokens",
+      paramJson,
+      schema,
+    );
+    //console.log({ updateHeader, updateParams });
+    const updatePayload: UpdateContractPayload = {
+      amount: new CcdAmount(0),
+      address: unwrap(contractAddress),
+      receiveName,
+      message: updateParams,
+      maxContractExecutionEnergy: maxCost,
+    };
+
+    // console.log({ updatePayload });
+    const updateTransaction: AccountTransaction = {
+      header: updateHeader,
+      payload: updatePayload,
+      type: AccountTransactionType.Update,
+    };
+    console.log(this.getDefaultTransactionExpiry());
+    const updateSignature = await signTransaction(updateTransaction, signer);
+    const updateTrxHash = await this.client.sendAccountTransaction(
+      updateTransaction,
+      updateSignature,
+    );
+    console.log("Transaction submitted, waiting for finalization...");
+    const updateStatus = await this.client.waitForTransactionFinalization(
+      updateTrxHash,
+    );
+    console.dir(updateStatus, {depth: null, colors: true});
+
+    return updateTrxHash;
+  }
+
+  async getCis2TransferMessageHash(message: any) {
+    try {
+      const contractAddress = {
+        index: this.contractIndex,
+        subindex: this.contractSubindex,
+      };
+      const moduleRef = new ModuleReference(this.moduleRef);
+      const schema = await this.client.getEmbeddedSchema(moduleRef);
+      const invoker = new AccountAddress(this.sender);
+
+      // Serialize the parameters
+      const serializedParams = serializeUpdateContractParameters(
+        "gonana_smart_wallet",
+        "getCis2TransferMessageHash",
+        message,
+        schema,
+      );
+
+      const result = await this.client.invokeContract({
+        contract: unwrap(contractAddress),
+        invoker,
+        method: "gonana_smart_wallet.getCis2TransferMessageHash",
+        parameter: serializedParams,
+      });
+      console.log({result});
+      const decodedResult = deserializeReceiveReturnValue(
+        // @ts-ignore
+        result.returnValue,
+        schema,
+        "gonana_smart_wallet",
+        "getCis2TransferMessageHash",
+      );
+
+      console.log({decodedResult});
+      // @ts-ignore
+      return result.returnValue;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async withdrawCis2Token(
+    amount: number,
+    recipient: string,
+    id: string,
+    tokenAddress: any,
+  ) {
+    const contractAddress = {
+      index: this.contractIndex,
+      subindex: this.contractSubindex,
+    };
+    const wallet = await this.getOrCreateConcordiumKeyPairs(id);
+    const sender = new AccountAddress(this.sender);
+    const signer = buildBasicAccountSigner(this.signingKey);
+    const moduleRef = new ModuleReference(this.moduleRef);
+    const schema = await this.client.getEmbeddedSchema(moduleRef);
+
+    const maxCost = BigInt(30000);
+    const contractName = "gonana_smart_wallet";
+    const receiveName = "gonana_smart_wallet.withdrawCis2Tokens";
+
+    const nonce = (await this.nonceOf(wallet.publicKey))[0];
+
+    console.log({nonce});
+    const expiry_time = await this.getExpiryTime();
+
+    const message = {
+      entry_point: "withdrawCis2Tokens",
+      expiry_time,
+      nonce,
+      service_fee_recipient:
+        "b288c8518c8be158e5e22cb1ee8c748b1992a2cb3572643a7b6ceb1ccd6bf3ec",
+      service_fee_amount: {
+        token_amount: "0",
+        token_id: "",
+        cis2_token_contract_address: tokenAddress,
+      },
+      simple_withdraws: [
+        {
+          to: {
+            Account: [recipient],
+          },
+          withdraw_amount: {
+            token_amount: (amount * 10 ** 6).toString(),
+            token_id: "",
+            cis2_token_contract_address: tokenAddress,
+          },
+          data: "",
+        },
+      ],
+    };
+
+    const messageHash = await this.getCis2WithdrawMessageHash(message);
+    // console.log({ messageHash });
+    const messageHashBin = this.hexToUint8Array(messageHash);
+
+    const privateKeyBin = this.hexToUint8Array(wallet.privateKey);
+
+    const signatureUint8 = sodium.crypto_sign_detached(
+      messageHashBin,
+      privateKeyBin,
+    );
+    const signature = sodium.to_hex(signatureUint8);
+    const paramJson = [
+      {
+        message,
+        signature,
+        signer: wallet.publicKey,
+      },
+    ];
+
+    const updateHeader: AccountTransactionHeader = {
+      // @ts-ignore
+      expiry: await this.getDefaultTransactionExpiry(),
+      nonce: (await this.client.getNextAccountNonce(sender)).nonce,
+      sender,
+    };
+
+    const updateParams = serializeUpdateContractParameters(
+      contractName,
+      "withdrawCis2Tokens",
+      paramJson,
+      schema,
+    );
+    console.log({updateHeader, updateParams});
+
+    const updatePayload: UpdateContractPayload = {
+      amount: new CcdAmount(0),
+      address: unwrap(contractAddress),
+      receiveName,
+      message: updateParams,
+      maxContractExecutionEnergy: maxCost,
+    };
+
+    console.log({updatePayload});
+    const updateTransaction: AccountTransaction = {
+      header: updateHeader,
+      payload: updatePayload,
+      type: AccountTransactionType.Update,
+    };
+
+    const updateSignature = await signTransaction(updateTransaction, signer);
+    const updateTrxHash = await this.client.sendAccountTransaction(
+      updateTransaction,
+      updateSignature,
+    );
+    console.log("Transaction submitted, waiting for finalization...");
+    const updateStatus = await this.client.waitForTransactionFinalization(
+      updateTrxHash,
+    );
+    console.dir(updateStatus, {depth: null, colors: true});
+    //@ts-ignore
+    console.log(updateStatus.summary.transactionType);
+
+    return updateTrxHash;
+  }
+
+  async getCis2WithdrawMessageHash(message: any) {
+    try {
+      const contractAddress = {
+        index: this.contractIndex,
+        subindex: this.contractSubindex,
+      };
+      const moduleRef = new ModuleReference(this.moduleRef);
+      const schema = await this.client.getEmbeddedSchema(moduleRef);
+      const invoker = new AccountAddress(this.sender);
+
+      // Serialize the parameters
+      const serializedParams = serializeUpdateContractParameters(
+        "gonana_smart_wallet",
+        "getCis2WithdrawMessageHash",
+        message,
+        schema,
+      );
+
+      const result = await this.client.invokeContract({
+        contract: unwrap(contractAddress),
+        invoker,
+        method: "gonana_smart_wallet.getCis2WithdrawMessageHash",
+        parameter: serializedParams,
+      });
+
+      console.log({result});
+
+      const decodedResult = deserializeReceiveReturnValue(
+        // @ts-ignore
+        result.returnValue,
+        schema,
+        "gonana_smart_wallet",
+        "getCis2WithdrawMessageHash",
+      );
+
+      console.log({decodedResult});
+      // @ts-ignore
+      return result.returnValue;
+    } catch (error) {
+      console.error(error);
+    }
   }
 }

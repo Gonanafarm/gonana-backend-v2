@@ -176,6 +176,9 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   referral_code: string;
+
+  @Prop({type: mongoose.SchemaTypes.Number, default: undefined})
+  gonaTokenBalance: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

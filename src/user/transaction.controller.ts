@@ -185,6 +185,33 @@ export class TransactionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get("/gonatoken-balance")
+  getGonaTokenBalance(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user.id;
+    return this.userService.getGonaTokenBalance(user_id);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Post("/transfer-gona")
+  transferGona(@Req() req: Request, @Body() data: any) {
+    //@ts-ignore
+    const user_id = req.user.id;
+    console.log(data);
+
+    return this.userService.transferGonaToken(
+      user_id,
+      data.amount,
+      data.recipient,
+    );
+  }
+  @UseGuards(JwtAuthGuard)
+  @Post("/withdraw-gona")
+  withdrawGona(@Req() req: Request, @Body() data: any) {
+    //@ts-ignore
+    const user_id = req.user.id;
+    return this.userService.withdrawGona(user_id, data.amount, data.recipient);
+  }
+  @UseGuards(JwtAuthGuard)
   @Post("/ngn-usd")
   ngnToUsd(@Body("ngn") data: string) {
     return this.userService.convertNgntoUsd(data);
