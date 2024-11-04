@@ -2228,6 +2228,7 @@ export class UserService extends GenericService<UserDocument> {
       user.gonaTokenBalance = balance;
       await user.save();
       return {
+        success: true,
         balance: balance,
       };
     } catch (error: any) {
@@ -2358,7 +2359,6 @@ export class UserService extends GenericService<UserDocument> {
       if (!transaction) {
         throw new BadRequestException("Transaction Failed");
       }
-      
     } catch (error: any) {
       console.log(error);
       throw new HttpException(
