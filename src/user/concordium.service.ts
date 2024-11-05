@@ -847,7 +847,7 @@ export class ConcordiumService {
   async depositCis2Token(
     _amount: number,
     id: string,
-    tokencontractAddress: ContractAddress,
+    tokencontractAddress: any,
     tokenModuleRef: string,
   ) {
     const sender = new AccountAddress(this.sender);

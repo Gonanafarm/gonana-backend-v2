@@ -34,6 +34,7 @@ import {NotificationDocument} from "./notification.schema";
 import {providers, Wallet, utils, ethers} from "ethers";
 import {
   gonaAdminToken,
+  gonaModuleRef,
   gonanaAccountBankName,
   gonanaAccountName,
   gonanaAccountNumber,
@@ -2359,6 +2360,32 @@ export class UserService extends GenericService<UserDocument> {
       if (!transaction) {
         throw new BadRequestException("Transaction Failed");
       }
+      return {success: true, messsage: "Withdrawal Successful"};
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.reason || error.message,
+        },
+        error.status || 400,
+      );
+    }
+  }
+
+  async depositGona(id: string, amount: number) {
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new BadRequestException("Invalid Token");
+      }
+      await this.ccdService.depositCis2Token(
+        amount,
+        id,
+        gonaAdminToken,
+        gonaModuleRef,
+      );
+      return {success: true, message: "Deposit Succesful"};
     } catch (error: any) {
       console.log(error);
       throw new HttpException(

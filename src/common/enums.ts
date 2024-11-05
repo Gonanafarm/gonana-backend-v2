@@ -34,7 +34,7 @@ export const gonaAdminToken = {
   index: 9774,
   subindex: 0,
 };
-
+export const gonaModuleRef = process.env.GONANA_MODULE_REF as string;
 export const toronetHeaders = {
   admin: process.env.TORONET_ADMIN_ADDRESS,
   adminpwd: process.env.TORONET_ADMIN_PASSWORD,

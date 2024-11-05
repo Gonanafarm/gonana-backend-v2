@@ -217,6 +217,14 @@ export class TransactionController {
     return this.userService.convertNgntoUsd(data);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post("/deposit-gona")
+  deposit(@Req() req: Request, @Body("amount") amount: number) {
+    //@ts-ignore
+    const user_id = req.user.id;
+    return this.userService.depositGona(user_id, amount);
+  }
+
   @Post("/ngn-arb")
   ngnToArb(@Body("ngn") data: string) {
     return this.userService.convertNgntoArb(data);
