@@ -11,6 +11,7 @@ import {
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import config from "../config";
+import * as sodium from "libsodium-wrappers";
 import {comparePassword, hashPassword} from "../common/auth";
 import {
   UserNotFoundException,
@@ -45,6 +46,7 @@ import {
   toronetHeaders,
 } from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
+import {AccountAddress} from "@concordium/node-sdk";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -1141,7 +1143,6 @@ export class UserService extends GenericService<UserDocument> {
       };
     } catch (error: any) {
       console.log(error);
-
       throw new HttpException(
         {
           success: false,
@@ -2362,6 +2363,45 @@ export class UserService extends GenericService<UserDocument> {
       }
       return {success: true, messsage: "Withdrawal Successful"};
     } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.reason || error.message,
+        },
+        error.status || 400,
+      );
+    }
+  }
+
+  async sendGona(id: string, amount: number, recipientWallet: string) {
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new BadRequestException("Invalid Token");
+      }
+
+      const query = await this.getGonaTokenBalance(id);
+      if (query.balance < amount) {
+        throw new BadRequestException("Insufficient Gona Token Balance");
+      }
+      if (recipientWallet.length === 64) {
+        await this.transferGonaToken(id, amount, recipientWallet);
+        return {success: true, message: "Transfer Successful"};
+      }
+      const isCcdWallet = new AccountAddress(recipientWallet);
+      if (isCcdWallet) {
+        const transaction = await this.withdrawGona(
+          id,
+          amount,
+          recipientWallet,
+        );
+        if (!transaction) {
+          throw new BadRequestException("Transaction Failed");
+        }
+        return {success: true, messsage: "Withdrawal Successful"};
+      }
+    } catch (error) {
       console.log(error);
       throw new HttpException(
         {
