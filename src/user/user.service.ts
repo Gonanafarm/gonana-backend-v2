@@ -2389,6 +2389,7 @@ export class UserService extends GenericService<UserDocument> {
         await this.transferGonaToken(id, amount, recipientWallet);
         return {success: true, message: "Transfer Successful"};
       }
+      
       const isCcdWallet = new AccountAddress(recipientWallet);
       if (isCcdWallet) {
         const transaction = await this.withdrawGona(
