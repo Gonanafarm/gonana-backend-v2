@@ -86,6 +86,9 @@ export class UserPublicData {
 
   @ApiProperty({})
   onesignal_id: string;
+
+  @ApiProperty({})
+  firebaseToken: string;
 }
 
 export class UpdateUserDto {
@@ -137,6 +140,12 @@ export class UpdateUserDto {
   @Trim()
   @IsNotEmpty()
   country: string;
+
+  @IsString()
+  @IsOptional()
+  @Trim()
+  @IsNotEmpty()
+  firebaseToken: string;
 }
 
 export class GetUserTransactonsDto {
@@ -180,7 +189,6 @@ export class ResolveAccountNumber {
   @Trim()
   @Length(10)
   account_number: string;
-
 
   @ApiProperty({})
   @Trim()

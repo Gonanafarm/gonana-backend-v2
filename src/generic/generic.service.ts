@@ -21,7 +21,41 @@ export class GenericService<T extends Document> implements ServiceInterface {
         {...updateDoc},
         {new: true},
       );
-      
+
+      if (updated == null || updated == undefined) {
+        throw ResourceNotFoundException();
+      }
+      return updated;
+    } catch (e) {
+      throw e;
+    }
+  };
+  updateUser = async (item_id: string, updateDoc: any) => {
+    try {
+      const updated = await this.dataModel.findByIdAndUpdate(
+        item_id,
+        {...updateDoc},
+        {
+          new: true,
+          projection: {
+            id: 1,
+            email: 1,
+            first_name: 1,
+            last_name: 1,
+            profile_photo: 1,
+            cover_photo: 1,
+            phone: 1,
+            address: 1,
+            virtual_account_number: 1,
+            virtual_account_bank_name: 1,
+            virtual_account_name: 1,
+            country: 1,
+            onesignal_id: 1,
+            firebaseToken: 1,
+          },
+        },
+      );
+
       if (updated == null || updated == undefined) {
         throw ResourceNotFoundException();
       }

@@ -179,6 +179,9 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.Number, default: undefined})
   gonaTokenBalance: number;
+
+  @Prop({type: mongoose.SchemaTypes.String, default: undefined})
+  firebaseToken: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -212,6 +215,7 @@ UserSchema.methods.getPublicData = function () {
     country,
     onesignal_id,
     referral_code,
+    firebaseToken,
   } = this;
   const publicData = {
     id,
@@ -238,6 +242,7 @@ UserSchema.methods.getPublicData = function () {
     country,
     onesignal_id,
     referral_code,
+    firebaseToken,
   };
   return publicData;
 };

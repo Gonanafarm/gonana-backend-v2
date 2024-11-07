@@ -374,7 +374,7 @@ export class UserService extends GenericService<UserDocument> {
 
   async updateUserDetails(id: string, details: any) {
     try {
-      const updatedUser = await this.updateItem(id, details);
+      const updatedUser = await this.updateUser(id, details);
       return updatedUser;
     } catch (error: any) {
       console.error(error);
@@ -2389,7 +2389,7 @@ export class UserService extends GenericService<UserDocument> {
         await this.transferGonaToken(id, amount, recipientWallet);
         return {success: true, message: "Transfer Successful"};
       }
-      
+
       const isCcdWallet = new AccountAddress(recipientWallet);
       if (isCcdWallet) {
         const transaction = await this.withdrawGona(
