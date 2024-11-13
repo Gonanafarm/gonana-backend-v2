@@ -18,6 +18,7 @@ export interface OrderDocument extends Document {
   customer_received?: boolean;
   farmer_ship_date?: Date;
   customer_received_date?: Date;
+  channel?: string;
   type?: "OUTGOING";
   status:
     | "pending"
@@ -95,6 +96,9 @@ export class Order {
 
   @Prop({type: mongoose.SchemaTypes.String, required: true})
   customer_id: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, required: false, trim: true})
+  channel: string;
 
   @ApiProperty()
   @Prop({

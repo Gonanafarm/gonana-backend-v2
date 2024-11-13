@@ -4,7 +4,8 @@ import * as cloudinary from "cloudinary";
 
 import * as admin from "firebase-admin";
 import {bootstrap} from "./bootstrap";
-
+import * as Ably from "ably";
+import {ABLY_API_KEY} from "./common/enums";
 dotenv.config();
 
 cloudinary.v2.config({
@@ -18,5 +19,6 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccountFile),
 });
 export const db = admin.firestore();
+export const ably = new Ably.Realtime(ABLY_API_KEY);
 
 bootstrap();

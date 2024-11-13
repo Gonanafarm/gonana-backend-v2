@@ -14,11 +14,12 @@ import {GlobalAccessLogger} from "./common/accessLogger";
 import {AuthModule} from "./auth/auth.module";
 import {UserModule} from "./user/user.module";
 import config from "./config";
-import {CatalogModule} from "./catalog/catalog.module";
+import { CatalogModule } from "./catalog/catalog.module";
 import {JwtModule} from "@nestjs/jwt";
 import {PassportModule} from "@nestjs/passport";
 import {PublicModule} from "./public/public.module";
 import { GeocodeModule } from "./geocoder/module";
+import { MessageModule } from './message/message.module';
 
 const DEV_TRANSPORTER = {
   service: 'Gmail',
@@ -64,6 +65,7 @@ const DEV_TRANSPORTER = {
         },
       }),
     }),
+    MessageModule,
   
   ],
   providers: config.isTest() ? undefined : [GlobalAccessLogger],

@@ -19,6 +19,8 @@ import {PostService} from "../post/post.service";
 const abi = require("../../abi.json");
 import * as moment from "moment";
 import {ConcordiumService} from "../user/concordium.service";
+import {MessageService} from "../message/message.service";
+import {MessageDocument} from "../message/message.schema";
 const now = new Date(); // Get the current date and time in UTC
 @Injectable()
 export class OrderService {
@@ -34,6 +36,7 @@ export class OrderService {
     //@ts-ignore
     @InjectModel("INCOMING_ORDERS")
     private incomingOrderModel: Model<IncomingOrderDocument>,
+    @InjectModel("Message") private messageModel: Model<MessageDocument>,
     private userService: UserService,
     private userMailerService: UserMailerService,
     private ccdService: ConcordiumService,
@@ -182,6 +185,29 @@ export class OrderService {
         HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  async isValidShipbubbleId(shipbubbleId: string) {
+    const incomingOrder = await this.incomingOrderModel.findOne({
+      shipbubble_id: shipbubbleId,
+    });
+    if (!incomingOrder) {
+      return false;
+    }
+    if (incomingOrder.status === "completed") {
+      return false;
+    }
+
+    const outgoingOrder = await this.outgoingOrderModel.findOne({
+      shipbubble_id: shipbubbleId,
+    });
+    if (!outgoingOrder) {
+      return false;
+    }
+    if (outgoingOrder.status === "completed") {
+      return false;
+    }
+    return true;
   }
 
   async handleWebhook(payload: any) {

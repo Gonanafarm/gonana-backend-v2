@@ -128,7 +128,7 @@ export class CartItemController {
     //@ts-ignore
     const user_id = req.user?.id;
     console.log(body);
-    return this.dataService.payWithCCd(body.orders, user_id, body.service_code);
+    return this.dataService.payWithEth(body.orders, user_id, body.service_code);
     
     
   }

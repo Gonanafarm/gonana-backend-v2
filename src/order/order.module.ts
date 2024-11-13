@@ -17,8 +17,10 @@ import {OtpModel} from "../user/otp.model";
 import {JwtModule} from "@nestjs/jwt";
 import config from "../config";
 import {CloudinaryService} from "../post/cloudinary.service";
-import { NotificationModel } from "../user/notification.model";
-import { ConcordiumService } from "../user/concordium.service";
+import {NotificationModel} from "../user/notification.model";
+import {ConcordiumService} from "../user/concordium.service";
+import {MessageService} from "../message/message.service";
+import {MessageModule} from "../message/message.module";
 
 @Module({
   providers: [
@@ -33,6 +35,7 @@ import { ConcordiumService } from "../user/concordium.service";
   ],
   imports: [
     ScheduleModule.forRoot(),
+    MessageModule,
     JwtModule.register({
       secret: config.auth.secret,
       signOptions: {expiresIn: config.auth.jwtTokenExpireInSec},
@@ -43,7 +46,7 @@ import { ConcordiumService } from "../user/concordium.service";
     UserModel,
     IncomingOrderModel,
     OtpModel,
-    NotificationModel
+    NotificationModel,
   ],
   exports: [OutgoingOrderModel, OrderService, IncomingOrderModel],
 })

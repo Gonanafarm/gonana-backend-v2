@@ -7,6 +7,7 @@ import {setupSwaggerDocuments} from "./common/swagger";
 import {AppModule} from "./app.module";
 import config from "./config";
 
+
 /**
  * Helper to be used here & in tests.
  * @param app
@@ -20,7 +21,7 @@ export const configureApp = (app: any) => {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      transform: true
+      transform: true,
     }),
   );
 };
@@ -32,5 +33,5 @@ export async function bootstrap() {
 
   setupSwaggerDocuments(app);
 
-  await app.listen(config.port??"");
+  await app.listen(config.port ?? "");
 }

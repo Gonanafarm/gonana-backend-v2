@@ -44,3 +44,4 @@ export enum PaymentStatus {
   PENDING = "PENDING",
   COMPLETED = "COMPLETED",
 }
+export const ABLY_API_KEY = process.env.ABLY_API_KEY;
