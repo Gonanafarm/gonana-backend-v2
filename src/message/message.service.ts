@@ -119,4 +119,17 @@ export class MessageService {
     });
     return message;
   }
+  async getAllMessageBySenderReceiverIdChannel(
+    senderId: string,
+    receiverId: string,
+    shipbubbleId: string,
+  ) {
+    const message = await this.messageModel.find({
+      $or: [
+        {senderId, receiverId, channel: shipbubbleId},
+        {senderId: receiverId, receiverId: senderId, channel: shipbubbleId},
+      ],
+    });
+    return message;
+  }
 }

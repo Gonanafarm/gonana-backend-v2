@@ -1,4 +1,12 @@
-import {Body, Controller, Post, Req, UseGuards} from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  UseGuards,
+  Get,
+  Param,
+} from "@nestjs/common";
 import {MessageService} from "./message.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {Request} from "express";
@@ -18,6 +26,22 @@ export class MessageController {
       data.message,
       data.channel,
       data.isUrl,
+    );
+  }
+
+  @Get("/:recipientId/:channel")
+  @UseGuards(JwtAuthGuard)
+  async getMessagesBetweenUsers(
+    @Req() req: Request,
+    @Param("recipientId") recipientId: string,
+    @Param("channel") channel: string,
+  ) {
+    //@ts-ignore
+    const senderId = req.user.id;
+    return await this.messageService.getAllMessageBySenderReceiverIdChannel(
+      senderId,
+      recipientId,
+      channel,
     );
   }
 }
