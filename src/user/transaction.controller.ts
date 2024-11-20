@@ -278,4 +278,9 @@ export class TransactionController {
   // test(@Body() data: any) {
   //   return this.ccdService.withdrawFromEscrow(data.id)
   // }
+
+  // @Post("token")
+  // async createToken(@Body("token") data: number) {
+  //   return this.userService.createToken(data);
+  // }
 }

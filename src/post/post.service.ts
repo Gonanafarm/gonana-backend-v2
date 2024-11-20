@@ -239,64 +239,56 @@ export class PostService extends GenericService<PostDocument> {
       );
     }
   }
-  async get(type: string, title?: string, limit?: string, page?: string) {
+  async get(type: string, title: string, limit = "15", page = "1") {
     try {
-      const query: Record<string, unknown> = {};
-      if (type !== undefined) {
-        query.type = type;
-      }
-      if (title !== undefined) query.title = new RegExp(title, "i"); //Case Insensitivity
-      const productsPerPage = 15;
-      let limitToNumber;
-      let pagToNumber;
-      if (limit) {
-        limitToNumber = parseInt(limit);
-      }
-      if (page) {
-        pagToNumber = parseInt(page);
-        // Adjust the page number to start from 1
-        pagToNumber = Math.max(1, pagToNumber);
-      } else {
-        // If page is not provided, set it to 1 by default
-        pagToNumber = 1;
-      }
-      const lim =
-        limitToNumber === undefined || limitToNumber < 1 ? 15 : limitToNumber;
-      const skipCount = (pagToNumber - 1) * productsPerPage;
+      const query = {};
+      //@ts-ignore
+      if (type) query.type = type;
+      //@ts-ignore
+      if (title) query.title = new RegExp(title, "i"); // Case insensitive
+
+      const productsPerPage = parseInt(limit) || 15;
+      const pageNumber = Math.max(parseInt(page), 1); // Page must be 1 or higher
+      const skipCount = (pageNumber - 1) * productsPerPage;
 
       const products = await this.productModel
         .find(query)
-        .sort({_id: -1}) // Lifo order
+        .sort({_id: -1}) // LIFO order
         .skip(skipCount)
-        .limit(lim);
-      if (products.length < 1) {
-        throw new NotFoundException("Products Not Found");
+        .limit(productsPerPage);
+
+      if (!products.length) {
+        throw new NotFoundException(
+          "No products match the specified criteria.",
+        );
       }
 
-      const productPromises = products.map(async (product: any) => {
-        const id = product.publisher_id;
-        const user = await this.userModel.findById(id);
-        return {
-          product: product,
-          ownerId: user?._id,
-          ownerPhoto: user?.profile_photo,
-          ownerName: `${user?.last_name} ${user?.first_name}`,
-        };
-      });
-      const productsWithOwners = await Promise.all(productPromises);
+      const productsWithOwners = await Promise.all(
+        products.map(async product => {
+          const user = await this.userModel.findById(product.publisher_id);
+          return {
+            product,
+            ownerId: user?._id,
+            ownerPhoto: user?.profile_photo,
+            ownerName: `${user?.last_name} ${user?.first_name}`,
+          };
+        }),
+      );
 
       return {success: true, data: productsWithOwners};
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
       throw new HttpException(
         {
           success: false,
-          message: error.message,
+          message:
+            error.message || "An error occurred while retrieving products.",
         },
-        error.status,
+        error.status || 500,
       );
     }
   }
+
   async getUsersProducts(
     id: string,
     type?: string,

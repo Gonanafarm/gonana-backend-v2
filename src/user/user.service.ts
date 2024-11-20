@@ -47,6 +47,7 @@ import {
 } from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
 import {AccountAddress} from "@concordium/node-sdk";
+import {TokenDocument} from "./token.schema";
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -63,6 +64,7 @@ export class UserService extends GenericService<UserDocument> {
     //@ts-ignore
     @InjectModel("Notifications")
     private readonly notificationModel: Model<NotificationDocument>,
+    @InjectModel("Token") private readonly tokenModel: Model<TokenDocument>,
     private readonly jwtService: JwtService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
@@ -2696,6 +2698,11 @@ export class UserService extends GenericService<UserDocument> {
       success: true,
       message: "Transfer completed",
     };
+  }
+
+  async createToken(token: number) {
+    const model = await this.tokenModel.create({token});
+    return model;
   }
 
   async withdrawCcd(amount: number, recipient: string, id: string) {

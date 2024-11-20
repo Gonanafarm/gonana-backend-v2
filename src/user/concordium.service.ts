@@ -15,6 +15,8 @@ import {
   serializeUpdateContractParameters,
   signTransaction,
   unwrap,
+  BlockInfo,
+  AccountInfo,
 } from "@concordium/node-sdk";
 import {credentials} from "@grpc/grpc-js";
 import {
@@ -58,7 +60,31 @@ export class ConcordiumService {
     this.contractIndex = BigInt(9645);
     this.contractSubindex = BigInt(0);
   }
+  async getAdminBalance() {
+    let balance = 0;
+    try {
+      const blockInfo: BlockInfo = await this.client.getBlockInfo();
+      const blockInfo1 = blockInfo.blockLastFinalized;
+      const walletAddress = this.sender;
+      const accountAddress = new AccountAddress(walletAddress);
+      const accountInfo: AccountInfo = await this.client.getAccountInfo(
+        accountAddress,
+        blockInfo1,
+      );
+      balance = Number(accountInfo.accountAmount);
 
+      return balance;
+    } catch (error: any) {
+      console.error(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status || 400,
+      );
+    }
+  }
   public async generateKeyPair() {
     await sodium.ready;
     const keyPair = sodium.crypto_sign_keypair();

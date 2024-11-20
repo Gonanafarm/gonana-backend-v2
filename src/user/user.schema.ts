@@ -182,6 +182,9 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   firebaseToken: string;
+
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  airdropped: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
