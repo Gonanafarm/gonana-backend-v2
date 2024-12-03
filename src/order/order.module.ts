@@ -21,8 +21,6 @@ import {NotificationModel} from "../user/notification.model";
 import {ConcordiumService} from "../user/concordium.service";
 import {MessageService} from "../message/message.service";
 import {MessageModule} from "../message/message.module";
-import { TokenModel } from "../user/token.model";
-
 @Module({
   providers: [
     OrderService,
@@ -45,7 +43,6 @@ import { TokenModel } from "../user/token.model";
     PostModel,
     TransactionModel,
     UserModel,
-    TokenModel,
     IncomingOrderModel,
     OtpModel,
     NotificationModel,

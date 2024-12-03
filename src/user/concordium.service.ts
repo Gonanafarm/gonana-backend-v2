@@ -1059,6 +1059,107 @@ export class ConcordiumService {
     return updateTrxHash;
   }
 
+  async batchTransferCis2Token(
+    recepientArray: any[],
+    id: string,
+    cis2tokenAddress: any,
+  ) {
+    const contractAddress = {
+      index: this.contractIndex,
+      subindex: this.contractSubindex,
+    };
+    const wallet = await this.getOrCreateConcordiumKeyPairs(id);
+    const sender = new AccountAddress(this.sender);
+    const signer = buildBasicAccountSigner(this.signingKey);
+    const moduleRef = new ModuleReference(this.moduleRef);
+    const schema = await this.client.getEmbeddedSchema(moduleRef);
+
+    const maxCost = BigInt(30000);
+    const contractName = "gonana_smart_wallet";
+    const receiveName = "gonana_smart_wallet.transferCis2Tokens";
+
+    const nonce = (await this.nonceOf(wallet.publicKey))[0];
+
+    console.log({nonce});
+    const expiry_time = await this.getExpiryTime();
+    const message = {
+      entry_point: "transferCis2Tokens",
+      expiry_time,
+      nonce,
+      service_fee_recipient:
+        "b288c8518c8be158e5e22cb1ee8c748b1992a2cb3572643a7b6ceb1ccd6bf3ec",
+      service_fee_amount: {
+        token_amount: "0",
+        token_id: "",
+        cis2_token_contract_address: cis2tokenAddress,
+      },
+      simple_transfers: recepientArray,
+    };
+
+    const messageHash = await this.getCis2TransferMessageHash(message);
+    //console.log({ messageHash });
+
+    const messageHashBin = this.hexToUint8Array(messageHash);
+    const privateKeyBin = this.hexToUint8Array(wallet.privateKey);
+
+    const signatureUint8 = sodium.crypto_sign_detached(
+      messageHashBin,
+      privateKeyBin,
+    );
+    //console.log({ signatureUint8 });
+    const signature = sodium.to_hex(signatureUint8);
+    ///console.log({ signature });
+    const paramJson = [
+      {
+        message,
+        signature,
+        signer: wallet.publicKey,
+      },
+    ];
+
+    const updateHeader: AccountTransactionHeader = {
+      // @ts-ignore
+      expiry: await this.getDefaultTransactionExpiry(),
+      nonce: (await this.client.getNextAccountNonce(sender)).nonce,
+      sender,
+    };
+
+    const updateParams = serializeUpdateContractParameters(
+      contractName,
+      "transferCis2Tokens",
+      paramJson,
+      schema,
+    );
+    //console.log({ updateHeader, updateParams });
+    const updatePayload: UpdateContractPayload = {
+      amount: new CcdAmount(0),
+      address: unwrap(contractAddress),
+      receiveName,
+      message: updateParams,
+      maxContractExecutionEnergy: maxCost,
+    };
+
+    // console.log({ updatePayload });
+    const updateTransaction: AccountTransaction = {
+      header: updateHeader,
+      payload: updatePayload,
+      type: AccountTransactionType.Update,
+    };
+    console.log(this.getDefaultTransactionExpiry());
+    const updateSignature = await signTransaction(updateTransaction, signer);
+    const updateTrxHash = await this.client.sendAccountTransaction(
+      updateTransaction,
+      updateSignature,
+    );
+    console.log("Transaction submitted, waiting for finalization...");
+    const updateStatus = await this.client.waitForTransactionFinalization(
+      updateTrxHash,
+    );
+    console.dir(updateStatus, {depth: null, colors: true});
+
+    return updateTrxHash;
+  }
+
   async getCis2TransferMessageHash(message: any) {
     try {
       const contractAddress = {

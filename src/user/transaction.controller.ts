@@ -225,6 +225,14 @@ export class TransactionController {
     return this.userService.depositGona(user_id, amount);
   }
 
+  // @UseGuards(JwtAuthGuard)
+  // @Post("/deposit-ccd")
+  // depositCcd(@Req() req: Request, @Body("amount") amount: number) {
+  //   //@ts-ignore
+  //   const user_id = req.user.id;
+  //   return this.ccdService.deposit(amount, user_id);
+  // }
+
   @UseGuards(JwtAuthGuard)
   @Post("/send-gona")
   sendGona(@Req() req: Request, @Body() data: any) {
@@ -279,8 +287,13 @@ export class TransactionController {
   //   return this.ccdService.withdrawFromEscrow(data.id)
   // }
 
-  // @Post("token")
-  // async createToken(@Body("token") data: number) {
-  //   return this.userService.createToken(data);
+  // @Post("airdrop")
+  // async createToken() {
+  //   return this.userService.airdropTokens();
+  // }
+
+  // @Post("simbuy")
+  // async simbuy(@Body() data: any) {
+  //   return this.userService.simulateBuy();
   // }
 }

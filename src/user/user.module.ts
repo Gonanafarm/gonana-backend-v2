@@ -21,7 +21,6 @@ import {NotificationModel} from "./notification.model";
 import {ScheduleModule} from "@nestjs/schedule";
 import {UserCronJob} from "./user.cron";
 import {ConcordiumService} from "./concordium.service";
-import {TokenModel} from "./token.model";
 
 @Module({
   imports: [
@@ -29,7 +28,6 @@ import {TokenModel} from "./token.model";
     GeocodeModule,
     OtpModel,
     UserModel,
-    TokenModel,
     ScheduleModule.forRoot(),
     TransactionModel,
     NotificationModel,

@@ -47,7 +47,14 @@ import {
 } from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
 import {AccountAddress} from "@concordium/node-sdk";
-import {TokenDocument} from "./token.schema";
+
+export const shuffleArray = <T>(array: T[]): T[] => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+};
 
 @Injectable()
 export class UserService extends GenericService<UserDocument> {
@@ -64,7 +71,6 @@ export class UserService extends GenericService<UserDocument> {
     //@ts-ignore
     @InjectModel("Notifications")
     private readonly notificationModel: Model<NotificationDocument>,
-    @InjectModel("Token") private readonly tokenModel: Model<TokenDocument>,
     private readonly jwtService: JwtService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly userMailer: UserMailerService,
@@ -1867,6 +1873,11 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
   }
+
+  async roundToDecimalPlaces(num: number, decimals: number) {
+    const factor = Math.pow(10, decimals);
+    return Math.round(num * factor) / factor;
+  }
   async getArbitrumWalletBalance(id: string) {
     try {
       if (!id) {
@@ -1966,6 +1977,8 @@ export class UserService extends GenericService<UserDocument> {
         const balance = await this.ccdService.ccdBalanceOf(id);
         user.ccd_wallet = balance.toString();
         const ngn = await this.convertCcdtoNgn(user.ccd_wallet);
+        await user.save();
+
         return {
           success: true,
           cryptoWalletBalanceInNgn: ngn,
@@ -1975,12 +1988,13 @@ export class UserService extends GenericService<UserDocument> {
       const balance = await this.ccdService.ccdBalanceOf(id);
 
       user.ccd_wallet = balance.toString();
-
+      console.log(balance);
       const ngn = await this.convertCcdtoNgn(user.ccd_wallet);
       const usd = await this.convertNgntoUsd(ngn);
       user.ccdWalletBalanceInNgn = ngn;
       user.ccdWalletBalanceInUsd = usd;
       await user.save();
+      console.log(`${user.first_name} ccdbalance is ${balance.toString()}`);
       return {
         success: true,
         cryptoWalletBalanceInNgn: ngn.toString(),
@@ -2422,10 +2436,15 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new BadRequestException("Invalid Token");
       }
+      console.log(amount);
+
       await this.ccdService.depositCis2Token(
         amount,
         id,
-        gonaAdminToken,
+        {
+          index: 9774n,
+          subindex: 0n,
+        },
         gonaModuleRef,
       );
       return {success: true, message: "Deposit Succesful"};
@@ -2700,9 +2719,229 @@ export class UserService extends GenericService<UserDocument> {
     };
   }
 
-  async createToken(token: number) {
-    const model = await this.tokenModel.create({token});
-    return model;
+  async airdropTokens() {
+    const users = await this.userModel
+      .find({
+        ccd_wallet_address: {
+          $type: "string",
+          $ne: null,
+        },
+        $expr: {
+          $gt: [{$strLenCP: "$ccd_wallet_address"}, 1], // Ensures the length is greater than 1
+        },
+        _id: {$nin: ["66b60b909b70117042ef83d0"]},
+        airdropped: false,
+      })
+      .limit(30);
+    const noOfUsers = users.length;
+    const avalableTokens = await this.getGonaTokenBalance(
+      "66b60b909b70117042ef83d0",
+    );
+
+    if (avalableTokens.balance <= 0) {
+      console.error("Insufficient tokens");
+      return;
+    }
+
+    const distributionArray = await this.distributeTokens(
+      avalableTokens.balance,
+      noOfUsers,
+      700,
+      1050,
+    );
+    console.log(distributionArray);
+    const recipientArray = [];
+    for (let i = 0; i < users.length; i++) {
+      if (users[i].airdropped === false) {
+        console.log(distributionArray[i]);
+        recipientArray.push({
+          to: users[i].ccd_wallet_address,
+          transfer_amount: {
+            token_amount: (distributionArray[i] * 10 ** 6).toString(),
+            token_id: "",
+            cis2_token_contract_address: gonaAdminToken,
+          },
+        });
+        console.log(
+          `Built recipient ${distributionArray[i]} token to ${users[i].email}`,
+        );
+        users[i].airdropped = true;
+        await users[i].save();
+      }
+    }
+    await this.ccdService.batchTransferCis2Token(
+      recipientArray,
+      "66b60b909b70117042ef83d0",
+      gonaAdminToken,
+    );
+
+    return;
+  }
+  coinFlip() {
+    return Math.random() < 0.5 ? "Buy" : "Sell";
+  }
+
+  // async simulateBuy() {
+  //   const products = await this.postModel.find({type: "product"});
+
+  //   const farmerIds = products.map(product => {
+  //     return product.publisher_id;
+  //   });
+
+  //   const usersA = await this.userModel
+  //     .find({
+  //       ccd_wallet_address: {
+  //         $type: "string",
+  //         $ne: null,
+  //       },
+  //       $expr: {
+  //         $gt: [{$strLenCP: "$ccd_wallet_address"}, 1], // Ensures the length is greater than 1
+  //       },
+  //       _id: {$nin: ["66b60b909b70117042ef83d0", ...farmerIds]},
+  //       //airdropped: true,
+  //     })
+  //     .limit(50);
+  //   const users = shuffleArray(usersA);
+  //   const shuffledProducts = shuffleArray(products);
+  //   for (let i = 0; i < users.length; i++) {
+  //     const adminId = "66b60b909b70117042ef83d0";
+  //     const adminBalance = await this.ccdService.ccdBalanceOf(adminId);
+
+  //     const userBalance = await this.ccdService.ccdBalanceOf(users[i].id);
+  //     const farmer = await this.userModel.findById(
+  //       shuffledProducts[i].publisher_id,
+  //     );
+  //     if (userBalance < shuffledProducts[i].ccd_price) {
+  //       const amountToSend = shuffledProducts[0].amount - userBalance + 1;
+  //       await this.ccdService.transferCcd(
+  //         amountToSend,
+  //         users[i].ccd_wallet_address,
+  //         adminId,
+  //       );
+  //     }
+  //     const transactionId = this.generateRandomString(5);
+  //     await this.ccdService.pay(
+  //       shuffledProducts[i].amount,
+  //       farmer.ccd_wallet_address,
+  //       adminId,
+  //       transactionId,
+  //     );
+  //     await this.farmerModel.create({
+  //       farmerId: farmer.id,
+  //       customerId: users[i].id,
+  //       productId: shuffledProducts[i].id,
+  //       transactionId: transactionId,
+  //     });
+  //   }
+  //   const action = this.coinFlip();
+  //   if (action === "Sell") {
+  //     console.log("Its a sell");
+  //     const transactions = await this.farmerModel.find();
+  //     const newTransactions = shuffleArray(transactions);
+  //     const iterations = Math.min(newTransactions.length, 4);
+
+  //     for (let i = 0; i < iterations; i++) {
+  //       // Generate a random delay between 0 ms and 5 minutes (300,000 ms)
+  //       const delay = Math.floor(Math.random() * (300000 + 1));
+  //       console.log(
+  //         `Escrow will be released to ${newTransactions[i].farmerId} in ${delay}ms`,
+  //       );
+  //       setTimeout(async () => {
+  //         await this.ccdService.withdrawFromEscrow(
+  //           newTransactions[i].transactionId,
+  //         );
+  //       }, delay);
+  //     }
+  //   }
+  //   if (action === "Buy") {
+  //     console.log("Its a buy");
+  //     for (let i = 0; i < 4; i++) {
+  //       const adminId = "66b60b909b70117042ef83d0";
+  //       const adminBalance = await this.ccdService.ccdBalanceOf(adminId);
+
+  //       if (adminBalance < 200) {
+  //         throw new BadRequestException("Insufficient Balance");
+  //       }
+
+  //       const userBalance = await this.ccdService.ccdBalanceOf(users[i].id);
+  //       const farmer = await this.userModel.findById(
+  //         shuffledProducts[i].publisher_id,
+  //       );
+
+  //       if (userBalance < shuffledProducts[i].ccd_price) {
+  //         console.log(`Not enough balance  sending to ${users[i].balance}`);
+  //         const amountToSend = shuffledProducts[i].amount - userBalance + 1;
+
+  //         // Generate random delay between 0 and 5 minutes for transfer
+  //         const transferDelay = Math.floor(Math.random() * (300000 + 1));
+
+  //         setTimeout(async () => {
+  //           await this.ccdService.transferCcd(
+  //             amountToSend,
+  //             users[i].ccd_wallet_address,
+  //             adminId,
+  //           );
+  //         }, transferDelay);
+  //       }
+
+  //       // Generate random delay between 0 and 5 minutes for pay
+  //       const payDelay = Math.floor(Math.random() * (300000 + 1));
+
+  //       setTimeout(async () => {
+  //         const transactionId = this.generateRandomString(5);
+  //         await this.ccdService.pay(
+  //           shuffledProducts[i].amount,
+  //           farmer.ccd_wallet_address,
+  //           adminId,
+  //           transactionId,
+  //         );
+  //         await this.farmerModel.create({
+  //           farmerId: farmer.id,
+  //           customerId: users[i].id,
+  //           productId: shuffledProducts[i].id,
+  //           transactionId: transactionId,
+  //         });
+  //       }, payDelay);
+  //     }
+  //   }
+  // }
+
+  async distributeTokens(
+    totalTokens: number,
+    usersCount: number,
+    minTokens: number,
+    maxTokens: number,
+  ): Promise<number[]> {
+    // Input validation
+    if (
+      totalTokens < 0 ||
+      usersCount <= 0 ||
+      minTokens < 0 ||
+      maxTokens < minTokens
+    ) {
+      throw new Error("Invalid input parameters");
+    }
+
+    if (minTokens * usersCount > totalTokens) {
+      throw new Error(
+        "Cannot satisfy minimum distribution constraints. " +
+          `Total tokens must be at least ${minTokens * usersCount}`,
+      );
+    }
+
+    const allocations: number[] = new Array(usersCount).fill(0);
+
+    for (let i = 0; i < usersCount; i++) {
+      allocations[i] = minTokens;
+    }
+
+    for (let i = 0; i < usersCount; i++) {
+      const space = maxTokens - allocations[i];
+      const randomAmount = Math.floor(Math.random() * space) + 1;
+      allocations[i] += randomAmount;
+    }
+
+    return allocations;
   }
 
   async withdrawCcd(amount: number, recipient: string, id: string) {

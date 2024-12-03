@@ -57,6 +57,17 @@ export class OrderService {
 
     const product = await this.productModel.findById(product_id);
     if (!product) return;
+    let productAmount = product.amount;
+    if (payment_method === "CCD") {
+      productAmount = await this.userService.convertNgntoCcd(
+        productAmount.toString(),
+      );
+    }
+    if (payment_method === "ETH") {
+      productAmount = await this.userService.convertNgntoEth(
+        productAmount.toString(),
+      );
+    }
 
     const order = await this.outgoingOrderModel.create({
       farmer_id: farmer.id,
@@ -65,7 +76,7 @@ export class OrderService {
       payment_method: payment_method,
       image: product.images,
       product_id: product.id,
-      product_amount: product.amount,
+      product_amount: this.userService.roundToDecimalPlaces(productAmount, 2),
       shipbubble_id: shipbubble_id,
       customer_id: customer_id,
       product_description: product.body,
@@ -95,7 +106,17 @@ export class OrderService {
 
     const product = await this.productModel.findById(product_id);
     if (!product) return;
-
+    let productAmount = product.amount;
+    if (payment_method === "CCD") {
+      productAmount = await this.userService.convertNgntoCcd(
+        productAmount.toString(),
+      );
+    }
+    if (payment_method === "ETH") {
+      productAmount = await this.userService.convertNgntoEth(
+        productAmount.toString(),
+      );
+    }
     const order = await this.incomingOrderModel.create({
       customer_id: customer.id,
       product_name: product.title,
@@ -104,7 +125,7 @@ export class OrderService {
       image: product.images,
       farmer_id: farmer_id,
       product_id: product.id,
-      product_amount: product.amount,
+      product_amount: this.userService.roundToDecimalPlaces(productAmount, 2),
       shipbubble_id: shipbubble_id,
       product_description: product.body,
       self_shipping: product.self_shipping,
@@ -134,6 +155,7 @@ export class OrderService {
           message: "No orders",
         };
       }
+
       return {
         success: true,
         data: orders,
@@ -809,4 +831,35 @@ export class OrderService {
       message: "Complaint has been forwarded to our customer service",
     };
   }
+
+  // async updateIncomingOrder() {
+  //   const orders = await this.incomingOrderModel.find();
+  //   for (const order of orders) {
+  //     const productAmount = order.product_amount;
+  //     if (order.payment_method === "CCD") {
+  //       const newAmount = await this.userService.convertNgntoCcd(
+  //         productAmount.toString(),
+  //       );
+  //       order.product_amount = newAmount;
+  //       await order.save();
+  //     }
+  //   }
+  //   return "done";
+  // }
+
+  // async updateOutgoingOrders() {
+  //   const orders = await this.outgoingOrderModel.find();
+  //   for (const order of orders) {
+  //     const productAmount = order.product_amount;
+  //     if (order.payment_method === "CCD") {
+  //       const newAmount = await this.userService.convertNgntoCcd(
+  //         productAmount.toString(),
+  //       );
+  //       order.product_amount = newAmount;
+  //       await order.save();
+  //     }
+  //   }
+
+  //   return "done";
+  // }
 }
