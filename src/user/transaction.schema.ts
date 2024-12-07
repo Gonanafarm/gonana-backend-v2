@@ -30,10 +30,17 @@ export const tranSactionSchema = new mongoose.Schema(
         accountNumber: {
           type: "string",
         },
+        currency: {
+          type: "string",
+          enum: ["CCD", "NGN"],
+        },
         accountName: {
           type: "string",
         },
         bank: {
+          type: "string",
+        },
+        recipientWallet: {
           type: "string",
         },
         Time: {
@@ -53,7 +60,7 @@ export const tranSactionSchema = new mongoose.Schema(
 export interface TransactionDocument extends Document {
   userId: string;
   transactions: Array<{
-    Session_id: string;
+    Session_id?: string;
     Type:
       | "CREDIT"
       | "DEBIT"
@@ -68,5 +75,7 @@ export interface TransactionDocument extends Document {
     accountNumber?: string;
     accountName?: string;
     bank?: string;
+    currency?: "CCD" | "NGN";
+    recipientWallet?: string;
   }>;
 }

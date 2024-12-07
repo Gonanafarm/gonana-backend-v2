@@ -225,13 +225,13 @@ export class TransactionController {
     return this.userService.depositGona(user_id, amount);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Post("/deposit-ccd")
-  // depositCcd(@Req() req: Request, @Body("amount") amount: number) {
-  //   //@ts-ignore
-  //   const user_id = req.user.id;
-  //   return this.ccdService.deposit(amount, user_id);
-  // }
+  @UseGuards(JwtAuthGuard)
+  @Post("/deposit-ccd")
+  depositCcd(@Req() req: Request, @Body("amount") amount: number) {
+    //@ts-ignore
+    const user_id = req.user.id;
+    return this.ccdService.deposit(amount, user_id);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post("/send-gona")
@@ -280,6 +280,14 @@ export class TransactionController {
     //@ts-ignore
     const user_id = req.user?.id;
     return this.userService.withdrawCcd(data.amount, data.recipient, user_id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("ccd")
+  getCcdTransactions(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.getCcdTransactions(user_id);
   }
 
   // @Post("test")

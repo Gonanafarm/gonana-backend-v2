@@ -1451,6 +1451,32 @@ export class UserService extends GenericService<UserDocument> {
     return {success: true, transactions: transaction};
   }
 
+  async getCcdTransactions(userId: string) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException("Invalid Token");
+      }
+      const ccdTransaction = await this.transactionModel.findOne({
+        userId: userId,
+      });
+      const ccdTransactionsArray = ccdTransaction.transactions;
+      const ccdTransactions = ccdTransactionsArray.filter(
+        transaction => transaction.currency === "CCD",
+      );
+
+      return {success: true, transactions: ccdTransactions};
+    } catch (error) {
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
   async transfer(
     user_id: string,
     accountNumber: string,
@@ -2667,6 +2693,32 @@ export class UserService extends GenericService<UserDocument> {
         small_icon:
           "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
       };
+      const transactionObject: Record<string, any> = {
+        userId: user.id,
+        Type: "DEBIT" as const,
+        AmountSettled: amount,
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+        recipientWallet: recipientWallet,
+        currency: "CCD",
+      };
+
+      const transaction = await this.transactionModel.findOne({
+        userId: user.id,
+      });
+      if (!transaction) {
+        await this.transactionModel.create(transactionObject);
+      }
+      const transactionArrayObject = {
+        currency: "CCD" as const,
+        Type: "DEBIT" as const,
+        AmountSettled: amount,
+        AmountSent: amount,
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+        recipientWallet,
+      };
+      console.log(transactionArrayObject, transactionArrayObject);
+      transaction.transactions.push(transactionArrayObject);
+      await transaction.save();
       await this.sendNotificationToDevice(debitMessage, user.id);
       const creditMessage = {
         app_id: process.env.ONESIGNAL_APP_ID,
@@ -2958,6 +3010,32 @@ export class UserService extends GenericService<UserDocument> {
     if (!withdraw) {
       throw new BadRequestException("Withdraw failed");
     }
+    const transactionObject: Record<string, any> = {
+      userId: user.id,
+      Type: "DEBIT" as const,
+      AmountSettled: amount,
+      Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+      recipientWallet: "ADMIN",
+      currency: "CCD",
+    };
+
+    const transaction = await this.transactionModel.findOne({
+      userId: user.id,
+    });
+    if (!transaction) {
+      await this.transactionModel.create(transactionObject);
+    }
+    const transactionArrayObject = {
+      currency: "CCD" as const,
+      Type: "DEBIT" as const,
+      AmountSettled: amount,
+      AmountSent: amount,
+      Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+      recipientWallet: "ADMIN",
+    };
+    console.log(transactionArrayObject, transactionArrayObject);
+    transaction.transactions.push(transactionArrayObject);
+    await transaction.save();
     return {
       success: true,
       message: "Withdrawal completed",
