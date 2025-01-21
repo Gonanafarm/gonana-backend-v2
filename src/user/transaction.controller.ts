@@ -45,6 +45,12 @@ export class TransactionController {
     );
   }
 
+  @Post("/webhook")
+  async handleWebhook(@Body() payload: any) {
+    console.log(payload);
+    return;
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post("/transferToEscrow")
   sendToEscrow(@Body("amount") amount: string, @Req() req: Request) {
