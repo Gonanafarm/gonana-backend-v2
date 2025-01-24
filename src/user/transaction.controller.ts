@@ -12,6 +12,7 @@ import {Request} from "express";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {
+  CreateVirtualAccount,
   GetUserTransactonsDto,
   KycVerification,
   ResolveAccountNumber,
@@ -28,13 +29,19 @@ export class TransactionController {
     private readonly ccdService: ConcordiumService,
   ) {}
 
-  // @UseGuards(JwtAuthGuard)
-  // @Post("/create-virtual-account")
-  // virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
-  //   //@ts-ignore
-  //   const user_id = req.user?.id;
-  //   return this.userService.virtualAccount(user_id);
-  // }
+  @UseGuards(JwtAuthGuard)
+  @Post("/create-virtual-account")
+  virtualAccount(@Req() req: Request, @Body() data: CreateVirtualAccount) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.virtualAccount(
+      user_id,
+      data.gender,
+      data.bvn,
+      data.dob,
+      data.address,
+    );
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get("/resolve-account-number")

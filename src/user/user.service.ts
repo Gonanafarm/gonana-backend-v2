@@ -793,9 +793,13 @@ export class UserService extends GenericService<UserDocument> {
       if (!user.bvn && !bvn) {
         throw new BadRequestException("Invalid Bvn");
       }
-      if (!user.address[0].address && !address) {
+      if (
+        (!Array.isArray(user.address) || !user.address[0]?.address) &&
+        !address
+      ) {
         throw new BadRequestException("Invalid address");
       }
+
       if (!user.date_of_birth && !dob) {
         throw new BadRequestException("Invalid date of birth");
       }
@@ -807,13 +811,17 @@ export class UserService extends GenericService<UserDocument> {
         const convertedDate = convertDateFormat(user.date_of_birth);
         user.date_of_birth = convertedDate;
       }
+      console.log(user.phone);
 
       const url = `${process.env["9PSB_BASE_URL"]}/open_wallet`;
       user.gender = gender[gender];
       const data = {
         bvn: user.bvn || bvn,
         dateOfBirth: user.date_of_birth || dob,
-        address: user.address[0].address || address,
+        address:
+          Array.isArray(user.address) && user.address[0]?.address
+            ? user.address[0].address
+            : address,
         gender: gender,
         lastName: user.last_name,
         otherNames: user.first_name,
@@ -829,14 +837,20 @@ export class UserService extends GenericService<UserDocument> {
           "Content-Type": "application/json",
         },
       });
+
+      user.virtual_account_bank_name = "9 Payment Service Bank";
+      user.virtual_account_name = request.data.data.fullName;
+      user.virtual_account_number = request.data.data.accountNumber;
+      await user.save();
+      return request.data;
     } catch (error) {
-      console.error(error);
+      console.error(error.response.data);
       throw new HttpException(
         {
           success: false,
-          message: error.message,
+          message: error.response.data.message,
         },
-        error.status,
+        400,
       );
     }
   }
@@ -1067,16 +1081,23 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async getBanks() {
-    ///TORONET IMPLEMENTATION
     try {
-      const base_url = process.env.TORONET_BASE_URL;
-      const url = `${base_url}/payment/toro/`;
-      const toroData = {
-        op: "getbanklist_ngn",
-        params: [],
-      };
-      const response = await axios.post(url, toroData);
-      const banks = response.data.data;
+      ///TORONET IMPLEMENTATION
+      // const base_url = process.env.TORONET_BASE_URL;
+      // const url = `${base_url}/payment/toro/`;
+      // const toroData = {
+      //   op: "getbanklist_ngn",
+      //   params: [],
+      // };
+      const url = `${process.env["9PSB_BASE_URL"]}/get_banks`;
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${await this.generateToken()}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const banks = response.data.data.bankList as any[];
       const sortedBanks = banks.sort((a: any, b: any) => {
         return a.bankName.toLowerCase().localeCompare(b.bankName.toLowerCase());
       });

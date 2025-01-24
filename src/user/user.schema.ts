@@ -114,7 +114,7 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   virtual_account_name: string;
 
-  @Prop({type: mongoose.SchemaTypes.Array})
+  @Prop({type: mongoose.SchemaTypes.Array, default: []})
   address: Array<Record<string, any>>;
 
   @Prop({type: mongoose.SchemaTypes.Array})

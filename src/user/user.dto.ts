@@ -295,6 +295,35 @@ export interface ShipmentData {
   insurance_code?: string;
 }
 
+export class CreateVirtualAccount {
+  @IsString()
+  @Trim()
+  @Length(11)
+  @IsNotEmpty()
+  @IsOptional()
+  bvn: string;
+
+  @IsString()
+  @IsOptional()
+  @Trim()
+  @IsNotEmpty()
+  @Matches(/^\d{2}\/\d{2}\/\d{4}$/, {
+    message: 'dob must be in the format "dd/mm/yyyy"',
+  })
+  dob: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  gender: number;
+
+  @IsString()
+  @IsNotEmpty()
+  @Trim()
+  address: string;
+
+  
+}
+
 export class KycVerification {
   @IsString()
   @Length(11)
