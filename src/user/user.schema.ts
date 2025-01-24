@@ -9,7 +9,7 @@ import {OtpDocument} from "./otp.schema";
 export type UserMethods = {
   getPublicData: () => UserPublicData | any;
 };
-
+export const gender = ["MALE", "FEMALE"];
 export type UserDocument = User & Document & UserMethods & OtpDocument;
 
 @Schema({
@@ -129,25 +129,25 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String})
   country: string;
 
-  @Prop({type: mongoose.SchemaTypes.String, default:"0"})
+  @Prop({type: mongoose.SchemaTypes.String, default: "0"})
   ccd_wallet: string;
 
-  @Prop({type: mongoose.SchemaTypes.String, default:"0"})
+  @Prop({type: mongoose.SchemaTypes.String, default: "0"})
   arbitrum_wallet: string;
 
-  @Prop({type: mongoose.SchemaTypes.String, default:"0"})
+  @Prop({type: mongoose.SchemaTypes.String, default: "0"})
   ccdWalletBalanceInNgn: string;
 
-  @Prop({type: mongoose.SchemaTypes.String, default:"0"})
+  @Prop({type: mongoose.SchemaTypes.String, default: "0"})
   arbitrumWalletBalanceInNgn: string;
 
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   fiat_wallet_address: string;
 
-  @Prop({type: mongoose.SchemaTypes.String, default:"0"})
+  @Prop({type: mongoose.SchemaTypes.String, default: "0"})
   ccdWalletBalanceInUsd: string;
 
-  @Prop({type: mongoose.SchemaTypes.String, default:"0"})
+  @Prop({type: mongoose.SchemaTypes.String, default: "0"})
   arbitrumWalletBalanceInUsd: string;
 
   @Prop({type: mongoose.SchemaTypes.String})
@@ -185,6 +185,9 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
   airdropped: boolean;
+
+  @Prop({type: mongoose.SchemaTypes.String, enum: gender})
+  gender: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

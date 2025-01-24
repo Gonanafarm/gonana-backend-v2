@@ -47,6 +47,7 @@ import {
 } from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
 import {AccountAddress} from "@concordium/node-sdk";
+import {convertDateFormat} from "../common/helpers";
 
 export const shuffleArray = <T>(array: T[]): T[] => {
   for (let i = array.length - 1; i > 0; i--) {
@@ -597,23 +598,52 @@ export class UserService extends GenericService<UserDocument> {
     return {user: user.getPublicData(), token: token};
   }
 
+  // async generateToken() {
+  //   try {
+  //     const base_url = process.env.MINTYN_BASE_URL;
+  //     const id = process.env.MERCHANT_ID;
+  //     const secret = process.env.MINTYN_SECRET;
+  //     const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
+  //     const tokenHeaders = {
+  //       "secret-key": secret,
+  //     };
+
+  //     const response = await axios.get(tokenUrl, {headers: tokenHeaders});
+
+  //     if (!response.data.data.token) {
+  //       throw new InternalServerErrorException(response.data.message);
+  //     }
+  //     const token = response.data.data.token;
+  //     return token;
+  //   } catch (error: any) {
+  //     console.error(error);
+  //     throw new HttpException(
+  //       {
+  //         success: false,
+  //         message: error.message,
+  //       },
+  //       error.status,
+  //     );
+  //   }
+  // }
+
   async generateToken() {
     try {
-      const base_url = process.env.MINTYN_BASE_URL;
-      const id = process.env.MERCHANT_ID;
-      const secret = process.env.MINTYN_SECRET;
-      const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
-      const tokenHeaders = {
-        "secret-key": secret,
-      };
-
-      const response = await axios.get(tokenUrl, {headers: tokenHeaders});
-
-      if (!response.data.data.token) {
-        throw new InternalServerErrorException(response.data.message);
+      const url = `${process.env["9PSB_BASE_URL"]}/authenticate`;
+      const username = process.env["9PSB_USERNAME"];
+      const password = process.env["9PSB_PASSWORD"];
+      const clientId = process.env["9PSB_CLIENT_ID"];
+      const clientSecret = process.env["9PSB_CLIENT_SECRET"];
+      const request = await axios.post(url, {
+        username,
+        password,
+        clientId,
+        clientSecret,
+      });
+      if (request.data.message !== "successful") {
+        throw new InternalServerErrorException("Failed To Authenticate");
       }
-      const token = response.data.data.token;
-      return token;
+      return request.data.accessToken;
     } catch (error: any) {
       console.error(error);
       throw new HttpException(
@@ -693,49 +723,113 @@ export class UserService extends GenericService<UserDocument> {
   // }
 
   ////// TORONET IMPLEMENTATION
-  async virtualAccount(userId: string) {
+  // async virtualAccount(userId: string) {
+  //   try {
+  //     const user = await this.userModel.findById(userId);
+  //     if (!user) {
+  //       throw new BadRequestException("Login and try again");
+  //     }
+  //     if (!user.fiat_wallet_address) {
+  //       throw new BadRequestException("Login and try again");
+  //     }
+  //     const toroData = {
+  //       op: "generatevirtualwallet",
+  //       params: [
+  //         {
+  //           name: "address",
+  //           value: `${user.fiat_wallet_address}`, //wallet address
+  //         },
+  //         {
+  //           name: "payername",
+  //           value: `${user.first_name} ${user.last_name}`, //name of the account holder
+  //         },
+  //         {
+  //           name: "currency",
+  //           value: "NGN", //current options are USD, EUR, NGN - default
+  //         },
+  //       ],
+  //     };
+  //     const baseUrl = process.env.TORONET_BASE_URL;
+
+  //     const toronetRequest = await axios.post(
+  //       `${baseUrl}/payment/toro/`,
+  //       toroData,
+  //       {headers: toronetHeaders},
+  //     );
+  //     if (toronetRequest.data.result === false) {
+  //       throw new BadRequestException(toronetRequest.data.error);
+  //     }
+
+  //     user.virtual_account_bank_name = toronetRequest.data.bankname;
+  //     user.virtual_account_name = toronetRequest.data.accountname;
+  //     user.virtual_account_number = toronetRequest.data.accountnumber;
+  //     await user.save();
+  //     return toronetRequest.data;
+  //   } catch (error: any) {
+  //     console.error(error);
+  //     throw new HttpException(
+  //       {
+  //         success: false,
+  //         message: error.message,
+  //       },
+  //       error.status,
+  //     );
+  //   }
+  // }
+
+  ////// 9PSB IMPLEMENTATION
+  async virtualAccount(
+    userId: string,
+    gender: number,
+    bvn?: string,
+    dob?: string,
+    address?: string,
+  ) {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new BadRequestException("Login and try again");
       }
-      if (!user.fiat_wallet_address) {
-        throw new BadRequestException("Login and try again");
+      if (!user.bvn && !bvn) {
+        throw new BadRequestException("Invalid Bvn");
       }
-      const toroData = {
-        op: "generatevirtualwallet",
-        params: [
-          {
-            name: "address",
-            value: `${user.fiat_wallet_address}`, //wallet address
-          },
-          {
-            name: "payername",
-            value: `${user.first_name} ${user.last_name}`, //name of the account holder
-          },
-          {
-            name: "currency",
-            value: "NGN", //current options are USD, EUR, NGN - default
-          },
-        ],
+      if (!user.address[0].address && !address) {
+        throw new BadRequestException("Invalid address");
+      }
+      if (!user.date_of_birth && !dob) {
+        throw new BadRequestException("Invalid date of birth");
+      }
+      const bvnExists = await this.userModel.findOne({bvn: bvn});
+      if (bvnExists && bvnExists.id !== user.id) {
+        throw new ConflictException(`Gonana user with this bvn exists`);
+      }
+      if (user.date_of_birth) {
+        const convertedDate = convertDateFormat(user.date_of_birth);
+        user.date_of_birth = convertedDate;
+      }
+
+      const url = `${process.env["9PSB_BASE_URL"]}/open_wallet`;
+      user.gender = gender[gender];
+      const data = {
+        bvn: user.bvn || bvn,
+        dateOfBirth: user.date_of_birth || dob,
+        address: user.address[0].address || address,
+        gender: gender,
+        lastName: user.last_name,
+        otherNames: user.first_name,
+        email: user.email,
+        transactionTrackingRef: user.email,
+        phoneNo: user.phone,
       };
-      const baseUrl = process.env.TORONET_BASE_URL;
+      const token = await this.generateToken();
 
-      const toronetRequest = await axios.post(
-        `${baseUrl}/payment/toro/`,
-        toroData,
-        {headers: toronetHeaders},
-      );
-      if (toronetRequest.data.result === false) {
-        throw new BadRequestException(toronetRequest.data.error);
-      }
-
-      user.virtual_account_bank_name = toronetRequest.data.bankname;
-      user.virtual_account_name = toronetRequest.data.accountname;
-      user.virtual_account_number = toronetRequest.data.accountnumber;
-      await user.save();
-      return toronetRequest.data;
-    } catch (error: any) {
+      const request = await axios.post(url, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
       console.error(error);
       throw new HttpException(
         {
@@ -853,102 +947,102 @@ export class UserService extends GenericService<UserDocument> {
     return res.data;
   }
 
-  async verifyTransaction(data: any) {
-    console.log(data);
+  // async verifyTransaction(data: any) {
+  //   console.log(data);
 
-    const user = await this.userModel.findOne({bvn: data.payload.customerBVN});
-    if (!user) {
-      console.log("email not sent");
-      return {success: false, message: "Email not sent"};
-    }
-    const session_id = data.payload.sessionId;
+  //   const user = await this.userModel.findOne({bvn: data.payload.customerBVN});
+  //   if (!user) {
+  //     console.log("email not sent");
+  //     return {success: false, message: "Email not sent"};
+  //   }
+  //   const session_id = data.payload.sessionId;
 
-    const email = user.email;
-    try {
-      this.userMailer.transactionVerification(
-        email,
-        data.eventType,
-        data.payload.transactionAmount,
-      );
+  //   const email = user.email;
+  //   try {
+  //     this.userMailer.transactionVerification(
+  //       email,
+  //       data.eventType,
+  //       data.payload.transactionAmount,
+  //     );
 
-      setTimeout(() => {
-        this.confirmTransaction(session_id, email);
-      }, 300000);
-      return {success: true, message: `Notification sent to ${email}`};
-    } catch (error: any) {
-      console.error(error);
-      return {success: false, error: error.message};
-    }
-  }
-  async confirmTransaction(session_id: string, email: string) {
-    try {
-      const user = await this.userModel.findOne({email: email});
-      if (!user) {
-        console.log("User not found");
-        return;
-      }
-      const token = await this.generateToken();
-      const Headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-      const base_url = process.env.MINTYN_BASE_URL;
-      const url = `${base_url}/api/v1/merchant/virtual-account/verify-transaction?sessionId=${session_id}`;
-      const res = await axios.get(url, {headers: Headers});
+  //     setTimeout(() => {
+  //       this.confirmTransaction(session_id, email);
+  //     }, 300000);
+  //     return {success: true, message: `Notification sent to ${email}`};
+  //   } catch (error: any) {
+  //     console.error(error);
+  //     return {success: false, error: error.message};
+  //   }
+  // }
+  // async confirmTransaction(session_id: string, email: string) {
+  //   try {
+  //     const user = await this.userModel.findOne({email: email});
+  //     if (!user) {
+  //       console.log("User not found");
+  //       return;
+  //     }
+  //     const token = await this.generateToken();
+  //     const Headers = {
+  //       Authorization: `Bearer ${token}`,
+  //       "Content-Type": "application/json",
+  //     };
+  //     const base_url = process.env.MINTYN_BASE_URL;
+  //     const url = `${base_url}/api/v1/merchant/virtual-account/verify-transaction?sessionId=${session_id}`;
+  //     const res = await axios.get(url, {headers: Headers});
 
-      if (res.data.data.settlementStatus !== "SETTLED") {
-        console.log(res.data.data);
-        console.log(
-          `Transaction with sessionId:${session_id} is still pending`,
-        );
-        const transactionObject = {
-          userId: user.id,
-          Session_id: session_id,
-          Type: "PENDING" as const,
-          AmountSent: res.data.data.transactionAmount,
-          AmountSettled: res.data.data.amountSettled,
-          Time: res.data.data.transactionTime,
-        };
-        const transactions = await this.transactionModel.findOne({
-          userId: user.id,
-        });
+  //     if (res.data.data.settlementStatus !== "SETTLED") {
+  //       console.log(res.data.data);
+  //       console.log(
+  //         `Transaction with sessionId:${session_id} is still pending`,
+  //       );
+  //       const transactionObject = {
+  //         userId: user.id,
+  //         Session_id: session_id,
+  //         Type: "PENDING" as const,
+  //         AmountSent: res.data.data.transactionAmount,
+  //         AmountSettled: res.data.data.amountSettled,
+  //         Time: res.data.data.transactionTime,
+  //       };
+  //       const transactions = await this.transactionModel.findOne({
+  //         userId: user.id,
+  //       });
 
-        if (!transactions) {
-          transactionObject.userId = user.id;
-          const transaction = await this.transactionModel.create(
-            transactionObject,
-          );
-          transaction.transactions.push(transactionObject);
-          await transaction.save();
-          return;
-        }
+  //       if (!transactions) {
+  //         transactionObject.userId = user.id;
+  //         const transaction = await this.transactionModel.create(
+  //           transactionObject,
+  //         );
+  //         transaction.transactions.push(transactionObject);
+  //         await transaction.save();
+  //         return;
+  //       }
 
-        transactions.transactions.push(transactionObject);
-        await transactions.save();
-        return;
-      }
+  //       transactions.transactions.push(transactionObject);
+  //       await transactions.save();
+  //       return;
+  //     }
 
-      const transactionObject = {
-        userId: user.id,
-        Session_id: session_id,
-        Type: "CREDIT",
-        AmountSent: res.data.data.transactionAmount,
-        AmountSettled: res.data.data.amountSettled,
-        Time: res.data.data.transactionTime,
-      };
+  //     const transactionObject = {
+  //       userId: user.id,
+  //       Session_id: session_id,
+  //       Type: "CREDIT",
+  //       AmountSent: res.data.data.transactionAmount,
+  //       AmountSettled: res.data.data.amountSettled,
+  //       Time: res.data.data.transactionTime,
+  //     };
 
-      // Handle updating the user balance and saving the transaction asynchronously
-      await this.updateUserBalanceAndSaveTransaction(user, transactionObject);
+  //     // Handle updating the user balance and saving the transaction asynchronously
+  //     await this.updateUserBalanceAndSaveTransaction(user, transactionObject);
 
-      const transactionAmount = transactionObject.AmountSettled;
-      this.userMailer.transactionSucess(email, transactionAmount);
+  //     const transactionAmount = transactionObject.AmountSettled;
+  //     this.userMailer.transactionSucess(email, transactionAmount);
 
-      return true;
-    } catch (error) {
-      console.error(error);
-      return;
-    }
-  }
+  //     return true;
+  //   } catch (error) {
+  //     console.error(error);
+  //     return;
+  //   }
+  // }
 
   async updateUserBalanceAndSaveTransaction(user: any, transactionObject: any) {
     const balance =
@@ -1097,69 +1191,69 @@ export class UserService extends GenericService<UserDocument> {
     // }
   }
 
-  async recoverVirtualAccount(bvn: string, userId: string) {
-    try {
-      const token = await this.generateToken();
-      if (!token) {
-        throw new InternalServerErrorException("Failed To Get Token");
-      }
-      const accountHeaders = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-      const user = await this.userModel.findById(userId);
+  // async recoverVirtualAccount(bvn: string, userId: string) {
+  //   try {
+  //     const token = await this.generateToken();
+  //     if (!token) {
+  //       throw new InternalServerErrorException("Failed To Get Token");
+  //     }
+  //     const accountHeaders = {
+  //       Authorization: `Bearer ${token}`,
+  //       "Content-Type": "application/json",
+  //     };
+  //     const user = await this.userModel.findById(userId);
 
-      if (!user) {
-        throw new NotFoundException(`User Not Found, Login and try again`);
-      }
+  //     if (!user) {
+  //       throw new NotFoundException(`User Not Found, Login and try again`);
+  //     }
 
-      // if (user.bvn !== undefined) {
-      //   `You have already generated a virtual account`;
-      // }
+  //     // if (user.bvn !== undefined) {
+  //     //   `You have already generated a virtual account`;
+  //     // }
 
-      if (bvn.length !== 11) {
-        throw new BadRequestException("Bvn should be 11 digits");
-      }
-      const bvnExists = await this.userModel.findOne({bvn: bvn});
+  //     if (bvn.length !== 11) {
+  //       throw new BadRequestException("Bvn should be 11 digits");
+  //     }
+  //     const bvnExists = await this.userModel.findOne({bvn: bvn});
 
-      if (bvnExists && bvnExists?.id !== userId) {
-        throw new BadRequestException(
-          `Another Gonana Account is already associated with this bvn`,
-        );
-      }
+  //     if (bvnExists && bvnExists?.id !== userId) {
+  //       throw new BadRequestException(
+  //         `Another Gonana Account is already associated with this bvn`,
+  //       );
+  //     }
 
-      const base_url = process.env.MINTYN_BASE_URL;
+  //     const base_url = process.env.MINTYN_BASE_URL;
 
-      const url = `${base_url}/api/v1/merchant/virtual-account/accounts?bvn=${bvn}&page=0&size=100`;
-      const response = await axios.get(url, {headers: accountHeaders});
-      if (response.data.data.records.length < 1) {
-        throw new BadRequestException("Bvn not previously validated");
-      }
-      user.virtual_account_bank_name = response.data.data.records[0].bankName;
-      user.bvn = response.data.data.records[0].bvn;
-      user.virtual_account_name = response.data.data.records[0].accountName;
-      user.virtual_account_number = response.data.data.records[0].accountNumber;
-      await user.save();
-      return {
-        success: true,
-        message: "Virtual Account Recovered",
-        accountDetails: {
-          accountNumber: user.virtual_account_number,
-          accountName: user.virtual_account_name,
-          bankName: user.virtual_account_bank_name,
-        },
-      };
-    } catch (error: any) {
-      console.log(error);
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        error.status,
-      );
-    }
-  }
+  //     const url = `${base_url}/api/v1/merchant/virtual-account/accounts?bvn=${bvn}&page=0&size=100`;
+  //     const response = await axios.get(url, {headers: accountHeaders});
+  //     if (response.data.data.records.length < 1) {
+  //       throw new BadRequestException("Bvn not previously validated");
+  //     }
+  //     user.virtual_account_bank_name = response.data.data.records[0].bankName;
+  //     user.bvn = response.data.data.records[0].bvn;
+  //     user.virtual_account_name = response.data.data.records[0].accountName;
+  //     user.virtual_account_number = response.data.data.records[0].accountNumber;
+  //     await user.save();
+  //     return {
+  //       success: true,
+  //       message: "Virtual Account Recovered",
+  //       accountDetails: {
+  //         accountNumber: user.virtual_account_number,
+  //         accountName: user.virtual_account_name,
+  //         bankName: user.virtual_account_bank_name,
+  //       },
+  //     };
+  //   } catch (error: any) {
+  //     console.log(error);
+  //     throw new HttpException(
+  //       {
+  //         success: false,
+  //         message: error.message,
+  //       },
+  //       error.status,
+  //     );
+  //   }
+  // }
 
   async resolveAccountNumber(account_number: string, bank: string) {
     ///  TORONET IMPLEMENTATION

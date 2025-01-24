@@ -28,13 +28,13 @@ export class TransactionController {
     private readonly ccdService: ConcordiumService,
   ) {}
 
-  @UseGuards(JwtAuthGuard)
-  @Post("/create-virtual-account")
-  virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
-    //@ts-ignore
-    const user_id = req.user?.id;
-    return this.userService.virtualAccount(user_id);
-  }
+  // @UseGuards(JwtAuthGuard)
+  // @Post("/create-virtual-account")
+  // virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
+  //   //@ts-ignore
+  //   const user_id = req.user?.id;
+  //   return this.userService.virtualAccount(user_id);
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Get("/resolve-account-number")
@@ -65,13 +65,13 @@ export class TransactionController {
     const user_id = req.user?.id;
     return this.userService.transferFromEscrowToUser(user_id, amount);
   }
-  @UseGuards(JwtAuthGuard)
-  @Post("recover-virtual-account")
-  recoverVirtualAccount(@Body("bvn") bvn: string, @Req() req: Request) {
-    //@ts-ignore
-    const user_id = req.user?.id;
-    return this.userService.recoverVirtualAccount(bvn, user_id);
-  }
+  // @UseGuards(JwtAuthGuard)
+  // @Post("recover-virtual-account")
+  // recoverVirtualAccount(@Body("bvn") bvn: string, @Req() req: Request) {
+  //   //@ts-ignore
+  //   const user_id = req.user?.id;
+  //   return this.userService.recoverVirtualAccount(bvn, user_id);
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Post("/transfer-to-user")
