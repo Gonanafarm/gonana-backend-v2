@@ -1277,38 +1277,51 @@ export class UserService extends GenericService<UserDocument> {
   // }
 
   async resolveAccountNumber(account_number: string, bank: string) {
-    ///  TORONET IMPLEMENTATION
     try {
+      ///  TORONET IMPLEMENTATION
       const bankCode = await this.getBankCode(bank);
       console.log(bankCode);
-      const toroData = {
-        op: "verifybankaccountname_ngn",
-        params: [
-          {
-            name: "destinationInstitutionCode",
-            value: bankCode, //destinationInstitutionCode
+      // const toroData = {
+      //   op: "verifybankaccountname_ngn",
+      //   params: [
+      //     {
+      //       name: "destinationInstitutionCode",
+      //       value: bankCode, //destinationInstitutionCode
+      //     },
+      //     {
+      //       name: "accountNumber",
+      //       value: account_number,
+      //     },
+      //   ],
+      // };
+
+      const url = `${process.env["9PSB_BASE_URL"]}/other_banks_enquiry`;
+      const response = await axios.post(
+        url,
+        {
+          customer: {
+            account: {
+              bank: bankCode,
+              number: account_number,
+            },
           },
-          {
-            name: "accountNumber",
-            value: account_number,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${await this.generateToken()}`,
+            "Content-Type": "application/json",
           },
-        ],
-      };
-      const base_url = process.env.TORONET_BASE_URL;
-      const url = `${base_url}/payment/toro/`;
-      const response = await axios.post(url, toroData, {
-        headers: toronetHeaders,
-      });
-      if (response.data.data === null) {
-        throw new HttpException(
-          {
-            success: false,
-            message: response.data.responseMessage,
-          },
-          400,
-        );
-      }
-      console.log(response.data.data.accountName);
+        },
+      );
+      // if (response.data.data === null) {
+      //   throw new HttpException(
+      //     {
+      //       success: false,
+      //       message: response.data.responseMessage,
+      //     },
+      //     400,
+      //   );
+      // }
 
       return {success: true, data: response.data, bankCode: bankCode};
     } catch (error: any) {
