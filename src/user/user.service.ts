@@ -1377,43 +1377,26 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found, Login and Try again.");
       }
-
-      if (!user.fiat_wallet_address || user.fiat_wallet_address.length < 1) {
-        throw new BadRequestException("Login and try again");
+      const token = await this.generateToken();
+      const url = `${process.env["9PSB_BASE_URL"]}/wallet_enquiry`;
+      if (!user.virtual_account_number) {
+        throw new BadRequestException(
+          "User has not generated a virtual account",
+        );
       }
-      const toroData = {
-        op: "updatevirtualwallettransactions",
-        params: [
-          {
-            name: "walletaddress",
-            value: user.virtual_account_number, //blockchain address
+      const request = await axios.post(
+        url,
+        {
+          accountNo: `${user.virtual_account_number}`,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-        ],
-      };
-      await axios.post(`${toronetBaseUrl}/payment`, toroData, {
-        headers: toronetHeaders,
-      });
-      const response = await axios.get(`${toronetBaseUrl}/query`, {
-        params: {
-          op: "getaddrbalance",
-          params: [
-            {
-              name: "addr",
-              value: `${user.fiat_wallet_address}`,
-            },
-          ],
         },
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.data.result !== true || response.data.result === undefined) {
-        throw new BadRequestException(response.data.error);
-      }
-      const balance = response.data.bal_naira;
-      console.log(response.data);
-
-      user.balance = parseFloat(parseFloat(balance).toFixed(2));
+      );
+      user.balance = request.data.data.availableBalance;
 
       await user.save();
       return {
@@ -1614,7 +1597,7 @@ export class UserService extends GenericService<UserDocument> {
     narration?: string,
     debitProperty?: object,
   ) {
-    //// TORONET IMPLEMENTATION
+    //// 9PSB IMPLEMENTATION
     try {
       await this.getUserBalance(user_id);
       const user = await this.userModel.findById(user_id);
@@ -1625,175 +1608,47 @@ export class UserService extends GenericService<UserDocument> {
       //@ts-ignore
       const balance = parseFloat(user.balance);
       console.log(balance);
-      const updatedAmount = amount + 10;
-      if (balance < updatedAmount) {
+      if (balance < amount) {
         throw new BadRequestException("Insuffient balance");
       }
       const resolve = await this.resolveAccountNumber(accountNumber, bankName);
       const bankCode = resolve.bankCode;
-
       const data = {
-        op: "recordfiatwithdrawal",
-        params: [
-          {
-            name: "addr",
-            value: user.fiat_wallet_address,
+        customer: {
+          account: {
+            bank: bankCode,
+            name: account_name,
+            number: accountNumber,
+            senderaccountnumber: `${user.virtual_account_number}`,
+            sendername: `${user.first_name} ${user.last_name}`,
           },
-          {
-            name: "pwd",
-            value: user.email,
-          },
-          {
-            name: "currency",
-            value: "NGN",
-          },
-          {
-            name: "token",
-            value: "NGN",
-          },
-          {
-            name: "payername",
-            value: `${user.first_name} ${user.last_name}`,
-          },
-          {
-            name: "payeremail",
-            value: user.email,
-          },
-          {
-            name: "payeraddress",
-            value: "nil",
-          },
-          {
-            name: "payercity",
-            value: "nil",
-          },
-          {
-            name: "payerstate",
-            value: "nil",
-          },
-          {
-            name: "payercountry",
-            value: "NG",
-          },
-          {
-            name: "payerzipcode",
-            value: "nil",
-          },
-          {
-            name: "payerphone",
-            value: user.phone,
-          },
-          {
-            name: "description",
-            value: narration,
-          },
-          {
-            name: "amount",
-            value: updatedAmount.toString(),
-          },
-          {
-            name: "accounttype",
-            value: "ach",
-          },
-          {
-            name: "bankname",
-            value: bankName,
-          },
-          {
-            name: "routingno",
-            value: "nil",
-          },
-          {
-            name: "accountno",
-            value: accountNumber,
-          },
-          {
-            name: "expirydate",
-            value: "nil",
-          },
-          {
-            name: "accountname",
-            value: account_name,
-          },
-          {
-            name: "recipientstate",
-            value: "nil",
-          },
-          {
-            name: "recipientzip",
-            value: "nil",
-          },
-          {
-            name: "recipientphone",
-            value: "nil",
-          },
-        ],
-      };
-
-      console.log("transfer request data:", data);
-
-      const res = await axios.post(`${toronetBaseUrl}/payment/toro/`, data, {
-        headers: toronetHeaders,
-      });
-      console.log("trasnfer request response:", res.data);
-      if (res.data.result !== true) {
-        throw new BadRequestException(res.data.error || res.data.message);
-      }
-
-      const transactionObject: Record<string, any> = {
-        Session_id: res.data.data.data.sessionID || res.data.transactionid,
-        userId: user.id,
-        Type: "DEBIT" as const,
-        AmountSettled: res.data.data.data.amount || updatedAmount,
-        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
-        accountNumber: accountNumber,
-        accountName: account_name,
-        bank: bankName,
-      };
-
-      if (narration !== undefined) {
-        transactionObject.narration = narration;
-      }
-      const transaction = await this.transactionModel.findOne({
-        userId: user.id,
-      });
-      if (!transaction) {
-        await this.transactionModel.create(transactionObject);
-        return {success: true, data: res.data};
-      }
-      const transactionArrayObject = {
-        Session_id: res.data.data.data.sessionID || res.data.transactionid,
-        Type: "DEBIT" as const,
-        AmountSettled: res.data.data.data.amount || updatedAmount,
-        AmountSent: res.data.data.data.amount || updatedAmount,
-        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
-        accountNumber: accountNumber,
-        accountName: account_name,
-        bank: bankName,
-      };
-      transaction.transactions.push(transactionArrayObject);
-      await transaction.save();
-      const debitMessage = {
-        app_id: process.env.ONESIGNAL_APP_ID,
-        contents: {
-          en: `₦${
-            res.data.data.data.amount || updatedAmount
-          } has been debited from your account`,
         },
-        headings: {en: "Debit Notification"},
-        included_segments: ["include_player_ids"],
-        include_player_ids: [user.onesignal_id],
-        content_available: true,
-        small_icon:
-          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        narration: narration || "",
+        order: {
+          amount: amount.toString(),
+          country: "NGA",
+          currency: "NGN",
+          description: narration || "",
+        },
+        transaction: {
+          reference: this.generateRandomString(10),
+        },
+        merchant: {
+          isFee: false,
+          merchantFeeAccount: `${process.env["9PSB_TEST_FEE_ACCOUNT"]}`,
+          merchantFeeAmount: "0",
+        },
       };
-      if (debitProperty) {
-        await this.sendNotificationToDevice(debitProperty, user.id);
-      }
-      await this.sendNotificationToDevice(debitMessage, user.id);
-      return {success: true, data: res.data.data.data || res.data};
+      console.log(data);
+      const url = `${process.env["9PSB_BASE_URL"]}/wallet_other_banks`;
+      const request = await axios.post(url, data, {
+        headers: {
+          Authorization: `Bearer ${await this.generateToken()}`,
+          "Content-Type": "application/json",
+        },
+      });
     } catch (error: any) {
-      console.log(error);
+      console.error(error);
       throw new HttpException(
         {
           success: false,
@@ -1802,6 +1657,194 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+    //// TORONET IMPLEMENTATION
+    // try {
+    //   await this.getUserBalance(user_id);
+    //   const user = await this.userModel.findById(user_id);
+    //   if (!user) {
+    //     throw new NotFoundException("user not found. login and try again");
+    //   }
+
+    //   //@ts-ignore
+    //   const balance = parseFloat(user.balance);
+    //   console.log(balance);
+    //   const updatedAmount = amount + 10;
+    //   if (balance < updatedAmount) {
+    //     throw new BadRequestException("Insuffient balance");
+    //   }
+    //   const resolve = await this.resolveAccountNumber(accountNumber, bankName);
+    //   const bankCode = resolve.bankCode;
+
+    //   const data = {
+    //     op: "recordfiatwithdrawal",
+    //     params: [
+    //       {
+    //         name: "addr",
+    //         value: user.fiat_wallet_address,
+    //       },
+    //       {
+    //         name: "pwd",
+    //         value: user.email,
+    //       },
+    //       {
+    //         name: "currency",
+    //         value: "NGN",
+    //       },
+    //       {
+    //         name: "token",
+    //         value: "NGN",
+    //       },
+    //       {
+    //         name: "payername",
+    //         value: `${user.first_name} ${user.last_name}`,
+    //       },
+    //       {
+    //         name: "payeremail",
+    //         value: user.email,
+    //       },
+    //       {
+    //         name: "payeraddress",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "payercity",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "payerstate",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "payercountry",
+    //         value: "NG",
+    //       },
+    //       {
+    //         name: "payerzipcode",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "payerphone",
+    //         value: user.phone,
+    //       },
+    //       {
+    //         name: "description",
+    //         value: narration,
+    //       },
+    //       {
+    //         name: "amount",
+    //         value: updatedAmount.toString(),
+    //       },
+    //       {
+    //         name: "accounttype",
+    //         value: "ach",
+    //       },
+    //       {
+    //         name: "bankname",
+    //         value: bankName,
+    //       },
+    //       {
+    //         name: "routingno",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "accountno",
+    //         value: accountNumber,
+    //       },
+    //       {
+    //         name: "expirydate",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "accountname",
+    //         value: account_name,
+    //       },
+    //       {
+    //         name: "recipientstate",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "recipientzip",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "recipientphone",
+    //         value: "nil",
+    //       },
+    //     ],
+    //   };
+
+    //   console.log("transfer request data:", data);
+
+    //   const res = await axios.post(`${toronetBaseUrl}/payment/toro/`, data, {
+    //     headers: toronetHeaders,
+    //   });
+    //   console.log("trasnfer request response:", res.data);
+    //   if (res.data.result !== true) {
+    //     throw new BadRequestException(res.data.error || res.data.message);
+    //   }
+
+    //   const transactionObject: Record<string, any> = {
+    //     Session_id: res.data.data.data.sessionID || res.data.transactionid,
+    //     userId: user.id,
+    //     Type: "DEBIT" as const,
+    //     AmountSettled: res.data.data.data.amount || updatedAmount,
+    //     Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+    //     accountNumber: accountNumber,
+    //     accountName: account_name,
+    //     bank: bankName,
+    //   };
+
+    //   if (narration !== undefined) {
+    //     transactionObject.narration = narration;
+    //   }
+    //   const transaction = await this.transactionModel.findOne({
+    //     userId: user.id,
+    //   });
+    //   if (!transaction) {
+    //     await this.transactionModel.create(transactionObject);
+    //     return {success: true, data: res.data};
+    //   }
+    //   const transactionArrayObject = {
+    //     Session_id: res.data.data.data.sessionID || res.data.transactionid,
+    //     Type: "DEBIT" as const,
+    //     AmountSettled: res.data.data.data.amount || updatedAmount,
+    //     AmountSent: res.data.data.data.amount || updatedAmount,
+    //     Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+    //     accountNumber: accountNumber,
+    //     accountName: account_name,
+    //     bank: bankName,
+    //   };
+    //   transaction.transactions.push(transactionArrayObject);
+    //   await transaction.save();
+    //   const debitMessage = {
+    //     app_id: process.env.ONESIGNAL_APP_ID,
+    //     contents: {
+    //       en: `₦${
+    //         res.data.data.data.amount || updatedAmount
+    //       } has been debited from your account`,
+    //     },
+    //     headings: {en: "Debit Notification"},
+    //     included_segments: ["include_player_ids"],
+    //     include_player_ids: [user.onesignal_id],
+    //     content_available: true,
+    //     small_icon:
+    //       "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+    //   };
+    //   if (debitProperty) {
+    //     await this.sendNotificationToDevice(debitProperty, user.id);
+    //   }
+    //   await this.sendNotificationToDevice(debitMessage, user.id);
+    //   return {success: true, data: res.data.data.data || res.data};
+    // } catch (error: any) {
+    //   console.log(error);
+    //   throw new HttpException(
+    //     {
+    //       success: false,
+    //       message: error.message,
+    //     },
+    //     error.status,
+    //   );
+    // }
 
     ////MINTYN IMPLEMENTATION
     // try {
