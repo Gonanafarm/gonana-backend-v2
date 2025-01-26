@@ -53,9 +53,11 @@ export class TransactionController {
   }
 
   @Post("/webhook")
-  async handleWebhook(@Body() payload: any) {
-    console.log(payload);
-    return;
+  async handleWebhook(@Query("event") event: string, @Body() data: any) {
+    console.log("event:", event);
+    console.log("data:", data);
+
+    return this.userService.handleWebhook(event);
   }
 
   @UseGuards(JwtAuthGuard)

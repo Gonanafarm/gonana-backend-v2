@@ -170,6 +170,14 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
+  async handleWebhook(event:string){
+    if(event === "transfer"){
+      console.log("Transfer event");
+      
+      
+    }
+  }
+
   async resendActivation(id: string, origin: any): Promise<any> {
     const user = await this.userModel
       .findByIdAndUpdate(
@@ -1631,7 +1639,7 @@ export class UserService extends GenericService<UserDocument> {
           description: narration || "",
         },
         transaction: {
-          reference: this.generateRandomString(10),
+          reference: this.generateRandomString(25),
         },
         merchant: {
           isFee: false,
@@ -1647,6 +1655,8 @@ export class UserService extends GenericService<UserDocument> {
           "Content-Type": "application/json",
         },
       });
+      console.log(request.data);
+      return request.data
     } catch (error: any) {
       console.error(error);
       throw new HttpException(
