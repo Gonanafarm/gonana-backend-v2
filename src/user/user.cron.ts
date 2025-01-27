@@ -60,7 +60,9 @@ export class UserCronJob {
   @Cron(CronExpression.EVERY_12_HOURS)
   async getUsersWithBalance() {
     const users = await this.userModel.find({balance: {$gt: 5}});
-    const oneSignalIds = users.map(user => user.onesignal_id);
+    const oneSignalIds = users
+      .map(user => user.onesignal_id)
+      .filter(id => id != null && id !== "");
     const emails = users.map(user => user.email);
     console.log(oneSignalIds, emails);
     await this.userService.sendNotificationToParticularDevices(
