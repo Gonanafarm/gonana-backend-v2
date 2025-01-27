@@ -32,7 +32,7 @@ export const tranSactionSchema = new mongoose.Schema(
         },
         currency: {
           type: "string",
-          enum: ["CCD", "NGN"],
+          enum: ["CCD", "NGN", "GONA"],
         },
         accountName: {
           type: "string",
@@ -42,6 +42,11 @@ export const tranSactionSchema = new mongoose.Schema(
         },
         recipientWallet: {
           type: "string",
+        },
+        status: {
+          type: "string",
+          enum: ["PENDING", "SUCCESS", "FAILED"],
+          required: true,
         },
         Time: {
           type: "string",
@@ -61,6 +66,7 @@ export interface TransactionDocument extends Document {
   userId: string;
   transactions: Array<{
     Session_id?: string;
+    status: "PENDING" | "SUCCESS" | "FAILED";
     Type:
       | "CREDIT"
       | "DEBIT"
@@ -75,7 +81,7 @@ export interface TransactionDocument extends Document {
     accountNumber?: string;
     accountName?: string;
     bank?: string;
-    currency?: "CCD" | "NGN";
+    currency?: "CCD" | "NGN" | "GONA";
     recipientWallet?: string;
   }>;
 }

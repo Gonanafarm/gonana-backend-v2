@@ -200,6 +200,7 @@ export class UserService extends GenericService<UserDocument> {
         await this.sendNotificationToDevice(creditMessage, user.id);
         const transactionObject: Record<string, any> = {
           Session_id: data.nipsessionid,
+          status: data.message,
           userId: user.id,
           Type: "CREDIT" as const,
           AmountSettled: data.amount,
@@ -227,6 +228,7 @@ export class UserService extends GenericService<UserDocument> {
           Type: "CREDIT" as const,
           AmountSettled: data.amount,
           AmountSent: data.amount,
+          status: data.message,
           Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
           accountNumber: user.virtual_account_number,
           accountName: user.virtual_account_name,
@@ -938,88 +940,127 @@ export class UserService extends GenericService<UserDocument> {
     if (user.balance < parseFloat(amount)) {
       throw new BadRequestException(`Insufficient funds`);
     }
+    // const data = {
+    //   op: "transfer",
+    //   params: [
+    //     {
+    //       name: "client",
+    //       value: `${user.fiat_wallet_address}`,
+    //     },
+    //     {
+    //       name: "clientpwd",
+    //       value: `${user.email}`,
+    //     },
+    //     {
+    //       name: "to",
+    //       value: "0x2d113511a9a64744a3424e9614534bd037bbf1a8",
+    //     },
+    //     {
+    //       name: "val",
+    //       value: amount,
+    //     },
+    //   ],
+    // };
+
+    // console.log(data);
+
+    // const res = await axios.post(`${toronetBaseUrl}/currency/naira/cl`, data, {
+    //   headers: toronetHeaders,
+    // });
+    // console.log(res.data);
+    // if (res.data.result !== true) {
+    //   throw new BadRequestException(res.data.error);
+    // }
+    const url = `${process.env["9PSB_BASE_URL"]}/debit/transfer`;
     const data = {
-      op: "transfer",
-      params: [
-        {
-          name: "client",
-          value: `${user.fiat_wallet_address}`,
-        },
-        {
-          name: "clientpwd",
-          value: `${user.email}`,
-        },
-        {
-          name: "to",
-          value: "0x2d113511a9a64744a3424e9614534bd037bbf1a8",
-        },
-        {
-          name: "val",
-          value: amount,
-        },
-      ],
+      accountNo: `${user.virtual_account_number}`,
+      narration: `ORDER DEBIT`,
+      totalAmount: parseFloat(amount),
+      transactionId: this.generateRandomString(20),
+      merchant: {
+        isFee: false,
+        merchantFeeAccount: `${process.env["9PSB_TEST_FEE_ACCOUNT"]}`,
+        merchantFeeAmount: "",
+      },
     };
-
-    console.log(data);
-
-    const res = await axios.post(`${toronetBaseUrl}/currency/naira/cl`, data, {
-      headers: toronetHeaders,
+    const request = await axios.post(url, data, {
+      headers: {
+        Authorization: `Bearer ${await this.generateToken()}`,
+        "Content-Type": "application/json",
+      },
     });
-    console.log(res.data);
-    if (res.data.result !== true) {
-      throw new BadRequestException(res.data.error);
-    }
-    return res.data.data;
+    return {
+      data: request.data,
+      status: (request.data.status as string).toUpperCase(),
+    };
   }
 
   async transferFromEscrowToUser(userId: string, amount: string) {
     const user = await this.userModel.findById(userId);
     if (!user) return;
-    const toroData = {
-      op: "updatevirtualwallettransactions",
-      params: [
-        {
-          name: "walletaddress",
-          value: gonanaAccountNumber, //blockchain address
-        },
-      ],
-    };
-    await axios.post(`${toronetBaseUrl}/payment`, toroData, {
-      headers: toronetHeaders,
-    });
+    // const toroData = {
+    //   op: "updatevirtualwallettransactions",
+    //   params: [
+    //     {
+    //       name: "walletaddress",
+    //       value: gonanaAccountNumber, //blockchain address
+    //     },
+    //   ],
+    // };
+    // await axios.post(`${toronetBaseUrl}/payment`, toroData, {
+    //   headers: toronetHeaders,
+    // });
 
     const narration = "Order Settlement from Gonana";
+    // const data = {
+    //   op: "transfer",
+    //   params: [
+    //     {
+    //       name: "client",
+    //       value: gonanaAdminAddress,
+    //     },
+    //     {
+    //       name: "clientpwd",
+    //       value: gonanaAdminPassword,
+    //     },
+    //     {
+    //       name: "to",
+    //       value: `${user.fiat_wallet_address}`,
+    //     },
+    //     {
+    //       name: "val",
+    //       value: amount,
+    //     },
+    //   ],
+    // };
+
+    // console.log(data);
+
+    // const res = await axios.post(`${toronetBaseUrl}/currency/naira/cl`, data, {
+    //   headers: toronetHeaders,
+    // });
+    // console.log(res.data);
+    // if (res.data.result !== true) {
+    //   throw new BadRequestException(res.data.error);
+    // }
+    const url = `${process.env["9PSB_BASE_URL"]}/credit/transfer`;
     const data = {
-      op: "transfer",
-      params: [
-        {
-          name: "client",
-          value: gonanaAdminAddress,
-        },
-        {
-          name: "clientpwd",
-          value: gonanaAdminPassword,
-        },
-        {
-          name: "to",
-          value: `${user.fiat_wallet_address}`,
-        },
-        {
-          name: "val",
-          value: amount,
-        },
-      ],
+      accountNo: `${user.virtual_account_number}`,
+      narration: narration,
+      totalAmount: parseFloat(amount),
+      transactionId: this.generateRandomString(20),
+      merchant: {
+        isFee: false,
+        merchantFeeAccount: `${process.env["9PSB_TEST_FEE_ACCOUNT"]}`,
+        merchantFeeAmount: "10",
+      },
     };
-
-    console.log(data);
-
-    const res = await axios.post(`${toronetBaseUrl}/currency/naira/cl`, data, {
-      headers: toronetHeaders,
+    const request = await axios.post(url, data, {
+      headers: {
+        Authorization: `Bearer ${await this.generateToken()}`,
+        "Content-Type": "application/json",
+      },
     });
-    console.log(res.data);
-    if (res.data.result !== true) {
-      throw new BadRequestException(res.data.error);
-    }
     const creditMessage = {
       app_id: process.env.ONESIGNAL_APP_ID,
       contents: {
@@ -1033,7 +1074,7 @@ export class UserService extends GenericService<UserDocument> {
         "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
     };
     await this.sendNotificationToDevice(creditMessage, user.id);
-    return res.data;
+    return request.data;
   }
 
   // async verifyTransaction(data: any) {
@@ -1723,7 +1764,95 @@ export class UserService extends GenericService<UserDocument> {
         },
       });
       console.log(request.data);
-      return request.data;
+      const transactionObject: Record<string, any> = {
+        Session_id: request.data.data.transaction.sessionId,
+        userId: user.id,
+        Type: "DEBIT" as const,
+        status: request.data.status,
+        AmountSettled: request.data.data.order.amount,
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+        accountNumber: accountNumber,
+        accountName: account_name,
+        bank: bankName,
+      };
+
+      if (narration !== undefined) {
+        transactionObject.narration = narration;
+      }
+      const transaction = await this.transactionModel.findOne({
+        userId: user.id,
+      });
+      if (!transaction) {
+        await this.transactionModel.create(transactionObject);
+        if (request.data.status === "SUCCESS") {
+          const debitMessage = {
+            app_id: process.env.ONESIGNAL_APP_ID,
+            contents: {
+              en: `₦${amount} has been debited from your account`,
+            },
+            headings: {en: "Debit Notification"},
+            included_segments: ["include_player_ids"],
+            include_player_ids: [user.onesignal_id],
+            content_available: true,
+            small_icon:
+              "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+          };
+
+          if (debitProperty) {
+            await this.sendNotificationToDevice(debitProperty, user.id);
+          }
+          await this.sendNotificationToDevice(debitMessage, user.id);
+          return {success: true, data: request.data};
+        } else {
+          throw new HttpException(
+            {
+              success: false,
+              message: request.data.data.message,
+            },
+            500,
+          );
+        }
+      }
+      if (request.data.status === "SUCCESS") {
+        const transactionArrayObject = {
+          Session_id: request.data.data.transaction.sessionId,
+          Type: "DEBIT" as const,
+          AmountSettled: request.data.data.order.amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          accountNumber: accountNumber,
+          accountName: account_name,
+          bank: bankName,
+          status: request.data.status,
+          AmountSent: amount,
+        };
+        transaction.transactions.push(transactionArrayObject);
+        await transaction.save();
+        const debitMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `₦${amount} has been debited from your account`,
+          },
+          headings: {en: "Debit Notification"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        if (debitProperty) {
+          await this.sendNotificationToDevice(debitProperty, user.id);
+        }
+        await this.sendNotificationToDevice(debitMessage, user.id);
+        return request.data;
+      } else {
+        throw new HttpException(
+          {
+            success: false,
+            message: request.data.data.message,
+          },
+          500,
+        );
+      }
     } catch (error: any) {
       console.error(error);
       throw new HttpException(
@@ -2044,98 +2173,41 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new BadRequestException("User Not Found");
       }
-      const data = {
-        op: "transfer",
-        params: [
-          {
-            name: "client",
-            value: `${crediter.fiat_wallet_address}`,
-          },
-          {
-            name: "clientpwd",
-            value: `${crediter.email}`,
-          },
-          {
-            name: "to",
-            value: `${user.fiat_wallet_address}`,
-          },
-          {
-            name: "val",
-            value: `${amount}`,
-          },
-        ],
-      };
-      const res = await axios.post(
-        `${toronetBaseUrl}/currency/naira/cl`,
-        data,
-        {headers: toronetHeaders},
+      // const data = {
+      //   op: "transfer",
+      //   params: [
+      //     {
+      //       name: "client",
+      //       value: `${crediter.fiat_wallet_address}`,
+      //     },
+      //     {
+      //       name: "clientpwd",
+      //       value: `${crediter.email}`,
+      //     },
+      //     {
+      //       name: "to",
+      //       value: `${user.fiat_wallet_address}`,
+      //     },
+      //     {
+      //       name: "val",
+      //       value: `${amount}`,
+      //     },
+      //   ],
+      // };
+      // const res = await axios.post(
+      //   `${toronetBaseUrl}/currency/naira/cl`,
+      //   data,
+      //   {headers: toronetHeaders},
+      // );
+      const request = await this.transfer(
+        crediter.id,
+        crediter.virtual_account_number,
+        crediter.virtual_account_bank_name,
+        amount,
+        crediter.virtual_account_name,
+        narration,
       );
-      console.log("transfer to user response", res.data.transaction);
-      if (res.data.result !== true) {
-        throw new BadRequestException(res.data.error);
-      }
-      const transactionObject: Record<string, any> = {
-        Session_id: res.data.transaction,
-        userId: crediter.id,
-        Type: "DEBIT" as const,
-        AmountSettled: amount,
-        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
-        accountNumber: user.virtual_account_number,
-        accountName: user.virtual_account_name,
-        bank: user.virtual_account_bank_name,
-      };
-
-      if (narration !== undefined) {
-        transactionObject.narration = narration;
-      }
-      const transaction = await this.transactionModel.findOne({
-        userId: crediter.id,
-      });
-      if (!transaction) {
-        await this.transactionModel.create(transactionObject);
-        return {success: true, data: res.data};
-      }
-      const transactionArrayObject = {
-        Session_id: res.data.transaction,
-        Type: "DEBIT" as const,
-        AmountSettled: amount,
-        AmountSent: amount,
-        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
-        accountNumber: user.virtual_account_number,
-        accountName: user.virtual_account_name,
-        bank: user.virtual_account_bank_name,
-      };
-      console.log(transactionArrayObject, transactionArrayObject);
-      transaction.transactions.push(transactionArrayObject);
-      await transaction.save();
-      const debitMessage = {
-        app_id: process.env.ONESIGNAL_APP_ID,
-        contents: {
-          en: `₦${amount} has been debited from your account`,
-        },
-        headings: {en: "Debit Notification"},
-        included_segments: ["include_player_ids"],
-        include_player_ids: [crediter.onesignal_id],
-        content_available: true,
-        small_icon:
-          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
-      };
-
-      const creditMessage = {
-        app_id: process.env.ONESIGNAL_APP_ID,
-        contents: {
-          en: `You have received ₦${amount} from ${crediter.first_name} ${crediter.last_name}`,
-        },
-        headings: {en: "Credit Notification"},
-        included_segments: ["include_player_ids"],
-        include_player_ids: [user.onesignal_id],
-        content_available: true,
-        small_icon:
-          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
-      };
-      await this.sendNotificationToDevice(creditMessage, user.id);
-      await this.sendNotificationToDevice(debitMessage, crediter.id);
-      return {success: true, data: res.data};
+      return {success: true, data: request.data};
     } catch (error: any) {
       console.log(error);
       throw new HttpException(
@@ -2943,6 +3015,7 @@ export class UserService extends GenericService<UserDocument> {
       };
       const transactionObject: Record<string, any> = {
         userId: user.id,
+        status: "SUCCESS",
         Type: "DEBIT" as const,
         AmountSettled: amount,
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
@@ -2960,6 +3033,7 @@ export class UserService extends GenericService<UserDocument> {
         currency: "CCD" as const,
         Type: "DEBIT" as const,
         AmountSettled: amount,
+        status: "SUCCESS" as const,
         AmountSent: amount,
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
         recipientWallet,
@@ -3261,6 +3335,7 @@ export class UserService extends GenericService<UserDocument> {
     const transactionObject: Record<string, any> = {
       userId: user.id,
       Type: "DEBIT" as const,
+      status: "SUCCESS",
       AmountSettled: amount,
       Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
       recipientWallet: "ADMIN",
@@ -3276,6 +3351,7 @@ export class UserService extends GenericService<UserDocument> {
     const transactionArrayObject = {
       currency: "CCD" as const,
       Type: "DEBIT" as const,
+      status: "SUCCESS" as const,
       AmountSettled: amount,
       AmountSent: amount,
       Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),

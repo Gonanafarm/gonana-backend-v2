@@ -491,7 +491,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         return ids.join(", ");
       };
 
-      await this.userService.transferToEscrowFromUser(
+      const transfer = await this.userService.transferToEscrowFromUser(
         totalCost.toString(),
         user_id,
       );
@@ -506,6 +506,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               Type: "ORDER DEBIT", // Represents debits from orders
               Session_Id: generateRandomString(),
               AmountSent: totalCost.toString(),
+              status: transfer.status,
               AmountSettled: totalCost.toString(),
               productId: getIds(orderItems),
             },
@@ -516,6 +517,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
           Session_id: generateRandomString(),
           Type: "ORDER DEBIT" as const, // Represents debits from orders
           AmountSent: totalCost,
+          status: transfer.status as "SUCCESS" | "FAILED" | "PENDING",
           AmountSettled: totalCost,
           productId: getIds(orderItems),
           Time: new Date().toISOString(),
