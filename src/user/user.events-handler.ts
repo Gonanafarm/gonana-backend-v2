@@ -49,24 +49,24 @@ export class UserEventHanders {
     data.user.ccd_wallet = balance.toString();
     data.user.ccd_wallet_address = address;
 
-    const torodata = {
-      op: "createkey",
-      params: [
-        {
-          name: "pwd",
-          value: `${data.user.email}`,
-        },
-      ],
-    };
-    const toronetResponse = await axios.post(
-      `${process.env.TORONET_BASE_URL}/keystore`,
-      torodata,
-      {
-        headers: toronetHeaders,
-      },
-    );
-    const fiat_wallet_address = toronetResponse.data.address;
-    data.user.fiat_wallet_address = fiat_wallet_address;
+    // const torodata = {
+    //   op: "createkey",
+    //   params: [
+    //     {
+    //       name: "pwd",
+    //       value: `${data.user.email}`,
+    //     },
+    //   ],
+    // };
+    // const toronetResponse = await axios.post(
+    //   `${process.env.TORONET_BASE_URL}/keystore`,
+    //   torodata,
+    //   {
+    //     headers: toronetHeaders,
+    //   },
+    // );
+    // const fiat_wallet_address = toronetResponse.data.address;
+    // data.user.fiat_wallet_address = fiat_wallet_address;
     data.user.referral_code = await this.userService.generateUniqueReferralCode();
     await data.user.save();
 

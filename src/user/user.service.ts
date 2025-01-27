@@ -170,11 +170,78 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async handleWebhook(event:string){
-    if(event === "transfer"){
+  async handleWebhook(event: string, data: any) {
+    if (event === "transfer") {
       console.log("Transfer event");
-      
-      
+      if (data.message === "SUCCESS") {
+        const user = await this.userModel.findOne({
+          virtual_account_number: data.accountnumber,
+        });
+        if (!user) {
+          return {
+            success: true,
+            code: "00",
+            status: "SUCCESS",
+            message: "Acknowledged",
+          };
+        }
+        const creditMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `You have received ₦${data.amount} from ${data.sendername}`,
+          },
+          headings: {en: "Credit Alert"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        await this.sendNotificationToDevice(creditMessage, user.id);
+        const transactionObject: Record<string, any> = {
+          Session_id: data.nipsessionid,
+          userId: user.id,
+          Type: "CREDIT" as const,
+          AmountSettled: data.amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          accountNumber: user.virtual_account_number,
+          accountName: user.virtual_account_name,
+          bank: user.virtual_account_bank_name,
+          naration: data.narration,
+        };
+
+        const transaction = await this.transactionModel.findOne({
+          userId: user.id,
+        });
+        if (!transaction) {
+          await this.transactionModel.create(transactionObject);
+          return {
+            success: true,
+            code: "00",
+            status: "SUCCESS",
+            message: "Acknowledged",
+          };
+        }
+        const transactionArrayObject = {
+          Session_id: data.nipsessionid,
+          Type: "CREDIT" as const,
+          AmountSettled: data.amount,
+          AmountSent: data.amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          accountNumber: user.virtual_account_number,
+          accountName: user.virtual_account_name,
+          bank: user.virtual_account_bank_name,
+        };
+        console.log(transactionArrayObject, transactionArrayObject);
+        transaction.transactions.push(transactionArrayObject);
+        await transaction.save();
+        return {
+          success: true,
+          code: "00",
+          status: "SUCCESS",
+          message: "Acknowledged",
+        };
+      }
     }
   }
 
@@ -505,47 +572,47 @@ export class UserService extends GenericService<UserDocument> {
       if (!user.referral_code?.length) {
         user.referral_code = await this.generateUniqueReferralCode();
       }
-      if (
-        user.fiat_wallet_address === undefined ||
-        user.fiat_wallet_address.length < 1
-      ) {
-        const data = {
-          op: "createkey",
-          params: [
-            {
-              name: "pwd",
-              value: `${user.email}`,
-            },
-          ],
-        };
-        const toronetResponse = await axios.post(
-          `${process.env.TORONET_BASE_URL}/keystore`,
-          data,
-          {
-            headers: toronetHeaders,
-          },
-        );
-        const fiat_wallet_address = toronetResponse.data.address;
-        user.fiat_wallet_address = fiat_wallet_address;
-      }
-      if (
-        user.arbitrum_wallet_address === undefined ||
-        user.arbitrum_wallet_address === null
-      ) {
-        const wallet = Wallet.createRandom();
-        const address = wallet.address;
-        const balance = await provider.getBalance(address);
-        const privateKey = wallet.privateKey;
+      // if (
+      //   user.fiat_wallet_address === undefined ||
+      //   user.fiat_wallet_address.length < 1
+      // ) {
+      //   const data = {
+      //     op: "createkey",
+      //     params: [
+      //       {
+      //         name: "pwd",
+      //         value: `${user.email}`,
+      //       },
+      //     ],
+      //   };
+      //   const toronetResponse = await axios.post(
+      //     `${process.env.TORONET_BASE_URL}/keystore`,
+      //     data,
+      //     {
+      //       headers: toronetHeaders,
+      //     },
+      //   );
+      //   const fiat_wallet_address = toronetResponse.data.address;
+      //   user.fiat_wallet_address = fiat_wallet_address;
+      // }
+      // if (
+      //   user.arbitrum_wallet_address === undefined ||
+      //   user.arbitrum_wallet_address === null
+      // ) {
+      //   const wallet = Wallet.createRandom();
+      //   const address = wallet.address;
+      //   const balance = await provider.getBalance(address);
+      //   const privateKey = wallet.privateKey;
 
-        user.arbitrum_wallet = balance.toString();
-        user.arbitrum_wallet_address = address;
-        user.arbitrumPrivateKey = privateKey;
+      //   user.arbitrum_wallet = balance.toString();
+      //   user.arbitrum_wallet_address = address;
+      //   user.arbitrumPrivateKey = privateKey;
 
-        const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
-        const usd = await this.convertNgntoUsd(ngn);
-        user.arbitrumWalletBalanceInUsd = usd;
-        user.arbitrumWalletBalanceInNgn = ngn;
-      }
+      //   const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
+      //   const usd = await this.convertNgntoUsd(ngn);
+      //   user.arbitrumWalletBalanceInUsd = usd;
+      //   user.arbitrumWalletBalanceInNgn = ngn;
+      // }
 
       if (
         user.ccd_wallet_address === undefined ||
@@ -1656,7 +1723,7 @@ export class UserService extends GenericService<UserDocument> {
         },
       });
       console.log(request.data);
-      return request.data
+      return request.data;
     } catch (error: any) {
       console.error(error);
       throw new HttpException(

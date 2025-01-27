@@ -57,7 +57,7 @@ export class TransactionController {
     console.log("event:", event);
     console.log("data:", data);
 
-    return this.userService.handleWebhook(event);
+    return this.userService.handleWebhook(event, data);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -154,13 +154,13 @@ export class TransactionController {
     return this.userService.getUserTransactions(user_id, body.page, body.limit);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post("/kyc")
-  verify(@Req() req: Request, @Body() data: KycVerification) {
-    //@ts-ignore
-    const user_id = req.user?.id;
-    return this.userService.kycVerification(user_id, data.dob, data.bvn);
-  }
+  // @UseGuards(JwtAuthGuard)
+  // @Post("/kyc")
+  // verify(@Req() req: Request, @Body() data: KycVerification) {
+  //   //@ts-ignore
+  //   const user_id = req.user?.id;
+  //   return this.userService.kycVerification(user_id, data.dob, data.bvn);
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Get("/ccd-balance")
