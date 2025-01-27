@@ -139,6 +139,20 @@ export class UserMailerService {
       console.error(error);
     }
   }
+  sendBulkEmails(emails: string[], subject: string, htmlContent: string) {
+    try {
+      emails.forEach(email => {
+        this.mailerService.sendMail({
+          to: email,
+          subject: subject,
+          html: htmlContent,
+        });
+      });
+      console.log("Bulk emails sent successfully");
+    } catch (error) {
+      console.error("Error sending bulk emails:", error);
+    }
+  }
   notSelfShipOrderSuccessMail(
     user: User,
     url: string,
