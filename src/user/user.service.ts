@@ -3434,8 +3434,11 @@ export class UserService extends GenericService<UserDocument> {
     };
   }
   async getByReferralCode(code: string) {
+    // Escape special regex characters in the code
+    const escapedCode = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
     const user = await this.userModel.findOne({
-      referral_code: {$regex: new RegExp(`^${code}$`, "i")}, // Case-insensitive match
+      referral_code: {$regex: new RegExp(`^${escapedCode}$`, "i")}, // Case-insensitive match
     });
 
     return user;
