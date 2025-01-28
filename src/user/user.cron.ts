@@ -57,9 +57,13 @@ export class UserCronJob {
     }
   }
 
-  @Cron(CronExpression.EVERY_12_HOURS)
+  @Cron(CronExpression.EVERY_6_HOURS)
   async getUsersWithBalance() {
-    const users = await this.userModel.find({balance: {$gt: 5}});
+    const users = await this.userModel.find({
+      $expr: {
+        $gte: [{$toDouble: "$balance"}, 5],
+      },
+    });
     const oneSignalIds = users
       .map(user => user.onesignal_id)
       .filter(id => id != null && id !== "");
