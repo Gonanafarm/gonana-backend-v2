@@ -888,10 +888,12 @@ export class UserService extends GenericService<UserDocument> {
         const convertedDate = convertDateFormat(user.date_of_birth);
         user.date_of_birth = convertedDate;
       }
-      console.log(user.phone);
 
       const url = `${process.env["9PSB_BASE_URL"]}/open_wallet`;
       user.gender = gender[gender];
+      if (!user.bvn) {
+        user.bvn = bvn;
+      }
       const data = {
         bvn: user.bvn || bvn,
         dateOfBirth: user.date_of_birth || dob,
