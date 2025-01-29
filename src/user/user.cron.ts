@@ -83,7 +83,7 @@ export class UserCronJob {
 
   @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
   async resetInsuranceStatus() {
-    const users = await this.userModel.find();
+    const users = await this.userModel.find({insurance:true});
     for (const user of users) {
       user.insurance = false;
       await user.save();
