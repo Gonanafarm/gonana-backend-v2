@@ -438,7 +438,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
   ) {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
-      const totalCost = rates.total_shipping_cost;
+      console.log("rates:",rates);
+      
+      const totalCost = rates.total_shipping_cost || rates.product_cost;
+      console.log("totalcost:", totalCost);
 
       const user = await this.userModel.findById(user_id);
       if (!user) {
@@ -665,6 +668,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
         message: "Orders Placed Successfully",
       };
     } catch (error: any) {
+      console.log(error);
+      
       throw new HttpException(
         {
           success: false,
