@@ -934,6 +934,8 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
+  async upgradeWallet(){}
+
   async transferToEscrowFromUser(amount: string, userId: string) {
     await this.getUserBalance(userId);
     const user = await this.userModel.findById(userId);
