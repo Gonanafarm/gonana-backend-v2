@@ -14,6 +14,7 @@ import {
   ValidationOptions,
   ValidationArguments,
   IsIn,
+  IsUrl,
 } from "class-validator";
 import {AccountStatus} from "../common/enums";
 
@@ -337,6 +338,7 @@ export class WalletUpgradeDto {
   tier: string;
 
   @IsString()
+  @IsUrl()
   @IsNotEmpty()
   userPhoto: string;
 
@@ -363,10 +365,12 @@ export class WalletUpgradeDto {
   idExpiryDate: string;
 
   @IsString()
-  @IsNotEmpty() // Optional field
+  @IsNotEmpty()
+  @IsUrl() 
   idCardFront: string;
 
   @IsString()
+  @IsUrl()
   @IsOptional() // Optional field
   idCardBack?: string;
 
@@ -397,10 +401,12 @@ export class WalletUpgradeDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsUrl()
   customerSignature: string;
 
   @IsString()
   @IsNotEmpty()
+  @IsUrl()
   utilityBill: string;
 
   @IsString()
@@ -413,5 +419,6 @@ export class WalletUpgradeDto {
 
   @IsString()
   @IsOptional()
+  @IsUrl()
   proofOfAddressVerification: string;
 }
