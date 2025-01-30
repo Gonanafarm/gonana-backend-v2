@@ -333,7 +333,7 @@ export class WalletUpgradeDto {
   phoneNumber: string;
 
   @IsString()
-  @IsIn(["1", "2", "3"]) // Example: Validate tier is one of these values
+  @IsIn(["2", "3"]) // Example: Validate tier is one of these values
   tier: string;
 
   @IsString()
