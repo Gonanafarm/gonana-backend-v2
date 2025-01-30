@@ -42,6 +42,8 @@ export class TransactionController {
   virtualAccount(@Req() req: Request, @Body() data: CreateVirtualAccount) {
     //@ts-ignore
     const user_id = req.user?.id;
+    console.log(data);
+    
     return this.userService.virtualAccount(
       user_id,
       data.gender,

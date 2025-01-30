@@ -973,6 +973,8 @@ export class UserService extends GenericService<UserDocument> {
         transactionTrackingRef: user.email,
         phoneNo: user.phone,
       };
+      console.log(data);
+      
       const token = await this.generateToken();
 
       const request = await axios.post(url, data, {
@@ -988,7 +990,7 @@ export class UserService extends GenericService<UserDocument> {
       await user.save();
       return request.data;
     } catch (error) {
-      console.error(error.response.data);
+      console.error(error.response);
       throw new HttpException(
         {
           success: false,
@@ -1120,7 +1122,7 @@ export class UserService extends GenericService<UserDocument> {
         throw new BadRequestException(request.data.message);
       }
       //@ts-ignore
-      data.userId = userId
+      data.userId = userId;
       this.eventEmitter.emit("Wallet Upgrade", data);
       return request.data;
     } catch (error) {
