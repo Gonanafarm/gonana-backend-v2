@@ -1006,17 +1006,17 @@ export class UserService extends GenericService<UserDocument> {
     idIssueDate: string,
     idExpiryDate: string,
     nearestLandmark: string,
-    idCardBack: string,
-    idCardFront: string,
+    idCardBack: Express.Multer.File,
+    idCardFront: Express.Multer.File,
     pep: string,
-    customerSignature: string,
-    utilityBill: string,
+    customerSignature: Express.Multer.File,
+    utilityBill: Express.Multer.File,
     placeOfBirth: string,
     tier: string,
     localGovernment: string,
-    userPhoto: string,
+    userPhoto: Express.Multer.File,
     userId: string,
-    proofOfAddressVerification: string,
+    proofOfAddressVerification: Express.Multer.File,
     houseNumber: string,
     streetName: string,
     city: string,
@@ -1037,7 +1037,7 @@ export class UserService extends GenericService<UserDocument> {
           "Expiry date is required if id type is not NIN",
         );
       }
-      if (idType === "3" && !proofOfAddressVerification) {
+      if (tier === "3" && !proofOfAddressVerification) {
         throw new BadRequestException(
           "Proof of address verification is required for tier 3",
         );
@@ -1045,34 +1045,65 @@ export class UserService extends GenericService<UserDocument> {
       if (parseInt(tier) <= parseInt(user.tier)) {
         throw new BadRequestException("You cannot downgrade your wallet");
       }
+      // Upload files and convert URLs to base64
+      const proofOfAddressVerificationFile = proofOfAddressVerification
+        ? await this.cloudinaryService.uploadFile(proofOfAddressVerification)
+        : null;
+
+      const idCardFrontFile = await this.cloudinaryService.uploadFile(
+        idCardFront,
+      );
+      const idCardBackFile = idCardBack
+        ? await this.cloudinaryService.uploadFile(idCardBack)
+        : null;
+      const customerSignatureFile = await this.cloudinaryService.uploadFile(
+        customerSignature,
+      );
+      const utilityBillFile = await this.cloudinaryService.uploadFile(
+        utilityBill,
+      );
+      const userPhotoFile = await this.cloudinaryService.uploadFile(userPhoto);
+
+      // Convert to base64-encoded strings
+      const proofOfAddressVerificationBase64 = proofOfAddressVerificationFile
+        ? btoa(proofOfAddressVerificationFile.secure_url)
+        : undefined;
+
+      const idCardFrontBase64 = btoa(idCardFrontFile.secure_url);
+      const idCardBackBase64 = idCardBackFile
+        ? btoa(idCardBackFile.secure_url)
+        : undefined;
+      const customerSignatureBase64 = btoa(customerSignatureFile.secure_url);
+      const utilityBillBase64 = btoa(utilityBillFile.secure_url);
+      const userPhotoBase64 = btoa(userPhotoFile.secure_url);
+
+      // Prepare data payload
       const data = {
-        accountNumber: `${user.virtual_account_number}`,
-        bvn: `${user.bvn}`,
-        nin: nin,
-        accountName: `${user.virtual_account_name}`,
-        phoneNumber: `${user.phone}`,
-        tier: tier,
-        email: `${user.email}`,
-        userPhoto: btoa(userPhoto),
-        idType: idType,
+        accountNumber: user.virtual_account_number,
+        bvn: user.bvn,
+        nin,
+        accountName: user.virtual_account_name,
+        phoneNumber: user.phone,
+        tier,
+        email: user.email,
+        userPhoto: userPhotoBase64,
+        idType,
         idNumber,
         idIssueDate,
         idExpiryDate,
-        idCardFront: btoa(idCardFront),
-        idCardBack: idCardBack ? btoa(idCardBack) : undefined,
+        idCardFront: idCardFrontBase64,
+        idCardBack: idCardBackBase64,
         houseNumber,
         streetName,
         state,
         city,
         localGovernment,
         pep,
-        customerSignature: btoa(customerSignature),
-        utilityBill: btoa(utilityBill),
+        customerSignature: customerSignatureBase64,
+        utilityBill: utilityBillBase64,
         nearestLandmark,
         placeOfBirth,
-        proofOfAddressVerification: proofOfAddressVerification
-          ? btoa(proofOfAddressVerification)
-          : undefined,
+        proofOfAddressVerification: proofOfAddressVerificationBase64,
       };
       console.log(data);
 

@@ -338,11 +338,6 @@ export class WalletUpgradeDto {
   tier: string;
 
   @IsString()
-  @IsUrl()
-  @IsNotEmpty()
-  userPhoto: string;
-
-  @IsString()
   @IsNotEmpty()
   idType: string;
 
@@ -363,16 +358,6 @@ export class WalletUpgradeDto {
   })
   @IsOptional()
   idExpiryDate: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @IsUrl() 
-  idCardFront: string;
-
-  @IsString()
-  @IsUrl()
-  @IsOptional() // Optional field
-  idCardBack?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -401,24 +386,9 @@ export class WalletUpgradeDto {
 
   @IsString()
   @IsNotEmpty()
-  @IsUrl()
-  customerSignature: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @IsUrl()
-  utilityBill: string;
-
-  @IsString()
-  @IsNotEmpty()
   nearestLandmark: string;
 
   @IsString()
   @IsNotEmpty()
   placeOfBirth: string;
-
-  @IsString()
-  @IsOptional()
-  @IsUrl()
-  proofOfAddressVerification: string;
 }

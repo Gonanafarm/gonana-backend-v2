@@ -11,6 +11,7 @@ import {
   UploadedFile,
   InternalServerErrorException,
   BadRequestException,
+  UploadedFiles,
 } from "@nestjs/common";
 import {Request} from "express";
 import {UserService} from "./user.service";
@@ -26,7 +27,7 @@ import {
 } from "./user.dto";
 import {ConcordiumService} from "./concordium.service";
 import {CloudinaryService} from "../post/cloudinary.service";
-import {FileInterceptor} from "@nestjs/platform-express";
+import {FileFieldsInterceptor, FileInterceptor} from "@nestjs/platform-express";
 
 @Controller("api/transaction")
 export class TransactionController {
@@ -116,33 +117,64 @@ export class TransactionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      {name: "userPhoto", maxCount: 1},
+      {name: "idCardFront", maxCount: 1},
+      {name: "idCardBack", maxCount: 1},
+      {name: "customerSignature", maxCount: 1},
+      {name: "utilityBill", maxCount: 1},
+      {name: "proofOfAddressVerification", maxCount: 1},
+    ]),
+  )
   @Post("/upgrade-wallet")
-  upgradeWallet(@Req() req: Request, @Body() data: WalletUpgradeDto) {
-    //@ts-ignore
-    const user_id = req.user?.id;
-    return this.userService.upgradeWallet(
-      data.nin,
-      data.idType,
-      data.idNumber,
-      data.idIssueDate,
-      data.idExpiryDate,
-      data.nearestLandmark,
-      data.idCardBack,
-      data.idCardFront,
-      data.pep,
-      data.customerSignature,
-      data.utilityBill,
-      data.placeOfBirth,
-      data.tier,
-      data.localGovernment,
-      data.userPhoto,
-      user_id,
-      data.proofOfAddressVerification,
-      data.houseNumber,
-      data.streetName,
-      data.city,
-      data.state,
-    );
+  async upgradeWallet(
+    @Req() req: Request,
+    @Body() data: WalletUpgradeDto,
+    @UploadedFiles()
+    files: {
+      userPhoto?: Express.Multer.File[];
+      idCardFront?: Express.Multer.File[];
+      idCardBack?: Express.Multer.File[];
+      customerSignature?: Express.Multer.File[];
+      utilityBill?: Express.Multer.File[];
+      proofOfAddressVerification?: Express.Multer.File[];
+    },
+  ) {
+    try {
+      //@ts-ignore
+      const user_id = req.user?.id;
+      if (!user_id) {
+        throw new BadRequestException("User not authenticated");
+      }
+
+      return this.userService.upgradeWallet(
+        data.nin,
+        data.idType,
+        data.idNumber,
+        data.idIssueDate,
+        data.idExpiryDate,
+        data.nearestLandmark,
+        files.idCardBack?.[0],
+        files.idCardFront?.[0],
+        data.pep,
+        files.customerSignature?.[0],
+        files.utilityBill?.[0],
+        data.placeOfBirth,
+        data.tier,
+        data.localGovernment,
+        files.userPhoto?.[0],
+        user_id,
+        files.proofOfAddressVerification?.[0],
+        data.houseNumber,
+        data.streetName,
+        data.city,
+        data.state,
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException("File upload failed");
+    }
   }
 
   @UseGuards(JwtAuthGuard)
@@ -168,7 +200,6 @@ export class TransactionController {
       };
     } catch (error) {
       console.log(error);
-
       throw new InternalServerErrorException("File upload failed");
     }
   }
