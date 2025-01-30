@@ -21,11 +21,14 @@ import {NotificationModel} from "../user/notification.model";
 import {ConcordiumService} from "../user/concordium.service";
 import {MessageService} from "../message/message.service";
 import {MessageModule} from "../message/message.module";
+import { KycModule } from "../kyc/kyc.module";
+import { KycModel } from "../kyc/kyc.model";
 @Module({
   providers: [
     OrderService,
     PostModule,
     UserModule,
+    KycModule,
     UserService,
     ConcordiumService,
     CloudinaryService,
@@ -42,6 +45,7 @@ import {MessageModule} from "../message/message.module";
     OutgoingOrderModel,
     PostModel,
     TransactionModel,
+    KycModel,
     UserModel,
     IncomingOrderModel,
     OtpModel,

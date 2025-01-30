@@ -13,6 +13,7 @@ import {
   registerDecorator,
   ValidationOptions,
   ValidationArguments,
+  IsIn,
 } from "class-validator";
 import {AccountStatus} from "../common/enums";
 
@@ -320,20 +321,97 @@ export class CreateVirtualAccount {
   @IsNotEmpty()
   @Trim()
   address: string;
-
-  
 }
 
-export class KycVerification {
+export class WalletUpgradeDto {
   @IsString()
-  @Length(11)
   @IsNotEmpty()
-  bvn: string;
+  nin: string;
 
   @IsString()
   @IsNotEmpty()
-  @Matches(/^[0-9]{2}-[A-Z]{3}-[0-9]{4}$/, {
-    message: "DOB must be in the format DD-MMM-YYYY (e.g., 30-OCT-2001)",
+  phoneNumber: string;
+
+  @IsString()
+  @IsIn(["1", "2", "3"]) // Example: Validate tier is one of these values
+  tier: string;
+
+  @IsString()
+  @IsNotEmpty()
+  userPhoto: string;
+
+  @IsString()
+  @IsNotEmpty()
+  idType: string;
+
+  @IsString()
+  @IsNotEmpty()
+  idNumber: string;
+
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: "idIssueDate must be in the format YYYY-MM-DD",
   })
-  dob: string;
+  @IsNotEmpty()
+  idIssueDate: string;
+
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: "idExpiryDate must be in the format YYYY-MM-DD",
+  })
+  @IsOptional()
+  idExpiryDate: string;
+
+  @IsString()
+  @IsNotEmpty() // Optional field
+  idCardFront: string;
+
+  @IsString()
+  @IsOptional() // Optional field
+  idCardBack?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  houseNumber: string;
+
+  @IsString()
+  @IsNotEmpty()
+  streetName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  state: string;
+
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @IsString()
+  @IsNotEmpty()
+  localGovernment: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsIn(["YES", "NO"])
+  pep: string;
+
+  @IsString()
+  @IsNotEmpty()
+  customerSignature: string;
+
+  @IsString()
+  @IsNotEmpty()
+  utilityBill: string;
+
+  @IsString()
+  @IsNotEmpty()
+  nearestLandmark: string;
+
+  @IsString()
+  @IsNotEmpty()
+  placeOfBirth: string;
+
+  @IsString()
+  @IsOptional()
+  proofOfAddressVerification: string;
 }

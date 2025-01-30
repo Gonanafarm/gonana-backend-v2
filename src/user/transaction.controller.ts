@@ -14,11 +14,11 @@ import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {
   CreateVirtualAccount,
   GetUserTransactonsDto,
-  KycVerification,
   ResolveAccountNumber,
   TransferEthDto,
   TransferFundsDto,
   TransferToUser,
+  WalletUpgradeDto,
 } from "./user.dto";
 import {ConcordiumService} from "./concordium.service";
 
@@ -106,6 +106,44 @@ export class TransactionController {
       body.bank,
       user_id,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("/upgrade-wallet")
+  upgradeWallet(@Req() req: Request, @Body() data: WalletUpgradeDto) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.upgradeWallet(
+      data.nin,
+      data.idType,
+      data.idNumber,
+      data.idIssueDate,
+      data.idExpiryDate,
+      data.nearestLandmark,
+      data.idCardBack,
+      data.idCardFront,
+      data.pep,
+      data.customerSignature,
+      data.utilityBill,
+      data.placeOfBirth,
+      data.tier,
+      data.localGovernment,
+      data.userPhoto,
+      user_id,
+      data.proofOfAddressVerification,
+      data.houseNumber,
+      data.streetName,
+      data.city,
+      data.state,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("upgrade-status")
+  getUpgradeStatus(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.getUpgradeStatus(user_id);
   }
 
   @UseGuards(JwtAuthGuard)

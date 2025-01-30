@@ -188,6 +188,9 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.String, enum: gender})
   gender: string;
+
+  @Prop({type: mongoose.SchemaTypes.String, default: "1"})
+  tier: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -222,6 +225,7 @@ UserSchema.methods.getPublicData = function () {
     onesignal_id,
     referral_code,
     firebaseToken,
+    tier,
   } = this;
   const publicData = {
     id,
@@ -249,6 +253,7 @@ UserSchema.methods.getPublicData = function () {
     onesignal_id,
     referral_code,
     firebaseToken,
+    tier,
   };
   return publicData;
 };

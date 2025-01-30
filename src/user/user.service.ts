@@ -48,6 +48,7 @@ import {
 import {ConcordiumService} from "./concordium.service";
 import {AccountAddress} from "@concordium/node-sdk";
 import {convertDateFormat} from "../common/helpers";
+import {Kyc} from "../kyc/kyc.schema";
 
 export const shuffleArray = <T>(array: T[]): T[] => {
   for (let i = array.length - 1; i > 0; i--) {
@@ -62,6 +63,9 @@ export class UserService extends GenericService<UserDocument> {
   constructor(
     //@ts-ignore
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+
+    //@ts-ignore
+    @InjectModel("Kyc") private readonly kycModel: Model<Kyc>,
     //@ts-ignore
     @InjectModel("Transactions")
     private readonly transactionModel: Model<TransactionDocument>,
@@ -237,6 +241,67 @@ export class UserService extends GenericService<UserDocument> {
         console.log(transactionArrayObject, transactionArrayObject);
         transaction.transactions.push(transactionArrayObject);
         await transaction.save();
+        return {
+          success: true,
+          code: "00",
+          status: "SUCCESS",
+          message: "Acknowledged",
+        };
+      }
+    }
+
+    if (event === "account-upgrade") {
+      console.log("account upgrade event");
+      const user = await this.userModel.findOne({
+        virtual_account_number: data.accountNumber,
+      });
+      if (!user) {
+        return {
+          success: true,
+          code: "00",
+          status: "SUCCESS",
+          message: "Acknowledged",
+        };
+      }
+      if (data.status === "Approved") {
+        const message = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en:
+              `${data.message}` ||
+              "Congratulations, your wallet upgrade has been approved",
+          },
+          headings: {en: "Wallet Upgrade"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        await this.sendNotificationToDevice(message, user.id);
+        this.userMailer.sendWalletUpgradeSuccessMail(user.email);
+        return {
+          success: true,
+          code: "00",
+          status: "SUCCESS",
+          message: "Acknowledged",
+        };
+      }
+      if (data.status === "Declined") {
+        const message = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `${data.message}` || "Your wallet upgrade has been declined",
+          },
+          headings: {en: "Wallet Upgrade"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        await this.sendNotificationToDevice(message, user.id);
+        this.userMailer.sendWalletUpgradeFailedMail(user.email);
         return {
           success: true,
           code: "00",
@@ -934,7 +999,142 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async upgradeWallet(){}
+  async upgradeWallet(
+    nin: string,
+    idType: string,
+    idNumber: string,
+    idIssueDate: string,
+    idExpiryDate: string,
+    nearestLandmark: string,
+    idCardBack: string,
+    idCardFront: string,
+    pep: string,
+    customerSignature: string,
+    utilityBill: string,
+    placeOfBirth: string,
+    tier: string,
+    localGovernment: string,
+    userPhoto: string,
+    userId: string,
+    proofOfAddressVerification: string,
+    houseNumber: string,
+    streetName: string,
+    city: string,
+    state: string,
+  ) {
+    try {
+      await this.getUserBalance(userId);
+      const user = await this.userModel.findById(userId);
+      if (!user.virtual_account_number) {
+        throw new BadRequestException(
+          "Must have created virtual account first",
+        );
+      }
+      if (!user)
+        throw new BadRequestException("Login and try again, Invalid token");
+      if (idType !== "1" && !idExpiryDate) {
+        throw new BadRequestException(
+          "Expiry date is required if id type is not NIN",
+        );
+      }
+      if (idType === "3" && !proofOfAddressVerification) {
+        throw new BadRequestException(
+          "Proof of address verification is required for tier 3",
+        );
+      }
+      if (parseInt(tier) <= parseInt(user.tier)) {
+        throw new BadRequestException("You cannot downgrade your wallet");
+      }
+      const data = {
+        accountNumber: `${user.virtual_account_number}`,
+        bvn: `${user.bvn}`,
+        nin: nin,
+        accountName: `${user.virtual_account_name}`,
+        phoneNumber: `${user.phone}`,
+        tier: tier,
+        email: `${user.email}`,
+        userPhoto: userPhoto,
+        idType: idType,
+        idNumber,
+        idIssueDate,
+        idExpiryDate,
+        idCardFront,
+        idCardBack,
+        houseNumber,
+        streetName,
+        state,
+        city,
+        localGovernment,
+        pep,
+        customerSignature,
+        utilityBill,
+        nearestLandmark,
+        placeOfBirth,
+        proofOfAddressVerification,
+      };
+      console.log(data);
+
+      const token = await this.generateToken();
+      const url = `${process.env["9PSB_BASE_URL"]}/wallet_upgrade`;
+      const request = await axios.post(url, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (request.data.status !== "SUCCESS") {
+        throw new BadRequestException(request.data.message);
+      }
+      return request.data;
+    } catch (error) {
+      console.error(error.response.data);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.message,
+        },
+        400,
+      );
+    }
+  }
+
+  async getUpgradeStatus(userId: string) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user)
+        throw new BadRequestException("Login and try again, Invalid token");
+      if (!user.virtual_account_number) {
+        throw new BadRequestException(
+          "Must have created virtual account first",
+        );
+      }
+      const url = `${process.env["9PSB_BASE_URL"]}/upgrade_status`;
+      const token = await this.generateToken();
+      const request = await axios.post(
+        url,
+        {accountNumber: `${user.virtual_account_number}`},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      if (request.data.status !== "SUCCESS") {
+        throw new BadRequestException(request.data.message);
+      }
+      return request.data;
+    } catch (error) {
+      console.error(error.response.data);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.message,
+        },
+        400,
+      );
+    }
+  }
 
   async transferToEscrowFromUser(amount: string, userId: string) {
     await this.getUserBalance(userId);
@@ -1517,7 +1717,8 @@ export class UserService extends GenericService<UserDocument> {
         },
       );
       user.balance = request.data.data.availableBalance;
-
+      console.log(request.data);
+      user.tier = request.data.data.tier;
       await user.save();
       return {
         success: true,
