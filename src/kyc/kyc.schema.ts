@@ -2,6 +2,9 @@ import * as mongoose from "mongoose";
 import {Prop, SchemaFactory} from "@nestjs/mongoose";
 
 export class Kyc extends mongoose.Document {
+  @Prop({required: true})
+  userId: string;
+  
   @Prop({required: true, unique: true})
   accountNumber: string;
 

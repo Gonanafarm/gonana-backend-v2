@@ -53,3 +53,11 @@ export function convertDateFormat(dateStr: string): string {
   // Format and return the date as dd/mm/yyyy
   return `${day.padStart(2, "0")}/${numericMonth}/${year}`;
 }
+
+export function removeUndefinedProperties<T extends object>(obj: T): void {
+  for (const key in obj) {
+    if (obj[key] === undefined) {
+      delete obj[key];
+    }
+  }
+}

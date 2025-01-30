@@ -7,12 +7,16 @@ import axios from "axios";
 import {toronetHeaders} from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
 import {UserDocument} from "./user.schema";
+import {InjectModel} from "@nestjs/mongoose";
+import {Model} from "mongoose";
+import {Kyc} from "../kyc/kyc.schema";
 @Injectable()
 export class UserEventHanders {
   constructor(
     private readonly userMailer: UserMailerService,
     private userService: UserService,
     private ccdService: ConcordiumService,
+    @InjectModel("Kyc") private readonly kycModel: Model<Kyc>,
   ) {}
   @OnEvent("account.created")
   async handleAccountCreatedEvent(payload: any) {
@@ -67,7 +71,8 @@ export class UserEventHanders {
     // );
     // const fiat_wallet_address = toronetResponse.data.address;
     // data.user.fiat_wallet_address = fiat_wallet_address;
-    data.user.referral_code = await this.userService.generateUniqueReferralCode();
+    data.user.referral_code =
+      await this.userService.generateUniqueReferralCode();
     await data.user.save();
 
     console.log("Balance:", balance.toString());
@@ -92,7 +97,6 @@ export class UserEventHanders {
   @OnEvent("account.login")
   async handleAccountLogindEvent(user: UserDocument) {
     // handle and process "OrderCreatedEvent" event
-
   }
 
   @OnEvent("account.activated")
@@ -126,5 +130,21 @@ export class UserEventHanders {
       "Verification update",
       "This is to notify you that documents you submitted did not pass the verification stage, kindly update proceed to the verification page and request a new verification.",
     );
+  }
+  @OnEvent("Wallet Upgrade")
+  async createKycDocument(payload: any) {
+    const kycExists = await this.kycModel.findOne({
+      bvn: payload.bvn,
+      userId: payload.userId,
+    });
+    if (kycExists) {
+      await this.kycModel.updateOne(
+        {bvn: payload.bvn, userId: payload.userId},
+        payload,
+      );
+    } else {
+      await this.kycModel.create(payload);
+      console.log("kyc created");
+    }
   }
 }

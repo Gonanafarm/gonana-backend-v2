@@ -47,7 +47,7 @@ import {
 } from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
 import {AccountAddress} from "@concordium/node-sdk";
-import {convertDateFormat} from "../common/helpers";
+import {convertDateFormat, removeUndefinedProperties} from "../common/helpers";
 import {Kyc} from "../kyc/kyc.schema";
 
 export const shuffleArray = <T>(array: T[]): T[] => {
@@ -1107,6 +1107,7 @@ export class UserService extends GenericService<UserDocument> {
       };
       console.log(data);
 
+      removeUndefinedProperties(data);
       const token = await this.generateToken();
       const url = `${process.env["9PSB_BASE_URL"]}/wallet_upgrade`;
       const request = await axios.post(url, data, {
@@ -1118,6 +1119,9 @@ export class UserService extends GenericService<UserDocument> {
       if (request.data.status !== "SUCCESS") {
         throw new BadRequestException(request.data.message);
       }
+      //@ts-ignore
+      data.userId = userId
+      this.eventEmitter.emit("Wallet Upgrade", data);
       return request.data;
     } catch (error) {
       console.error(error.response.data);
