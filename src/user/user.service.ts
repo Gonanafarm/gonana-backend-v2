@@ -1053,24 +1053,26 @@ export class UserService extends GenericService<UserDocument> {
         phoneNumber: `${user.phone}`,
         tier: tier,
         email: `${user.email}`,
-        userPhoto: userPhoto,
+        userPhoto: btoa(userPhoto),
         idType: idType,
         idNumber,
         idIssueDate,
         idExpiryDate,
-        idCardFront,
-        idCardBack,
+        idCardFront: btoa(idCardFront),
+        idCardBack: idCardBack ? btoa(idCardBack) : undefined,
         houseNumber,
         streetName,
         state,
         city,
         localGovernment,
         pep,
-        customerSignature,
-        utilityBill,
+        customerSignature: btoa(customerSignature),
+        utilityBill: btoa(utilityBill),
         nearestLandmark,
         placeOfBirth,
-        proofOfAddressVerification,
+        proofOfAddressVerification: proofOfAddressVerification
+          ? btoa(proofOfAddressVerification)
+          : undefined,
       };
       console.log(data);
 

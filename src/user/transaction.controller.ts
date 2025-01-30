@@ -7,6 +7,10 @@ import {
   Body,
   HttpCode,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  InternalServerErrorException,
+  BadRequestException,
 } from "@nestjs/common";
 import {Request} from "express";
 import {UserService} from "./user.service";
@@ -21,12 +25,15 @@ import {
   WalletUpgradeDto,
 } from "./user.dto";
 import {ConcordiumService} from "./concordium.service";
+import {CloudinaryService} from "../post/cloudinary.service";
+import {FileInterceptor} from "@nestjs/platform-express";
 
 @Controller("api/transaction")
 export class TransactionController {
   constructor(
     private readonly userService: UserService,
     private readonly ccdService: ConcordiumService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -136,6 +143,34 @@ export class TransactionController {
       data.city,
       data.state,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor("file"))
+  @Post("/upload-file")
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException("No file uploaded");
+    }
+
+    const allowedMimeTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        "Invalid file type. Only JPG, PNG and PDF files are allowed",
+      );
+    }
+
+    try {
+      const result = await this.cloudinaryService.uploadFile(file);
+      return {
+        message: "File uploaded successfully",
+        url: result.secure_url,
+      };
+    } catch (error) {
+      console.log(error);
+
+      throw new InternalServerErrorException("File upload failed");
+    }
   }
 
   @UseGuards(JwtAuthGuard)
