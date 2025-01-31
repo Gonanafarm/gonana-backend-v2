@@ -18,6 +18,7 @@ import {User} from "./user.schema";
 import {FileInterceptor} from "@nestjs/platform-express";
 import {LogisticsService} from "./logistics.service";
 import {sendNotificationDto} from "./user.dto";
+import { UserMailerService } from "./user.mailer.service";
 
 @ApiTags("user-controller")
 @ApiBearerAuth()
@@ -26,6 +27,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly logisticsService: LogisticsService,
+    private readonly userMailerService: UserMailerService,
   ) {}
 
   @Get("/find-by-email/:email")
@@ -110,5 +112,18 @@ export class UserController {
     const userId = req.user?.id;
     const playerId = req.body.id;
     return this.userService.updateOneSignalId(userId, playerId);
+  }
+
+  @Post("/contact-email")
+  async sendEmail(
+    @Body('name') name: string,
+    @Body('email') email: string,
+    @Body('subject') subject: string,
+    @Body('message') message: string,
+  ) {
+    if (!name || !email || !subject || !message) {
+      return { success: false, message: 'All fields are required' };
+    }
+    return this.userMailerService.sendContactEmail(name, email, subject, message);
   }
 }
