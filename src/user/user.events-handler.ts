@@ -133,18 +133,34 @@ export class UserEventHanders {
   }
   @OnEvent("Wallet Upgrade")
   async createKycDocument(payload: any) {
-    const kycExists = await this.kycModel.findOne({
-      bvn: payload.bvn,
-      userId: payload.userId,
-    });
-    if (kycExists) {
-      await this.kycModel.updateOne(
-        {bvn: payload.bvn, userId: payload.userId},
-        payload,
-      );
-    } else {
-      await this.kycModel.create(payload);
-      console.log("kyc created");
+    try {
+      console.log("Wallet Upgrade Event Triggered with payload:", payload);
+
+      if (!payload || !payload.bvn || !payload.userId) {
+        console.error("Invalid payload received:", payload);
+        return;
+      }
+
+      const kycExists = await this.kycModel.findOne({
+        bvn: payload.bvn,
+        userId: payload.userId,
+      });
+
+      if (kycExists) {
+        console.log("Updating existing KYC document:", kycExists);
+        await this.kycModel.updateOne(
+          {bvn: payload.bvn, userId: payload.userId},
+          {$set: payload},
+        );
+      } else {
+        console.log("Creating new KYC document");
+        const newKyc = await this.kycModel.create(payload);
+      }
+
+      console.log("KYC document processed successfully");
+    } catch (error) {
+      console.error("Error processing KYC document:", error);
+      // Log error but do not throw to prevent stopping server operations
     }
   }
 }

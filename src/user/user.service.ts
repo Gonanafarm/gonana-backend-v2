@@ -974,7 +974,7 @@ export class UserService extends GenericService<UserDocument> {
         phoneNo: user.phone,
       };
       console.log(data);
-      
+
       const token = await this.generateToken();
 
       const request = await axios.post(url, data, {
@@ -1736,6 +1736,9 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found, Login and Try again.");
       }
+      if (!user.virtual_account_number) {
+        return "0";
+      }
       const token = await this.generateToken();
       const url = `${process.env["9PSB_BASE_URL"]}/wallet_enquiry`;
       if (!user.virtual_account_number) {
@@ -1937,6 +1940,32 @@ export class UserService extends GenericService<UserDocument> {
       );
 
       return {success: true, transactions: ccdTransactions};
+    } catch (error) {
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
+  async getGonaTransactions(userId: string) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException("Invalid Token");
+      }
+      const gonaTransaction = await this.transactionModel.findOne({
+        userId: userId,
+      });
+      const gonaTransactionsArray = gonaTransaction.transactions;
+      const gonaTransactions = gonaTransactionsArray.filter(
+        transaction => transaction.currency === "GONA",
+      );
+
+      return {success: true, transactions: gonaTransactions};
     } catch (error) {
       throw new HttpException(
         {
@@ -2897,6 +2926,34 @@ export class UserService extends GenericService<UserDocument> {
           small_icon:
             "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
         };
+        const transactionObject: Record<string, any> = {
+          userId: user.id,
+          status: "SUCCESS",
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet: recipientWallet,
+          currency: "GONA",
+        };
+
+        const transaction = await this.transactionModel.findOne({
+          userId: user.id,
+        });
+        if (!transaction) {
+          await this.transactionModel.create(transactionObject);
+        }
+        const transactionArrayObject = {
+          currency: "GONA" as const,
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          status: "SUCCESS" as const,
+          AmountSent: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet,
+        };
+        console.log(transactionArrayObject, transactionArrayObject);
+        transaction.transactions.push(transactionArrayObject);
+        await transaction.save();
 
         await this.sendNotificationToDevice(
           creditMessage,

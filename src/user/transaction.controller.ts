@@ -411,6 +411,14 @@ export class TransactionController {
     return this.userService.getCcdTransactions(user_id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get("gona")
+  getGonaTransactions(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.getGonaTransactions(user_id);
+  }
+
   // @Post("test")
   // test(@Body() data: any) {
   //   return this.ccdService.withdrawFromEscrow(data.id)
