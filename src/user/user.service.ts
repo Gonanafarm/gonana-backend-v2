@@ -1044,7 +1044,7 @@ export class UserService extends GenericService<UserDocument> {
     try {
       const banks = (await this.getBanks()).data;
       const bank = banks.find((bank: any) => {
-        const bankNameLower = bank_name.toLowerCase();
+        const bankNameLower = bank_name.toLowerCase();   
         return (
           bank.bankName.toLowerCase() === bankNameLower ||
           (bank.bankShortName &&
@@ -1165,7 +1165,7 @@ export class UserService extends GenericService<UserDocument> {
     ///  TORONET IMPLEMENTATION
     try {
       const bankCode = await this.getBankCode(bank);
-      console.log(bankCode);
+      console.log("baNKCODE:",bankCode);
       const toroData = {
         op: "verifybankaccountname_ngn",
         params: [
@@ -1557,7 +1557,7 @@ export class UserService extends GenericService<UserDocument> {
           },
           {
             name: "description",
-            value: narration,
+            value: narration || "",
           },
           {
             name: "amount",
