@@ -57,33 +57,33 @@ export class UserCronJob {
     }
   }
 
-  @Cron(CronExpression.EVERY_6_HOURS)
-  async getUsersWithBalance() {
-    const users = await this.userModel.find({
-      $expr: {
-        $gte: [{$toDouble: "$balance"}, 5],
-      },
-    });
-    const oneSignalIds = users
-      .map(user => user.onesignal_id)
-      .filter(id => id != null && id !== "");
-    const emails = users.map(user => user.email);
-    console.log(oneSignalIds, emails);
-    await this.userService.sendNotificationToParticularDevices(
-      "Withdraw all funds from your virtual account, we will be changing payment providers soon and getting any funds back after that time may not be possible",
-      "Important Notice",
-      oneSignalIds,
-    );
-    this.mailerService.sendBulkEmails(
-      emails,
-      "Important Notice",
-      "Withdraw all funds from your virtual account, we will be changing payment providers soon and getting any funds back after that time may not be possible",
-    );
-  }
+  // @Cron(CronExpression.EVERY_6_HOURS)
+  // async getUsersWithBalance() {
+  //   const users = await this.userModel.find({
+  //     $expr: {
+  //       $gte: [{$toDouble: "$balance"}, 5],
+  //     },
+  //   });
+  //   const oneSignalIds = users
+  //     .map(user => user.onesignal_id)
+  //     .filter(id => id != null && id !== "");
+  //   const emails = users.map(user => user.email);
+  //   console.log(oneSignalIds, emails);
+  //   await this.userService.sendNotificationToParticularDevices(
+  //     "Withdraw all funds from your virtual account, we will be changing payment providers soon and getting any funds back after that time may not be possible",
+  //     "Important Notice",
+  //     oneSignalIds,
+  //   );
+  //   this.mailerService.sendBulkEmails(
+  //     emails,
+  //     "Important Notice",
+  //     "Withdraw all funds from your virtual account, we will be changing payment providers soon and getting any funds back after that time may not be possible",
+  //   );
+  // }
 
   @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
   async resetInsuranceStatus() {
-    const users = await this.userModel.find();
+    const users = await this.userModel.find({insurance:true});
     for (const user of users) {
       user.insurance = false;
       await user.save();
