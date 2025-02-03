@@ -3030,13 +3030,13 @@ export class UserService extends GenericService<UserDocument> {
       if (query.balance < amount) {
         throw new BadRequestException("Insufficient Gona Token Balance");
       }
-      const transaction = await this.ccdService.withdrawCis2Token(
+      const request = await this.ccdService.withdrawCis2Token(
         amount,
         recipientWallet,
         id,
         gonaAdminToken,
       );
-      if (!transaction) {
+      if (!request) {
         throw new BadRequestException("Transaction Failed");
       }
       return {success: true, messsage: "Withdrawal Successful"};
@@ -3065,19 +3065,98 @@ export class UserService extends GenericService<UserDocument> {
       }
       if (recipientWallet.length === 64) {
         await this.transferGonaToken(id, amount, recipientWallet);
+        const debitMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `${amount} gona has been debited from your wallet`,
+          },
+          headings: {en: "Debit Notification"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        const transactionObject: Record<string, any> = {
+          userId: user.id,
+          status: "SUCCESS",
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet: recipientWallet,
+          currency: "GONA",
+        };
+
+        const transaction = await this.transactionModel.findOne({
+          userId: user.id,
+        });
+        if (!transaction) {
+          await this.transactionModel.create(transactionObject);
+        }
+        const transactionArrayObject = {
+          currency: "GONA" as const,
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          status: "SUCCESS" as const,
+          AmountSent: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet,
+        };
+        console.log(transactionArrayObject, transactionArrayObject);
+        transaction.transactions.push(transactionArrayObject);
+        await transaction.save();
+        await this.sendNotificationToDevice(debitMessage, user.id);
         return {success: true, message: "Transfer Successful"};
       }
 
       const isCcdWallet = new AccountAddress(recipientWallet);
       if (isCcdWallet) {
-        const transaction = await this.withdrawGona(
-          id,
-          amount,
-          recipientWallet,
-        );
-        if (!transaction) {
+        const request = await this.withdrawGona(id, amount, recipientWallet);
+        if (!request) {
           throw new BadRequestException("Transaction Failed");
         }
+        const debitMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `${amount} gona has been debited from your wallet`,
+          },
+          headings: {en: "Debit Notification"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        const transactionObject: Record<string, any> = {
+          userId: user.id,
+          status: "SUCCESS",
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet: recipientWallet,
+          currency: "GONA",
+        };
+
+        const transaction = await this.transactionModel.findOne({
+          userId: user.id,
+        });
+        if (!transaction) {
+          await this.transactionModel.create(transactionObject);
+        }
+        const transactionArrayObject = {
+          currency: "GONA" as const,
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          status: "SUCCESS" as const,
+          AmountSent: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet,
+        };
+        console.log(transactionArrayObject, transactionArrayObject);
+        transaction.transactions.push(transactionArrayObject);
+        await transaction.save();
+        await this.sendNotificationToDevice(debitMessage, user.id);
+
         return {success: true, messsage: "Withdrawal Successful"};
       }
     } catch (error) {
@@ -3109,6 +3188,45 @@ export class UserService extends GenericService<UserDocument> {
         },
         gonaModuleRef,
       );
+      const creditMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `${amount} gona has been credited into your wallet`,
+        },
+        headings: {en: "Credit Notification"},
+        included_segments: ["include_player_ids"],
+        include_player_ids: [user.onesignal_id],
+        content_available: true,
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+      };
+      const transactionObject: Record<string, any> = {
+        userId: user.id,
+        status: "SUCCESS",
+        Type: "CREDIT" as const,
+        AmountSettled: amount,
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+        currency: "GONA",
+      };
+
+      const transaction = await this.transactionModel.findOne({
+        userId: user.id,
+      });
+      if (!transaction) {
+        await this.transactionModel.create(transactionObject);
+      }
+      const transactionArrayObject = {
+        currency: "GONA" as const,
+        Type: "CREDIT" as const,
+        AmountSettled: amount,
+        status: "SUCCESS" as const,
+        AmountSent: amount,
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+      };
+      console.log(transactionArrayObject, transactionArrayObject);
+      transaction.transactions.push(transactionArrayObject);
+      await transaction.save();
+      await this.sendNotificationToDevice(creditMessage, user.id);
       return {success: true, message: "Deposit Succesful"};
     } catch (error: any) {
       console.log(error);
