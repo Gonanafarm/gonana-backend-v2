@@ -551,4 +551,43 @@ export class PostService extends GenericService<PostDocument> {
     const roundedUsd = this.userService.roundToSignificantFigures(usd, 9);
     return roundedUsd.toString();
   }
+  async getUsersWithOldProducts(): Promise<UserDocument[]> {
+    // Calculate the date 30 days ago
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Find posts that haven't been updated in the last 30 days
+    const outdatedPosts = await this.productModel
+      .find({
+        updated_at: {$lt: thirtyDaysAgo},
+      })
+      .exec();
+
+    // Extract unique user IDs from the outdated posts
+    const userIds = [...new Set(outdatedPosts.map(post => post.publisher_id))];
+
+    // Find users who have these outdated posts
+    const usersWithOutdatedProducts = await this.userModel
+      .find({
+        _id: {$in: userIds},
+      })
+      .exec();
+
+    for (const user of usersWithOutdatedProducts) {
+      const message = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: "Price updates keep your products live and selling. Take a moment to update now before they’re removed from the app!",
+        },
+        headings: {en: "Quick Update = More Sales! 🚀"},
+        included_segments: ["include_player_ids"],
+        include_player_ids: [user.onesignal_id],
+        content_available: true,
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+      };
+      await this.userService.sendNotificationToDevice(message, user.id);
+    }
+    return usersWithOutdatedProducts;
+  }
 }

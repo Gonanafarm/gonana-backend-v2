@@ -56,6 +56,8 @@ export class AuthService {
         {subject: `${user?.id}`},
       ),
       user: userData,
+      versionIOS:process.env.IOS_VERSION,
+      versionAndroid: process.env.ANDROID_VERSION,
     };
   }
 
@@ -103,6 +105,8 @@ export class AuthService {
         {subject: `${user.id}`},
       ),
       user: user.getPublicData(),
+      versionIOS:process.env.IOS_VERSION,
+      versionAndroid: process.env.ANDROID_VERSION,
     };
   }
 

@@ -40,7 +40,7 @@ export class Post {
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.String, enum: PostType})
-  type: string; // article , video, audio
+  type: string;
 
   @ApiProperty()
   @Prop({type: mongoose.SchemaTypes.String})

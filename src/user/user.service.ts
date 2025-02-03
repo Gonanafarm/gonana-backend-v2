@@ -344,7 +344,12 @@ export class UserService extends GenericService<UserDocument> {
       throw UserNotFoundException();
     }
 
-    return {user, data: user.getPublicData()};
+    return {
+      user,
+      data: user.getPublicData(),
+      versionIOS: process.env.IOS_VERSION,
+      versionAndroid: process.env.ANDROID_VERSION,
+    };
   }
 
   async activate(userId: string, activationToken: string) {
@@ -703,6 +708,8 @@ export class UserService extends GenericService<UserDocument> {
         console.log(user.ccdWalletBalanceInNgn);
       }
       await user.save();
+      userData.versionIOS = process.env.IOS_VERSION;
+      userData.versionAndroid = process.env.ANDROID_VERSION;
       return userData;
     } catch (error: any) {
       console.error(error);
@@ -737,7 +744,12 @@ export class UserService extends GenericService<UserDocument> {
       {...user.getPublicData()},
       {subject: `${user.id}`},
     );
-    return {user: user.getPublicData(), token: token};
+    return {
+      user: user.getPublicData(),
+      token: token,
+      versionIOS: process.env.IOS_VERSION,
+      versionAndroid: process.env.ANDROID_VERSION,
+    };
   }
 
   // async generateToken() {
@@ -1737,7 +1749,10 @@ export class UserService extends GenericService<UserDocument> {
         throw new NotFoundException("User not found, Login and Try again.");
       }
       if (!user.virtual_account_number) {
-        return "0";
+        return {
+          success: true,
+          balance: "0",
+        };
       }
       const token = await this.generateToken();
       const url = `${process.env["9PSB_BASE_URL"]}/wallet_enquiry`;
@@ -3214,6 +3229,8 @@ export class UserService extends GenericService<UserDocument> {
     });
 
     console.log(req.data);
+    console.log("Sent push notification to" + userId);
+
     return req.data;
   }
   async sendTestNotificationToDevice(data: Array<string>) {

@@ -438,8 +438,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
   ) {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
-      console.log("rates:",rates);
-      
+      console.log("rates:", rates);
+
       const totalCost = rates.total_shipping_cost || rates.product_cost;
       console.log("totalcost:", totalCost);
 
@@ -448,9 +448,10 @@ export class CartItemService extends GenericService<CartItemDocument> {
         throw new BadRequestException(`User Not found`);
       }
 
-      const balance = (await this.userService.getUserBalance(user_id)).balance;
+      let balance = (await this.userService.getUserBalance(user_id)).balance;
       console.log("Balance Gotten");
-
+      //@ts-ignore
+      balance = parseFloat(balance);
       if (balance < totalCost) {
         throw new BadRequestException(
           `Insufficient balance fund wallet and try again`,
@@ -669,7 +670,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       };
     } catch (error: any) {
       console.log(error);
-      
+
       throw new HttpException(
         {
           success: false,

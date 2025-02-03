@@ -67,6 +67,11 @@ export class PostController {
       body.page,
     );
   }
+
+  @Get("out")
+  async getOut(){
+    return await this.dataService.getUsersWithOldProducts()
+  }
   @Get("/user-products")
   async getUserProducts(@Req() req: Request, @Query() body: GetUserPostsDto) {
     //@ts-ignore
