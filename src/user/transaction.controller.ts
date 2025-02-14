@@ -17,9 +17,12 @@ import {Request} from "express";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {
+  BvnOtpVerification,
+  BvnVerification,
   CreateVirtualAccount,
   GetUserTransactonsDto,
   ResolveAccountNumber,
+  SendBvnOtp,
   TransferEthDto,
   TransferFundsDto,
   TransferToUser,
@@ -43,12 +46,10 @@ export class TransactionController {
     //@ts-ignore
     const user_id = req.user?.id;
     console.log(data);
-    
+
     return this.userService.virtualAccount(
       user_id,
       data.gender,
-      data.bvn,
-      data.dob,
       data.address,
     );
   }
@@ -260,13 +261,39 @@ export class TransactionController {
     return this.userService.getUserTransactions(user_id, body.page, body.limit);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Post("/kyc")
-  // verify(@Req() req: Request, @Body() data: KycVerification) {
-  //   //@ts-ignore
-  //   const user_id = req.user?.id;
-  //   return this.userService.kycVerification(user_id, data.dob, data.bvn);
-  // }
+  @UseGuards(JwtAuthGuard)
+  @Post("/kyc/bvn")
+  verify(@Req() req: Request, @Body() data: BvnVerification) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.bvnVerification(user_id, data.bvn);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("kyc/bvn/otp")
+  bvnOtp(@Req() req: Request, @Body() data: SendBvnOtp) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.sendBvnOtp(
+      user_id,
+      data.method,
+      data.sessionId,
+      data.phone_number,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("kyc/bvn/otp/verify")
+  verifyBvnOtp(@Req() req: Request, @Body() data: BvnOtpVerification) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.verifyBvnOtp(
+      user_id,
+      data.sessionId,
+      data.otp,
+      data.dob,
+    );
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get("/ccd-balance")

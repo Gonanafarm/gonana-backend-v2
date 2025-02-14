@@ -61,3 +61,15 @@ export function removeUndefinedProperties<T extends object>(obj: T): void {
     }
   }
 }
+
+export function compareKeys(
+  objA: { [key: string]: any }, // Object `a` with any properties
+  objB: { [key: string]: any }, // Object `b` with any properties
+  keyA: string, // Key to select from object `a`
+  keyB: string // Key to select from object `b`
+): boolean {
+  console.log("objA name:",objA[keyA].toLowerCase());
+  console.log("objB name:",objB[keyB].toLowerCase());
+  
+  return objA[keyA].toLowerCase() === objB[keyB].toLowerCase();
+}

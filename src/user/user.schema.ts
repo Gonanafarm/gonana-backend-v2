@@ -191,6 +191,15 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.String, default: "1"})
   tier: string;
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  nin: string;
+
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  bvnVerified: boolean;
+
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  ninVerified: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -226,6 +235,8 @@ UserSchema.methods.getPublicData = function () {
     referral_code,
     firebaseToken,
     tier,
+    bvnVerified,
+    ninVerified,
   } = this;
   const publicData = {
     id,
@@ -254,6 +265,8 @@ UserSchema.methods.getPublicData = function () {
     referral_code,
     firebaseToken,
     tier,
+    bvnVerified,
+    ninVerified,
   };
   return publicData;
 };

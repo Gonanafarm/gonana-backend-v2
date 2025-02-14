@@ -47,7 +47,11 @@ import {
 } from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
 import {AccountAddress} from "@concordium/node-sdk";
-import {convertDateFormat, removeUndefinedProperties} from "../common/helpers";
+import {
+  compareKeys,
+  convertDateFormat,
+  removeUndefinedProperties,
+} from "../common/helpers";
 import {Kyc} from "../kyc/kyc.schema";
 
 export const shuffleArray = <T>(array: T[]): T[] => {
@@ -935,8 +939,6 @@ export class UserService extends GenericService<UserDocument> {
   async virtualAccount(
     userId: string,
     gender: number,
-    bvn?: string,
-    dob?: string,
     address?: string,
   ) {
     try {
@@ -944,8 +946,8 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new BadRequestException("Login and try again");
       }
-      if (!user.bvn && !bvn) {
-        throw new BadRequestException("Invalid Bvn");
+      if (!user.bvnVerified) {
+        throw new BadRequestException("Must verify bvn before creating virtual account");
       }
       if (
         (!Array.isArray(user.address) || !user.address[0]?.address) &&
@@ -954,26 +956,12 @@ export class UserService extends GenericService<UserDocument> {
         throw new BadRequestException("Invalid address");
       }
 
-      if (!user.date_of_birth && !dob) {
-        throw new BadRequestException("Invalid date of birth");
-      }
-      const bvnExists = await this.userModel.findOne({bvn: bvn});
-      if (bvnExists && bvnExists.id !== user.id) {
-        throw new ConflictException(`Gonana user with this bvn exists`);
-      }
-      if (user.date_of_birth) {
-        const convertedDate = convertDateFormat(user.date_of_birth);
-        user.date_of_birth = convertedDate;
-      }
-
       const url = `${process.env["9PSB_BASE_URL"]}/open_wallet`;
       user.gender = gender[gender];
-      if (!user.bvn) {
-        user.bvn = bvn;
-      }
+
       const data = {
-        bvn: user.bvn || bvn,
-        dateOfBirth: user.date_of_birth || dob,
+        bvn: user.bvn,
+        dateOfBirth: user.date_of_birth,
         address:
           Array.isArray(user.address) && user.address[0]?.address
             ? user.address[0].address
@@ -1793,108 +1781,289 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async kycVerification(userId: string, dob: string, bvn?: string) {
+  async bvnVerification(userId: string, bvn: string) {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new NotFoundException("User not found, Login and Try again.");
       }
+      if (user.bvnVerified === true) {
+        throw new BadRequestException("Bvn already verified.");
+      }
       if (!user.bvn && !bvn) {
         throw new BadRequestException("Invalid Bvn");
       }
 
-      if (!user.fiat_wallet_address) {
-        throw new BadRequestException("Login and try again");
-      }
+      // if (!user.fiat_wallet_address) {
+      //   throw new BadRequestException("Login and try again");
+      // }
       const bvnExists = await this.userModel.findOne({bvn: bvn});
       if (bvnExists && bvnExists.id !== user.id) {
         throw new ConflictException(`Gonana user with this bvn exists`);
       }
-      const toroData = {
-        op: "check_kyc",
-        params: [
-          {
-            name: "currency",
-            value: "NGN", //current options are NGN
-          },
-          {
-            name: "bvn",
-            value: user.bvn || bvn,
-          },
-          {
-            name: "firstName",
-            value: user.first_name,
-          },
-          {
-            name: "lastName",
-            value: user.last_name,
-          },
-          {
-            name: "middleName",
-            value: "",
-          },
-          {
-            name: "phoneNumber",
-            value: user.phone,
-          },
-          {
-            name: "dob",
-            value: dob,
-          },
-          {
-            name: "address",
-            value: user.fiat_wallet_address,
-          },
-        ],
+
+      // const toroData = {
+      //   op: "check_kyc",
+      //   params: [
+      //     {
+      //       name: "currency",
+      //       value: "NGN", //current options are NGN
+      //     },
+      //     {
+      //       name: "bvn",
+      //       value: user.bvn || bvn,
+      //     },
+      //     {
+      //       name: "firstName",
+      //       value: user.first_name,
+      //     },
+      //     {
+      //       name: "lastName",
+      //       value: user.last_name,
+      //     },
+      //     {
+      //       name: "middleName",
+      //       value: "",
+      //     },
+      //     {
+      //       name: "phoneNumber",
+      //       value: user.phone,
+      //     },
+      //     {
+      //       name: "dob",
+      //       value: dob,
+      //     },
+      //     {
+      //       name: "address",
+      //       value: user.fiat_wallet_address,
+      //     },
+      //   ],
+      // };
+
+      // const res = await axios.post(
+      //   `${toronetBaseUrl}/payment/toro/`,
+      //   toroData,
+      //   {headers: toronetHeaders},
+      // );
+
+      const bvnData = {
+        bvn: bvn || user.bvn,
+        scope: "identity",
       };
+      const bvnUrl = `${process.env.MONO_BASE_URL}/v2/lookup/bvn/initiate`;
+      const bvnRes = await axios.post(bvnUrl, bvnData, {
+        headers: {
+          "Content-Type": "application/json",
+          "mono-sec-key": `${process.env.MONO_SECRET_KEY}`,
+        },
+      });
 
-      const res = await axios.post(
-        `${toronetBaseUrl}/payment/toro/`,
-        toroData,
-        {headers: toronetHeaders},
-      );
-      console.log(toroData);
+      console.log("bvn response:", bvnRes.data);
 
-      console.log(res.data);
-
-      if (res.data.result === false) {
-        throw new BadRequestException(res.data.error);
-      }
-      if (res.data.data.passed === false) {
-        const failedProps = Object.keys(res.data.data).filter(
-          key => res.data.data[key] === "N",
-        );
-        if (failedProps.includes("dob")) {
-          throw new BadRequestException(
-            "Date of Birth provided does not match the one associated with your bvn",
-          );
-        } else {
-          throw new BadRequestException(
-            `${failedProps.join(
-              ", ",
-            )} in your profile does not match the one associated with your bvn`,
-          );
-        }
-      }
-      user.date_of_birth = dob;
-      if (!user.bvn && bvn) {
-        user.bvn = bvn as string;
-        await user.save();
-      }
-      await user.save();
-      return {
-        success: true,
-        message: "Kyc completed",
-      };
+      // if (res.data.result === false) {
+      //   throw new BadRequestException(res.data.error);
+      // }
+      // if (res.data.data.passed === false) {
+      //   const failedProps = Object.keys(res.data.data).filter(
+      //     key => res.data.data[key] === "N",
+      //   );
+      //   if (failedProps.includes("dob")) {
+      //     throw new BadRequestException(
+      //       "Date of Birth provided does not match the one associated with your bvn",
+      //     );
+      //   } else {
+      //     throw new BadRequestException(
+      //       `${failedProps.join(
+      //         ", ",
+      //       )} in your profile does not match the one associated with your bvn`,
+      //     );
+      //   }
+      // }
+      // user.date_of_birth = dob;
+      return bvnRes.data;
     } catch (error: any) {
       console.log("error:", error);
+
+      // Handle NestJS exceptions (e.g., ConflictException, NotFoundException)
+      if (error instanceof HttpException) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
+          },
+          error.getStatus(), // Use the status code from the exception
+        );
+      }
+
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
       throw new HttpException(
         {
           success: false,
-          message: error.message,
-          data: error.response.data,
+          message: error.message || "An unexpected error occurred",
         },
-        error.status,
+        400,
+      );
+    }
+  }
+  async sendBvnOtp(
+    userId: string,
+    method: string,
+    sessionId: string,
+    phone_number?: string,
+  ) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException("User not found, Login and Try again.");
+      }
+      const data: any = {
+        method: method,
+        phone_number: phone_number,
+      };
+      if (!phone_number) {
+        delete data.phone_number;
+      }
+      const url = `${process.env.MONO_BASE_URL}/v2/lookup/bvn/verify`;
+      const res = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+          "mono-sec-key": `${process.env.MONO_SECRET_KEY}`,
+          "x-session-id": sessionId,
+        },
+      });
+      return res.data;
+    } catch (error: any) {
+      console.log("error:", error);
+
+      // Handle NestJS exceptions (e.g., ConflictException, NotFoundException)
+      if (error instanceof HttpException) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
+          },
+          error.getStatus(), // Use the status code from the exception
+        );
+      }
+
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message || "An unexpected error occurred",
+        },
+        400,
+      );
+    }
+  }
+
+  async verifyBvnOtp(
+    userId: string,
+    sessionId: string,
+    otp: string,
+    dob: string,
+  ) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException("User not found, Login and Try again.");
+      }
+      const url = `${process.env.MONO_BASE_URL}/v2/lookup/bvn/details`;
+      const data = {
+        otp: otp,
+      };
+      const res = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+          "mono-sec-key": `${process.env.MONO_SECRET_KEY}`,
+          "x-session-id": sessionId,
+        },
+      });
+      console.log("bvn:", res.data.data.bvn);
+
+      const errors: string[] = [];
+
+      if (!compareKeys(user, res.data.data, "first_name", "first_name")) {
+        errors.push("First name in Bvn does not match first name in profile.");
+      }
+      if (!compareKeys(user, res.data.data, "last_name", "last_name")) {
+        errors.push("Last name in Bvn does not match last name in profile.");
+      }
+      if (dob !== res.data.data.dob) {
+        errors.push(
+          "Date of Birth in Bvn does not match date of birth submitted.",
+        );
+      }
+
+      // If any errors exist, throw them at once
+      if (errors.length > 0) {
+        throw new ConflictException(errors.join(", "));
+      }
+
+      user.bvn = res.data.data.bvn;
+      user.bvnVerified = true;
+      user.date_of_birth = dob.replace(/-/g, "/");
+      console.log(user.date_of_birth);
+
+      await user.save();
+      return {
+        succes: true,
+        message: "Bvn verified sucessfully",
+      };
+    } catch (error: any) {
+      console.log("error:", error);
+
+      // Handle NestJS exceptions (e.g., ConflictException, NotFoundException)
+      if (error instanceof HttpException) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
+          },
+          error.getStatus(), // Use the status code from the exception
+        );
+      }
+
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message || "An unexpected error occurred",
+        },
+        400,
       );
     }
   }
@@ -2008,7 +2177,11 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("user not found. login and try again");
       }
-
+      // if (user.tier === "1") {
+      //   throw new BadRequestException(
+      //     "Tier 1 users are not allowed to make transfers",
+      //   );
+      // }
       //@ts-ignore
       const balance = parseFloat(user.balance);
       console.log(balance);
