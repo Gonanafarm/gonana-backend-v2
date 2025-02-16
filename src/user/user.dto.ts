@@ -362,10 +362,6 @@ export class CreateVirtualAccount {
 export class WalletUpgradeDto {
   @IsString()
   @IsNotEmpty()
-  nin: string;
-
-  @IsString()
-  @IsNotEmpty()
   phoneNumber: string;
 
   @IsString()

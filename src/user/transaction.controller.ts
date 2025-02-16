@@ -47,13 +47,16 @@ export class TransactionController {
     const user_id = req.user?.id;
     console.log(data);
 
-    return this.userService.virtualAccount(
-      user_id,
-      data.gender,
-      data.address,
-    );
+    return this.userService.virtualAccount(user_id, data.gender, data.address);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post("/kyc/nin")
+  verifyNin(@Body("nin") nin: string, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.verifyNin(user_id, nin);
+  }
   @UseGuards(JwtAuthGuard)
   @Get("/resolve-account-number")
   getBanks(@Query() body: ResolveAccountNumber) {
@@ -152,7 +155,6 @@ export class TransactionController {
       }
 
       return this.userService.upgradeWallet(
-        data.nin,
         data.idType,
         data.idNumber,
         data.idIssueDate,

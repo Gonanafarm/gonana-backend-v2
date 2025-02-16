@@ -936,18 +936,16 @@ export class UserService extends GenericService<UserDocument> {
   // }
 
   ////// 9PSB IMPLEMENTATION
-  async virtualAccount(
-    userId: string,
-    gender: number,
-    address?: string,
-  ) {
+  async virtualAccount(userId: string, gender: number, address?: string) {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new BadRequestException("Login and try again");
       }
       if (!user.bvnVerified) {
-        throw new BadRequestException("Must verify bvn before creating virtual account");
+        throw new BadRequestException(
+          "Must verify bvn before creating virtual account",
+        );
       }
       if (
         (!Array.isArray(user.address) || !user.address[0]?.address) &&
@@ -1002,7 +1000,6 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async upgradeWallet(
-    nin: string,
     idType: string,
     idNumber: string,
     idIssueDate: string,
@@ -1030,6 +1027,16 @@ export class UserService extends GenericService<UserDocument> {
       if (!user.virtual_account_number) {
         throw new BadRequestException(
           "Must have created virtual account first",
+        );
+      }
+      if (!user.bvnVerified) {
+        throw new BadRequestException(
+          "Must verify bvn before upgrading wallet",
+        );
+      }
+      if (!user.ninVerified) {
+        throw new BadRequestException(
+          "Must verify nin before upgrading wallet",
         );
       }
       if (!user)
@@ -1083,7 +1090,7 @@ export class UserService extends GenericService<UserDocument> {
       const data = {
         accountNumber: user.virtual_account_number,
         bvn: user.bvn,
-        nin,
+        nin: user.nin,
         accountName: user.virtual_account_name,
         phoneNumber: user.phone,
         tier,
@@ -2031,6 +2038,96 @@ export class UserService extends GenericService<UserDocument> {
       return {
         succes: true,
         message: "Bvn verified sucessfully",
+      };
+    } catch (error: any) {
+      console.log("error:", error);
+
+      // Handle NestJS exceptions (e.g., ConflictException, NotFoundException)
+      if (error instanceof HttpException) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
+          },
+          error.getStatus(), // Use the status code from the exception
+        );
+      }
+
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message || "An unexpected error occurred",
+        },
+        400,
+      );
+    }
+  }
+
+  async verifyNin(userId: string, nin: string) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException("User not found, Login and Try again.");
+      }
+      if (!user.bvnVerified) {
+        throw new BadRequestException(
+          "Bvn must be verified before verifying nin",
+        );
+      }
+      if (user.ninVerified) {
+        throw new BadRequestException("Nin has already been verified");
+      }
+      const ninExists = await this.userModel.findOne({nin: nin});
+      if (ninExists && ninExists.id !== user.id) {
+        throw new ConflictException(`User with this nin already exists`);
+      }
+      const url = `${process.env.MONO_BASE_URL}/v3/lookup/nin`;
+      const data = {
+        nin: nin,
+      };
+      const res = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+          "mono-sec-key": `${process.env.MONO_SECRET_KEY}`,
+        },
+      });
+      console.log(res.data);
+
+      const errors: string[] = [];
+      if (!compareKeys(user, res.data.data, "first_name", "firstname")) {
+        errors.push("First name in Bvn does not match first name in nin.");
+      }
+      if (!compareKeys(user, res.data.data, "last_name", "surname")) {
+        errors.push("Last name in Bvn does not match last name in nin.");
+      }
+      // if (user.date_of_birth !== res.data.data.birthdate) {
+      //   errors.push(
+      //     "Date of Birth in Bvn does not match date of birth in nin.",
+      //   );
+      // }
+
+      // If any errors exist, throw them at once
+      if (errors.length > 0) {
+        throw new ConflictException(errors.join(", "));
+      }
+      user.nin = nin;
+      user.ninVerified = true;
+      await user.save();
+      return {
+        sucess: true,
+        message: "Nin verified sucessfully",
       };
     } catch (error: any) {
       console.log("error:", error);
