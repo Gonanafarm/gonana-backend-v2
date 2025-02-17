@@ -982,6 +982,9 @@ export class UserService extends GenericService<UserDocument> {
           "Content-Type": "application/json",
         },
       });
+      if (request.data.status === "FAILED") {
+        throw new BadRequestException(request.data.message);
+      }
 
       user.virtual_account_bank_name = "9 Payment Service Bank";
       user.virtual_account_name = request.data.data.fullName;
