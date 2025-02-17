@@ -1161,11 +1161,35 @@ export class UserService extends GenericService<UserDocument> {
       this.eventEmitter.emit("Wallet Upgrade", data);
       return request.data;
     } catch (error) {
-      console.error(error.response.data);
+      console.log("error:", error);
+
+      // Handle NestJS exceptions (e.g., ConflictException, NotFoundException)
+      if (error instanceof HttpException) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
+          },
+          error.getStatus(), // Use the status code from the exception
+        );
+      }
+
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
       throw new HttpException(
         {
           success: false,
-          message: error.response.data.message,
+          message: error.message || "An unexpected error occurred",
         },
         400,
       );
