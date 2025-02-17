@@ -51,6 +51,7 @@ import {
   compareKeys,
   convertDateFormat,
   removeUndefinedProperties,
+  reverseDateFormat,
 } from "../common/helpers";
 import {Kyc} from "../kyc/kyc.schema";
 
@@ -2031,7 +2032,7 @@ export class UserService extends GenericService<UserDocument> {
 
       user.bvn = res.data.data.bvn;
       user.bvnVerified = true;
-      user.date_of_birth = dob.replace(/-/g, "/");
+      user.date_of_birth = reverseDateFormat(dob.replace(/-/g, "/"));
       console.log(user.date_of_birth);
 
       await user.save();
