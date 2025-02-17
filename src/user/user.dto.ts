@@ -281,6 +281,7 @@ export class SendBvnOtp {
 export class BvnOtpVerification {
   @IsNumberString()
   @IsNotEmpty()
+  @Length(6,6)
   otp: string;
 
   @IsNotEmpty()
