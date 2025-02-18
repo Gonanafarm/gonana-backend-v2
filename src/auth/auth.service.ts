@@ -27,6 +27,12 @@ export class AuthService {
   ) {}
   async validateUser(email: string, password: string): Promise<UserDocument> {
     const res = await this.userService.findByEmail(email);
+    if (res.user.disabled === true) {
+      throw new HttpException(
+        "Account has been disabled, Contact customer care to gain accesss",
+        HttpStatus.FORBIDDEN,
+      );
+    }
     const user = res.user;
 
     if (!comparePassword(password, user.password)) {

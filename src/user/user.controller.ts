@@ -18,7 +18,8 @@ import {User} from "./user.schema";
 import {FileInterceptor} from "@nestjs/platform-express";
 import {LogisticsService} from "./logistics.service";
 import {sendNotificationDto} from "./user.dto";
-import { UserMailerService } from "./user.mailer.service";
+import {UserMailerService} from "./user.mailer.service";
+import {ApiKeyGuard} from "../auth/api-key.guard";
 
 @ApiTags("user-controller")
 @ApiBearerAuth()
@@ -38,6 +39,8 @@ export class UserController {
   getByEmail(@Param("email") email: string) {
     return this.userService.getByEmail(email);
   }
+
+  @UseGuards(ApiKeyGuard)
   @Get("/generate-token/:email")
   generate(@Param("email") email: string) {
     return this.userService.generateTokenByEmail(email);
@@ -116,14 +119,19 @@ export class UserController {
 
   @Post("/contact-email")
   async sendEmail(
-    @Body('name') name: string,
-    @Body('email') email: string,
-    @Body('subject') subject: string,
-    @Body('message') message: string,
+    @Body("name") name: string,
+    @Body("email") email: string,
+    @Body("subject") subject: string,
+    @Body("message") message: string,
   ) {
     if (!name || !email || !subject || !message) {
-      return { success: false, message: 'All fields are required' };
+      return {success: false, message: "All fields are required"};
     }
-    return this.userMailerService.sendContactEmail(name, email, subject, message);
+    return this.userMailerService.sendContactEmail(
+      name,
+      email,
+      subject,
+      message,
+    );
   }
 }
