@@ -201,7 +201,12 @@ export class UserService extends GenericService<UserDocument> {
       throw UserNotFoundException();
     }
 
-    return {user, data: user.getPublicData()};
+    return {
+      user,
+      data: user.getPublicData(),
+      versionIOS: process.env.IOS_VERSION,
+      versionAndroid: process.env.ANDROID_VERSION,
+    };
   }
 
   async activate(userId: string, activationToken: string) {
@@ -519,24 +524,24 @@ export class UserService extends GenericService<UserDocument> {
         const fiat_wallet_address = toronetResponse.data.address;
         user.fiat_wallet_address = fiat_wallet_address;
       }
-      if (
-        user.arbitrum_wallet_address === undefined ||
-        user.arbitrum_wallet_address === null
-      ) {
-        const wallet = Wallet.createRandom();
-        const address = wallet.address;
-        const balance = await provider.getBalance(address);
-        const privateKey = wallet.privateKey;
+      // if (
+      //   user.arbitrum_wallet_address === undefined ||
+      //   user.arbitrum_wallet_address === null
+      // ) {
+      //   const wallet = Wallet.createRandom();
+      //   const address = wallet.address;
+      //   const balance = await provider.getBalance(address);
+      //   const privateKey = wallet.privateKey;
 
-        user.arbitrum_wallet = balance.toString();
-        user.arbitrum_wallet_address = address;
-        user.arbitrumPrivateKey = privateKey;
+      //   user.arbitrum_wallet = balance.toString();
+      //   user.arbitrum_wallet_address = address;
+      //   user.arbitrumPrivateKey = privateKey;
 
-        const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
-        const usd = await this.convertNgntoUsd(ngn);
-        user.arbitrumWalletBalanceInUsd = usd;
-        user.arbitrumWalletBalanceInNgn = ngn;
-      }
+      //   const ngn = await this.convertEthToNgn(user.arbitrum_wallet);
+      //   const usd = await this.convertNgntoUsd(ngn);
+      //   user.arbitrumWalletBalanceInUsd = usd;
+      //   user.arbitrumWalletBalanceInNgn = ngn;
+      // }
 
       if (
         user.ccd_wallet_address === undefined ||
@@ -560,6 +565,8 @@ export class UserService extends GenericService<UserDocument> {
         console.log(user.ccdWalletBalanceInNgn);
       }
       await user.save();
+      userData.versionIOS = process.env.IOS_VERSION;
+      userData.versionAndroid = process.env.ANDROID_VERSION;
       return userData;
     } catch (error: any) {
       console.error(error);
@@ -594,7 +601,12 @@ export class UserService extends GenericService<UserDocument> {
       {...user.getPublicData()},
       {subject: `${user.id}`},
     );
-    return {user: user.getPublicData(), token: token};
+    return {
+      user: user.getPublicData(),
+      token: token,
+      versionIOS: process.env.IOS_VERSION,
+      versionAndroid: process.env.ANDROID_VERSION,
+    };
   }
 
   async generateToken() {
@@ -1044,7 +1056,7 @@ export class UserService extends GenericService<UserDocument> {
     try {
       const banks = (await this.getBanks()).data;
       const bank = banks.find((bank: any) => {
-        const bankNameLower = bank_name.toLowerCase();   
+        const bankNameLower = bank_name.toLowerCase();
         return (
           bank.bankName.toLowerCase() === bankNameLower ||
           (bank.bankShortName &&
@@ -1165,7 +1177,7 @@ export class UserService extends GenericService<UserDocument> {
     ///  TORONET IMPLEMENTATION
     try {
       const bankCode = await this.getBankCode(bank);
-      console.log("baNKCODE:",bankCode);
+      console.log("baNKCODE:", bankCode);
       const toroData = {
         op: "verifybankaccountname_ngn",
         params: [
