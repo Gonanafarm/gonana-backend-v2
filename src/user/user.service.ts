@@ -387,6 +387,25 @@ export class UserService extends GenericService<UserDocument> {
 
   async updateUserDetails(id: string, details: any) {
     try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new NotFoundException("User not found, login and try again");
+      }
+      if (user.bvnVerified && details.first_name) {
+        throw new BadRequestException(
+          "First name cannot be updated after BVN verification",
+        );
+      }
+      if (user.bvnVerified && details.last_name) {
+        throw new BadRequestException(
+          "Last name cannot be updated after BVN verification",
+        );
+      }
+      if (user.bvnVerified && details.phone) {
+        throw new BadRequestException(
+          "Phone number cannot be updated after BVN verification",
+        );
+      }
       const updatedUser = await this.updateUser(id, details);
       return updatedUser;
     } catch (error: any) {
@@ -713,6 +732,11 @@ export class UserService extends GenericService<UserDocument> {
       }
       if (!user.fiat_wallet_address) {
         throw new BadRequestException("Login and try again");
+      }
+      if (!user.bvnVerified) {
+        throw new BadRequestException(
+          "Must verify bvn before generating virtual account",
+        );
       }
       const toroData = {
         op: "generatevirtualwallet",
@@ -1404,6 +1428,7 @@ export class UserService extends GenericService<UserDocument> {
         user.bvn = bvn as string;
         await user.save();
       }
+      user.bvnVerified = true;
       await user.save();
       return {
         success: true,
