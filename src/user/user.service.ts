@@ -54,7 +54,7 @@ import {
   reverseDateFormat,
 } from "../common/helpers";
 import {Kyc} from "../kyc/kyc.schema";
-import {walletBvns} from "src/bvn-blacklist";
+import {walletBvns} from "../bvn-blacklist";
 
 export const shuffleArray = <T>(array: T[]): T[] => {
   for (let i = array.length - 1; i > 0; i--) {
