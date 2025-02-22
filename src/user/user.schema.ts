@@ -200,6 +200,9 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
   ninVerified: boolean;
+  
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  disabled: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

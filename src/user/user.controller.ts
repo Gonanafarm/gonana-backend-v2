@@ -18,6 +18,7 @@ import {User} from "./user.schema";
 import {FileInterceptor} from "@nestjs/platform-express";
 import {LogisticsService} from "./logistics.service";
 import {sendNotificationDto} from "./user.dto";
+import {ApiKeyGuard} from "../auth/api-key.guard";
 
 @ApiTags("user-controller")
 @ApiBearerAuth()
@@ -36,6 +37,8 @@ export class UserController {
   getByEmail(@Param("email") email: string) {
     return this.userService.getByEmail(email);
   }
+
+  @UseGuards(ApiKeyGuard)
   @Get("/generate-token/:email")
   generate(@Param("email") email: string) {
     return this.userService.generateTokenByEmail(email);

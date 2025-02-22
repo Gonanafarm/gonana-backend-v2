@@ -54,6 +54,7 @@ import {
   reverseDateFormat,
 } from "../common/helpers";
 import {Kyc} from "../kyc/kyc.schema";
+import {walletBvns} from "src/bvn-blacklist";
 
 export const shuffleArray = <T>(array: T[]): T[] => {
   for (let i = array.length - 1; i > 0; i--) {
@@ -535,6 +536,25 @@ export class UserService extends GenericService<UserDocument> {
 
   async updateUserDetails(id: string, details: any) {
     try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new NotFoundException("User not found, login and try again");
+      }
+      if (user.bvnVerified && details.first_name) {
+        throw new BadRequestException(
+          "First name cannot be updated after BVN verification",
+        );
+      }
+      if (user.bvnVerified && details.last_name) {
+        throw new BadRequestException(
+          "Last name cannot be updated after BVN verification",
+        );
+      }
+      if (user.bvnVerified && details.phone) {
+        throw new BadRequestException(
+          "Phone number cannot be updated after BVN verification",
+        );
+      }
       const updatedUser = await this.updateUser(id, details);
       return updatedUser;
     } catch (error: any) {
@@ -1845,6 +1865,14 @@ export class UserService extends GenericService<UserDocument> {
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new NotFoundException("User not found, Login and Try again.");
+      }
+      const blacklistedBvns = walletBvns.map(values => values.bvn);
+      if (blacklistedBvns.includes(bvn)) {
+        user.disabled = true;
+        await user.save();
+        throw new BadRequestException(
+          "Account disabled due to suspicious activity",
+        );
       }
       if (user.bvnVerified === true) {
         throw new BadRequestException("Bvn already verified.");

@@ -29,6 +29,12 @@ export class AuthService {
     const res = await this.userService.findByEmail(email);
     const user = res.user;
 
+    if (res.user.disabled === true) {
+      throw new HttpException(
+        "Account has been disabled, Contact customer care to gain accesss",
+        HttpStatus.FORBIDDEN,
+      );
+    }
     if (!comparePassword(password, user.password)) {
       throw LoginCredentialsException();
     }
@@ -56,7 +62,7 @@ export class AuthService {
         {subject: `${user?.id}`},
       ),
       user: userData,
-      versionIOS:process.env.IOS_VERSION,
+      versionIOS: process.env.IOS_VERSION,
       versionAndroid: process.env.ANDROID_VERSION,
     };
   }
@@ -105,7 +111,7 @@ export class AuthService {
         {subject: `${user.id}`},
       ),
       user: user.getPublicData(),
-      versionIOS:process.env.IOS_VERSION,
+      versionIOS: process.env.IOS_VERSION,
       versionAndroid: process.env.ANDROID_VERSION,
     };
   }
