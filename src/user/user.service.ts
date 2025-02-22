@@ -47,7 +47,7 @@ import {
 } from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
 import {AccountAddress} from "@concordium/node-sdk";
-import {walletBvns} from "src/bvn-blacklist";
+import {walletBvns} from "../bvn-blacklist";
 
 export const shuffleArray = <T>(array: T[]): T[] => {
   for (let i = array.length - 1; i > 0; i--) {
@@ -1361,7 +1361,7 @@ export class UserService extends GenericService<UserDocument> {
       const blacklistedBvns = walletBvns.map(values => values.bvn);
       if (blacklistedBvns.includes(bvn)) {
         user.disabled = true;
-        await user.save()
+        await user.save();
         throw new BadRequestException(
           "Account disabled due to suspicious activity",
         );
