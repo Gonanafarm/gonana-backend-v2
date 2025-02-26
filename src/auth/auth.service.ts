@@ -90,10 +90,10 @@ export class AuthService {
       }
     }
     const user = await this.userService.createAccount(
-      userData.first_name.trim(),
-      userData.last_name.trim(),
+      userData.first_name.toLowerCase().trim(),
+      userData.last_name.toLowerCase().trim(),
       userData.phone.trim(),
-      userData.email.trim(),
+      userData.email.toLowerCase().trim(),
       userData.password.trim(),
       origin,
       userData.account_type,
