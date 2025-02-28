@@ -189,7 +189,11 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String, enum: gender})
   gender: string;
 
-  @Prop({type: mongoose.SchemaTypes.String, default: "1"})
+  @Prop({
+    type: mongoose.SchemaTypes.String,
+    default: "1",
+    enum: ["1", "2", "3"],
+  })
   tier: string;
 
   @Prop({type: mongoose.SchemaTypes.String})
@@ -200,7 +204,7 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
   ninVerified: boolean;
-  
+
   @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
   disabled: boolean;
 }
