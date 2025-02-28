@@ -14,6 +14,10 @@ export const createLogsDirectory = once(() => {
   return logDirectory;
 });
 
+export function containsOrderSettlementIncludes(text: string): boolean {
+  return text.includes("Order Settlement from Gonana/GON");
+}
+
 export function convertDateFormat(dateStr: string): string {
   const monthMap: Record<string, string> = {
     JAN: "01",

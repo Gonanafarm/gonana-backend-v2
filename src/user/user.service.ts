@@ -49,6 +49,7 @@ import {ConcordiumService} from "./concordium.service";
 import {AccountAddress} from "@concordium/node-sdk";
 import {
   compareKeys,
+  containsOrderSettlementIncludes,
   convertDateFormat,
   removeUndefinedProperties,
   reverseDateFormat,
@@ -208,6 +209,53 @@ export class UserService extends GenericService<UserDocument> {
             "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
         };
         await this.sendNotificationToDevice(creditMessage, user.id);
+        if (containsOrderSettlementIncludes(data.narration)) {
+          const transactionObject: Record<string, any> = {
+            Session_id: data.nipsessionid,
+            status: data.message,
+            userId: user.id,
+            Type: "ORDER CREDIT" as const,
+            AmountSettled: data.amount,
+            Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+            accountNumber: user.virtual_account_number,
+            accountName: user.virtual_account_name,
+            bank: user.virtual_account_bank_name,
+            naration: data.narration,
+          };
+
+          const transaction = await this.transactionModel.findOne({
+            userId: user.id,
+          });
+          if (!transaction) {
+            await this.transactionModel.create(transactionObject);
+            return {
+              success: true,
+              code: "00",
+              status: "SUCCESS",
+              message: "Acknowledged",
+            };
+          }
+          const transactionArrayObject = {
+            Session_id: data.nipsessionid,
+            Type: "ORDER CREDIT" as const,
+            AmountSettled: data.amount,
+            AmountSent: data.amount,
+            status: data.message,
+            Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+            accountNumber: user.virtual_account_number,
+            accountName: user.virtual_account_name,
+            bank: user.virtual_account_bank_name,
+          };
+          console.log(transactionArrayObject, transactionArrayObject);
+          transaction.transactions.push(transactionArrayObject);
+          await transaction.save();
+          return {
+            success: true,
+            code: "00",
+            status: "SUCCESS",
+            message: "Acknowledged",
+          };
+        }
         const transactionObject: Record<string, any> = {
           Session_id: data.nipsessionid,
           status: data.message,
@@ -1396,45 +1444,7 @@ export class UserService extends GenericService<UserDocument> {
         "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
     };
     await this.sendNotificationToDevice(creditMessage, user.id);
-    const transactionObject: Record<string, any> = {
-      Session_id: this.generateRandomString(15),
-      status: request.data.status.toUpperCase(),
-      userId: user.id,
-      Type: "ORDER CREDIT" as const,
-      AmountSettled: amount,
-      Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
-      accountNumber: user.virtual_account_number,
-      accountName: user.virtual_account_name,
-      bank: user.virtual_account_bank_name,
-      naration: data.narration,
-    };
 
-    const transaction = await this.transactionModel.findOne({
-      userId: user.id,
-    });
-    if (!transaction) {
-      await this.transactionModel.create(transactionObject);
-      return {
-        success: true,
-        code: "00",
-        status: "SUCCESS",
-        message: "Acknowledged",
-      };
-    }
-    const transactionArrayObject = {
-      Session_id: this.generateRandomString(15),
-      Type: "ORDER CREDIT" as const,
-      AmountSettled: parseInt(amount),
-      AmountSent: parseInt(amount),
-      status: request.data.status.toUpperCase(),
-      Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
-      accountNumber: user.virtual_account_number,
-      accountName: user.virtual_account_name,
-      bank: user.virtual_account_bank_name,
-    };
-    console.log(transactionArrayObject, transactionArrayObject);
-    transaction.transactions.push(transactionArrayObject);
-    await transaction.save();
     return request.data;
   }
 
