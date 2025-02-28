@@ -1320,7 +1320,6 @@ export class UserService extends GenericService<UserDocument> {
         throw new BadRequestException(response.data.error);
       }
       const balance = response.data.bal_naira;
-      console.log(response.data);
 
       user.balance = parseFloat(parseFloat(balance).toFixed(2));
 
@@ -3150,6 +3149,17 @@ export class UserService extends GenericService<UserDocument> {
       );
     }
   }
+
+  // async refreshAllBalance() {
+  //   const users = await this.userModel.find();
+  //   for (const user of users) {
+  //     if (!user.virtual_account_number || !user.fiat_wallet_address) {
+  //       continue;
+  //     }
+  //     const balance = (await this.getUserBalance(user.id)).balance;
+  //     console.log(`${user.first_name} ${user.last_name} balance is ${balance}`);
+  //   }
+  // }
 
   async updateOneSignalId(userId: string, oneSignalId: string) {
     const user = await this.userModel.findById(userId);
