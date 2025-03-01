@@ -505,6 +505,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
             {
               Type: "ORDER DEBIT", // Represents debits from orders
               Session_Id: generateRandomString(),
+              currency:"NGN" as const,
               AmountSent: totalCost.toString(),
               AmountSettled: totalCost.toString(),
               productId: getIds(orderItems),
@@ -514,6 +515,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       } else {
         const transactionObject = {
           Session_id: generateRandomString(),
+          currency:"NGN" as const,
           Type: "ORDER DEBIT" as const, // Represents debits from orders
           AmountSent: totalCost,
           AmountSettled: totalCost,

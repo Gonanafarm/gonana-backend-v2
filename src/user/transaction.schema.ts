@@ -75,7 +75,7 @@ export interface TransactionDocument extends Document {
     accountNumber?: string;
     accountName?: string;
     bank?: string;
-    currency?: "CCD" | "NGN";
+    currency: "CCD" | "NGN";
     recipientWallet?: string;
   }>;
 }
