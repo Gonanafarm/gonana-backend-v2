@@ -501,6 +501,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
               Session_Id: generateRandomString(),
               AmountSent: totalCost.toString(),
               status: transfer.status,
+              currency: "NGN" as const,
               AmountSettled: totalCost.toString(),
               productId: getIds(orderItems),
             },
@@ -513,6 +514,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
           AmountSent: totalCost,
           status: transfer.status as "SUCCESS" | "FAILED" | "PENDING",
           AmountSettled: totalCost,
+          currency: "NGN" as const,
           productId: getIds(orderItems),
           Time: new Date().toISOString(),
         };
