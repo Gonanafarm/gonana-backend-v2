@@ -31,6 +31,7 @@ import {
 import {ConcordiumService} from "./concordium.service";
 import {CloudinaryService} from "../post/cloudinary.service";
 import {FileFieldsInterceptor, FileInterceptor} from "@nestjs/platform-express";
+import {BasicAuthGuard} from "../auth/basic-auth.guard";
 
 @Controller("api/transaction")
 export class TransactionController {
@@ -66,6 +67,7 @@ export class TransactionController {
     );
   }
 
+  @UseGuards(BasicAuthGuard)
   @Post("/webhook")
   async handleWebhook(@Query("event") event: string, @Body() data: any) {
     console.log("event:", event);
