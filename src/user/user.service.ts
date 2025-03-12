@@ -612,21 +612,34 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async generateTokenByEmail(email: string) {
-    const user = await this.userModel.findOne({email: email});
+    try {
+      const user = await this.userModel.findOne({email: email});
+      if (user) console.log("User found by email", email);
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
 
-    if (!user) {
-      throw new NotFoundException("User not found");
+      const token = this.jwtService.sign(
+        {...user.getPublicData()},
+        {subject: `${user.id}`},
+      );
+
+      return {
+        user: user.getPublicData(),
+        token: token,
+        versionIOS: process.env.IOS_VERSION,
+        versionAndroid: process.env.ANDROID_VERSION,
+      };
+    } catch (error: any) {
+      console.error("Error generating token by email:", error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status || 500,
+      );
     }
-    const token = this.jwtService.sign(
-      {...user.getPublicData()},
-      {subject: `${user.id}`},
-    );
-    return {
-      user: user.getPublicData(),
-      token: token,
-      versionIOS: process.env.IOS_VERSION,
-      versionAndroid: process.env.ANDROID_VERSION,
-    };
   }
 
   async generateToken() {
