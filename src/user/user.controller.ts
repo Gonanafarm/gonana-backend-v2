@@ -18,8 +18,8 @@ import {User} from "./user.schema";
 import {FileInterceptor} from "@nestjs/platform-express";
 import {LogisticsService} from "./logistics.service";
 import {sendNotificationDto} from "./user.dto";
-import {UserMailerService} from "./user.mailer.service";
 import {ApiKeyGuard} from "../auth/api-key.guard";
+import { UserMailerService } from "./user.mailer.service";
 
 @ApiTags("user-controller")
 @ApiBearerAuth()
@@ -133,5 +133,10 @@ export class UserController {
       subject,
       message,
     );
+  }
+
+  @Post("get-notification-report")
+  async GetReport() {
+    return await this.userService.sendNotificationsReport();
   }
 }
