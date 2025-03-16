@@ -49,6 +49,7 @@ import {
 import {ConcordiumService} from "./concordium.service";
 import {AccountAddress} from "@concordium/node-sdk";
 import {walletBvns} from "../bvn-blacklist";
+import { notifications } from "../common/notifications.data";
 
 export const shuffleArray = <T>(array: T[]): T[] => {
   for (let i = array.length - 1; i > 0; i--) {
@@ -3282,4 +3283,28 @@ export class UserService extends GenericService<UserDocument> {
     );
     return {success: true, data: referredUsers};
   }
+
+  //*******************Notifications Job********************** */
+  getNextNotification() {
+    const allNotifications = notifications.get();
+    console.log({lengthNotis: allNotifications.length})
+    return allNotifications.length > 0 ? allNotifications[0] : null;
+  }
+
+  removeSentNotification() {
+    const allNotifications = notifications.get();
+    if (allNotifications.length > 0) {
+      allNotifications.shift(); // Remove the first notification
+      notifications.set(allNotifications); // Update the file
+    }
+  }
+
+  async sendNotificationsReport() {
+    const user = await this.userModel.findOne({email: 'naanma4kizito@gmail.com'});
+    const allNotifications = notifications.get();
+    const message = ` Total notifications remaining: ${allNotifications.length}`
+    await this.userMailer.sendNotification('naanma4kizito@gmail.com', 'Report', message)
+  //  return  await this.sendNotificationToDevice(message, user.id)
+  }
+
 }

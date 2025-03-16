@@ -1,4 +1,4 @@
-import {Injectable} from "@nestjs/common";
+import {Injectable, Logger} from "@nestjs/common";
 import {Cron, CronExpression} from "@nestjs/schedule";
 import {UserService} from "../user/user.service";
 import {InjectModel} from "@nestjs/mongoose";
@@ -87,6 +87,38 @@ export class UserCronJob {
     for (const user of users) {
       user.insurance = false;
       await user.save();
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_9AM)
+  async handle9AM() {
+    await this.sendNotification();
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_2PM)
+  async handle2PM() {
+    await this.sendNotification();
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_8PM)
+  async handle8PM() {
+    await this.sendNotification();
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async sendReport() {
+    await this.userService.sendNotificationsReport();
+  }
+
+
+  private async sendNotification() {
+    const notification = this.userService.getNextNotification();
+    if (notification) {
+      await this.userService.sendNotificationToDevices(notification.title, notification.body);
+      this.userService.removeSentNotification();
+      console.log(`Sent notification: ${notification.title}`);
+    } else {
+      console.log('No more notifications to send.');
     }
   }
 }
