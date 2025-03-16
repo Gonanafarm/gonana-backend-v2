@@ -3303,6 +3303,7 @@ export class UserService extends GenericService<UserDocument> {
     const user = await this.userModel.findOne({email: 'naanma4kizito@gmail.com'});
     const allNotifications = notifications.get();
     const message = ` Total notifications remaining: ${allNotifications.length}`
+    console.log({message})
     await this.userMailer.sendNotification('naanma4kizito@gmail.com', 'Report', message)
   //  return  await this.sendNotificationToDevice(message, user.id)
   }
