@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
   HttpException,
   ConflictException,
+  ForbiddenException,
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import config from "../config";
@@ -618,7 +619,11 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found");
       }
-
+      if (user.disabled === true) {
+        throw new ForbiddenException(
+          "Account has been disabled, Contact customer care to gain accesss",
+        );
+      }
       const token = this.jwtService.sign(
         {...user.getPublicData()},
         {subject: `${user.id}`},
