@@ -110,6 +110,10 @@ export class UserCronJob {
     await this.userService.sendNotificationsReport();
   }
 
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async sendReportStatus() {
+    await this.userService.sendNotificationsReport();
+  }
 
   private async sendNotification() {
     const notification = this.userService.getNextNotification();
