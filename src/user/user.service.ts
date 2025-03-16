@@ -1559,6 +1559,10 @@ export class UserService extends GenericService<UserDocument> {
         throw new NotFoundException("user not found. login and try again");
       }
 
+      if (user.bvnVerified === false) {
+        throw new BadRequestException("Kindly Revalidate Bvn and try again");
+      }
+
       //@ts-ignore
       const balance = parseFloat(user.balance);
       console.log(balance);
