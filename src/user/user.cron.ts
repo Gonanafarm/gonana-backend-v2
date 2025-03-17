@@ -7,6 +7,8 @@ import {TransactionDocument} from "./transaction.schema";
 import {User, UserDocument} from "./user.schema";
 import {ConcordiumService} from "./concordium.service";
 import {UserMailerService} from "./user.mailer.service";
+import config from "../config";
+
 
 export const sumArray = (values: number[]): number => {
   let sum = 0;
@@ -105,7 +107,7 @@ export class UserCronJob {
     await this.sendNotification();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron(CronExpression.EVERY_DAY_AT_3PM)
   async sendReport() {
     await this.userService.sendNotificationsReport();
   }
@@ -117,7 +119,7 @@ export class UserCronJob {
 
   private async sendNotification() {
     const notification = this.userService.getNextNotification();
-    if (notification) {
+    if (notification && config.isProd()) {
       await this.userService.sendNotificationToDevices(notification.title, notification.body);
       this.userService.removeSentNotification();
       console.log(`Sent notification: ${notification.title}`);
