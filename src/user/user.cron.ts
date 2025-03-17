@@ -90,17 +90,17 @@ export class UserCronJob {
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_9AM)
+  @Cron(CronExpression.EVERY_DAY_AT_8AM)
   async handle9AM() {
     await this.sendNotification();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_2PM)
+  @Cron(CronExpression.EVERY_DAY_AT_1PM)
   async handle2PM() {
     await this.sendNotification();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_8PM)
+  @Cron(CronExpression.EVERY_DAY_AT_7PM)
   async handle8PM() {
     await this.sendNotification();
   }
@@ -110,7 +110,7 @@ export class UserCronJob {
     await this.userService.sendNotificationsReport();
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async sendReportStatus() {
     await this.userService.sendNotificationsReport();
   }
