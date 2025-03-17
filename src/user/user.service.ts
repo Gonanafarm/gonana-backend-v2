@@ -3300,11 +3300,19 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async sendNotificationsReport() {
-    const user = await this.userModel.findOne({email: 'naanma4kizito@gmail.com'});
-    const allNotifications = notifications.get();
-    const message = ` Total notifications remaining: ${allNotifications.length}`
-    console.log({message})
-    await this.userMailer.sendNotification('naanma4kizito@gmail.com', 'Report', message)
+    if (config.isProd()) {
+      // const user = await this.userModel.findOne({email: 'naanma4kizito@gmail.com'});
+      const allNotifications = notifications.get();
+      const message = ` Total notifications remaining on prod: ${allNotifications.length}`
+      console.log({message})
+      await this.userMailer.sendNotification('naanma4kizito@gmail.com', 'Report', message)
+    } else {
+      const allNotifications = notifications.get();
+      const message = ` Total notifications remaining on dev: ${allNotifications.length}`
+      console.log({message})
+      await this.userMailer.sendNotification('naanma4kizito@gmail.com', 'Report', message)
+    }
+
   //  return  await this.sendNotificationToDevice(message, user.id)
   }
 
