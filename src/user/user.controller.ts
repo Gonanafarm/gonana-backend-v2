@@ -64,7 +64,7 @@ export class UserController {
     return this.userService.sendTestNotificationToDevice(data);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ApiKeyGuard)
   @Post("send-notification-to-devices")
   sendNotifications(@Body() data: sendNotificationDto) {
     console.log(data);
