@@ -92,22 +92,22 @@ export class UserCronJob {
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_8AM)
-  async handle9AM() {
-    await this.sendNotification();
-  }
+  // @Cron(CronExpression.EVERY_DAY_AT_8AM)
+  // async handle9AM() {
+  //   await this.sendNotification();
+  // }
 
-  @Cron(CronExpression.EVERY_DAY_AT_1PM)
-  async handle2PM() {
-    await this.sendNotification();
-  }
+  // @Cron(CronExpression.EVERY_DAY_AT_1PM)
+  // async handle2PM() {
+  //   await this.sendNotification();
+  // }
 
-  @Cron(CronExpression.EVERY_DAY_AT_7PM)
-  async handle8PM() {
-    await this.sendNotification();
-  }
+  // @Cron(CronExpression.EVERY_DAY_AT_7PM)
+  // async handle8PM() {
+  //   await this.sendNotification();
+  // }
 
-  @Cron(CronExpression.EVERY_DAY_AT_3PM)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async sendReport() {
     await this.userService.sendNotificationsReport();
   }
@@ -117,14 +117,14 @@ export class UserCronJob {
     await this.userService.sendNotificationsReport();
   }
 
-  private async sendNotification() {
-    const notification = this.userService.getNextNotification();
-    if (notification && config.isProd()) {
-      await this.userService.sendNotificationToDevices(notification.title, notification.body);
-      this.userService.removeSentNotification();
-      console.log(`Sent notification: ${notification.title}`);
-    } else {
-      console.log('No more notifications to send.');
-    }
-  }
+  // private async sendNotification() {
+  //   const notification = this.userService.getNextNotification();
+  //   if (notification && config.isProd()) {
+  //     await this.userService.sendNotificationToDevices(notification.title, notification.body);
+  //     this.userService.removeSentNotification();
+  //     console.log(`Sent notification: ${notification.title}`);
+  //   } else {
+  //     console.log('No more notifications to send.');
+  //   }
+  // }
 }
