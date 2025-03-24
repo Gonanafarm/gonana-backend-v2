@@ -107,24 +107,4 @@ export class UserCronJob {
   //   await this.sendNotification();
   // }
 
-  @Cron(CronExpression.EVERY_30_MINUTES)
-  async sendReport() {
-    await this.userService.sendNotificationsReport();
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_9AM)
-  async sendReportStatus() {
-    await this.userService.sendNotificationsReport();
-  }
-
-  // private async sendNotification() {
-  //   const notification = this.userService.getNextNotification();
-  //   if (notification && config.isProd()) {
-  //     await this.userService.sendNotificationToDevices(notification.title, notification.body);
-  //     this.userService.removeSentNotification();
-  //     console.log(`Sent notification: ${notification.title}`);
-  //   } else {
-  //     console.log('No more notifications to send.');
-  //   }
-  // }
 }
