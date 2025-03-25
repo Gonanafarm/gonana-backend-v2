@@ -1554,6 +1554,7 @@ export class UserService extends GenericService<UserDocument> {
   ) {
     //// TORONET IMPLEMENTATION
     try {
+      throw new BadRequestException("This feature is currently disabled");
       await this.getUserBalance(user_id);
       const user = await this.userModel.findById(user_id);
       if (!user) {
