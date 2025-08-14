@@ -42,3 +42,4 @@ test/**/*.js
 **/.env
 
 .yarn/cache
+yarn.lock

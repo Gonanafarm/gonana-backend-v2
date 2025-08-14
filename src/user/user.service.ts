@@ -3300,6 +3300,9 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async sendNotificationsReport() {
+    const env = config.isDev
+    console.log({env})
+    return env
     const user = await this.userModel.findOne({email: 'naanma4kizito@gmail.com'});
     const allNotifications = notifications.get();
     const message = ` Total notifications remaining: ${allNotifications.length}`

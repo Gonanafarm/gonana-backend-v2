@@ -105,12 +105,12 @@ export class UserCronJob {
     await this.sendNotification();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron(CronExpression.EVERY_DAY_AT_2PM)
   async sendReport() {
     await this.userService.sendNotificationsReport();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_9AM)
+  @Cron(CronExpression.EVERY_3_HOURS)
   async sendReportStatus() {
     await this.userService.sendNotificationsReport();
   }

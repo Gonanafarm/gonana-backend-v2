@@ -6,6 +6,7 @@ import {
   NestModule,
 } from "@nestjs/common";
 import {MongooseModule} from "@nestjs/mongoose";
+import { ConfigModule } from '@nestjs/config';
 import {MailerModule, HandlebarsAdapter} from "@nest-modules/mailer";
 import {ServeStaticMiddleware} from "@nest-middlewares/serve-static";
 import {MorganModule} from "nest-morgan";
@@ -20,6 +21,7 @@ import {PassportModule} from "@nestjs/passport";
 import {PublicModule} from "./public/public.module";
 import { GeocodeModule } from "./geocoder/module";
 import { MessageModule } from './message/message.module';
+import { GaiaModule } from './gaia/gaia.module';
 
 const DEV_TRANSPORTER = {
   service: 'Gmail',
@@ -30,6 +32,7 @@ const DEV_TRANSPORTER = {
 };
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     UserModule,
     MorganModule,
@@ -66,6 +69,7 @@ const DEV_TRANSPORTER = {
       }),
     }),
     MessageModule,
+    GaiaModule,
   
   ],
   providers: config.isTest() ? undefined : [GlobalAccessLogger],
