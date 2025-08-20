@@ -20,6 +20,7 @@ import {PassportModule} from "@nestjs/passport";
 import {PublicModule} from "./public/public.module";
 import { GeocodeModule } from "./geocoder/module";
 import { MessageModule } from './message/message.module';
+import { GaiaModule } from './gaia/gaia.module';
 
 const DEV_TRANSPORTER = {
   service: 'Gmail',
@@ -66,7 +67,7 @@ const DEV_TRANSPORTER = {
       }),
     }),
     MessageModule,
-  
+    GaiaModule,
   ],
   providers: config.isTest() ? undefined : [GlobalAccessLogger],
 })
