@@ -9,6 +9,7 @@ import {ConcordiumService} from "./concordium.service";
 import {UserDocument} from "./user.schema";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
+import {WalletService} from "../wallet/wallet.service"; 
 import {Kyc} from "../kyc/kyc.schema";
 @Injectable()
 export class UserEventHanders {
@@ -16,6 +17,7 @@ export class UserEventHanders {
     private readonly userMailer: UserMailerService,
     private userService: UserService,
     private ccdService: ConcordiumService,
+    private walletService: WalletService,
     @InjectModel("Kyc") private readonly kycModel: Model<Kyc>,
   ) {}
   @OnEvent("account.created")
@@ -29,6 +31,12 @@ export class UserEventHanders {
     console.log("mail sent");
 
     const data = await this.userService.findByEmail(payload.user.email);
+    try {
+      await this.walletService.getOrCreateWallet(data.user.id);
+      console.log("BSC wallet created");
+    } catch (error) {
+      console.error("BSC wallet creation failed:", error);
+    }
     const wallet = await this.ccdService.getOrCreateConcordiumKeyPairs(
       data.user.id,
     );

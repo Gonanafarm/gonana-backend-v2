@@ -20,6 +20,7 @@ import {PassportModule} from "@nestjs/passport";
 import {PublicModule} from "./public/public.module";
 import { GeocodeModule } from "./geocoder/module";
 import { MessageModule } from './message/message.module';
+import { WalletModule } from "./wallet/wallet.module";
 
 const DEV_TRANSPORTER = {
   service: 'Gmail',
@@ -32,6 +33,7 @@ const DEV_TRANSPORTER = {
   imports: [
     AuthModule,
     UserModule,
+    WalletModule,
     MorganModule,
     GeocodeModule,
     PublicModule,
