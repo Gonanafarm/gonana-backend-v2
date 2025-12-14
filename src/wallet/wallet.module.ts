@@ -3,11 +3,13 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { WalletController } from './wallet.controller';
 import { WalletService } from './wallet.service';
 import { Wallet, WalletSchema } from './wallet.schema';
+import { EscrowOrder, EscrowOrderSchema } from './escrow.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Wallet.name, schema: WalletSchema }
+      { name: Wallet.name, schema: WalletSchema },
+      { name: EscrowOrder.name, schema: EscrowOrderSchema }
     ]),
   ],
   controllers: [WalletController],

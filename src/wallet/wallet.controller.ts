@@ -62,10 +62,18 @@ export class WalletController {
     return this.walletService.refundBuyer(req.user.id, dto.orderId);
   }
 
+  @Get('escrow/orders')
+  @ApiOperation({ summary: 'Get user escrow orders' })
+  @ApiResponse({ status: 200, description: 'List of orders' })
+  async getMyEscrowOrders(@Request() req) {
+    return this.walletService.getEscrowOrders(req.user.id);
+  }
+
   @Get('escrow/:orderId')
   @ApiOperation({ summary: 'Get escrow order details' })
   @ApiResponse({ status: 200, description: 'Order details retrieved' })
   async getEscrowOrder(@Request() req) {
     return this.walletService.getEscrowOrder(req.params.orderId);
   }
+
 }

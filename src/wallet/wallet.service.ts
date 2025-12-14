@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { ethers } from 'ethers';
 import * as crypto from 'crypto';
 import { Wallet, WalletDocument } from './wallet.schema';
+import { EscrowOrder, EscrowOrderDocument, EscrowStatus } from './escrow.schema';
 import { TransferDto, CreateEscrowDto, WalletResponseDto } from './wallet.dto';
 
 const ESCROW_ABI = [
@@ -26,6 +27,7 @@ export class WalletService {
 
   constructor(
     @InjectModel(Wallet.name) private walletModel: Model<WalletDocument>,
+    @InjectModel(EscrowOrder.name) private escrowOrderModel: Model<EscrowOrderDocument>,
   ) {
     // Use testnet by default, can be configured via env
     this.NETWORK = process.env.BSC_NETWORK || 'testnet';
@@ -176,6 +178,19 @@ export class WalletService {
     const event = receipt.events?.find((e: any) => e.event === 'OrderCreated');
     const orderId = event?.args?.orderId?.toString();
 
+
+
+    // Save to DB
+    await this.escrowOrderModel.create({
+      orderId,
+      buyerId: userId,
+      buyerAddress: signer.address,
+      sellerAddress: dto.seller,
+      amount: dto.amount,
+      status: EscrowStatus.CREATED,
+      txHash: tx.hash,
+    });
+
     return {
       txHash: tx.hash,
       orderId,
@@ -193,6 +208,11 @@ export class WalletService {
     const tx = await contract.markShipped(orderId);
     await tx.wait();
 
+    await this.escrowOrderModel.findOneAndUpdate(
+      { orderId },
+      { status: EscrowStatus.SHIPPED }
+    );
+
     return {
       txHash: tx.hash,
       orderId,
@@ -208,6 +228,11 @@ export class WalletService {
     const tx = await contract.confirmDelivery(orderId);
     await tx.wait();
 
+    await this.escrowOrderModel.findOneAndUpdate(
+      { orderId },
+      { status: EscrowStatus.COMPLETED }
+    );
+
     return {
       txHash: tx.hash,
       orderId,
@@ -222,6 +247,11 @@ export class WalletService {
 
     const tx = await contract.refundBuyer(orderId);
     await tx.wait();
+
+    await this.escrowOrderModel.findOneAndUpdate(
+      { orderId },
+      { status: EscrowStatus.REFUNDED }
+    );
 
     return {
       txHash: tx.hash,
@@ -252,5 +282,11 @@ export class WalletService {
         ? new Date(order.shippedAt.toNumber() * 1000) 
         : null,
     };
+  }
+
+
+  // Get user's escrow orders
+  async getEscrowOrders(userId: string): Promise<EscrowOrderDocument[]> {
+    return this.escrowOrderModel.find({ buyerId: userId }).sort({ created_at: -1 });
   }
 }
