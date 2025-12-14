@@ -64,7 +64,7 @@ export class LogisticsController {
     );
   }
 
-  @Patch("update-user-address")
+  @Post("update-user-address")
   @UseGuards(JwtAuthGuard)
   async updateUserAddress(@Body("address") body: string, @Req() req: Request) {
     //@ts-ignore

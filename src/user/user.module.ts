@@ -21,13 +21,17 @@ import {NotificationModel} from "./notification.model";
 import {ScheduleModule} from "@nestjs/schedule";
 import {UserCronJob} from "./user.cron";
 import {ConcordiumService} from "./concordium.service";
+import { KycModule } from "../kyc/kyc.module";
+import { WalletModule } from "../wallet/wallet.module";
 
 @Module({
   imports: [
     forwardRef(() => PostModule),
+    WalletModule,
     GeocodeModule,
     OtpModel,
     UserModel,
+    KycModule,
     ScheduleModule.forRoot(),
     TransactionModel,
     NotificationModel,

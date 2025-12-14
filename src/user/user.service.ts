@@ -48,6 +48,14 @@ import {
 } from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
 import {AccountAddress} from "@concordium/node-sdk";
+import {
+  compareKeys,
+  containsOrderSettlementIncludes,
+  convertDateFormat,
+  removeUndefinedProperties,
+  reverseDateFormat,
+} from "../common/helpers";
+import {Kyc} from "../kyc/kyc.schema";
 import {walletBvns} from "../bvn-blacklist";
 import { notifications } from "../common/notifications.data";
 
@@ -64,6 +72,9 @@ export class UserService extends GenericService<UserDocument> {
   constructor(
     //@ts-ignore
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+
+    //@ts-ignore
+    @InjectModel("Kyc") private readonly kycModel: Model<Kyc>,
     //@ts-ignore
     @InjectModel("Transactions")
     private readonly transactionModel: Model<TransactionDocument>,
@@ -169,6 +180,195 @@ export class UserService extends GenericService<UserDocument> {
         },
         error.status,
       );
+    }
+  }
+
+  async handleWebhook(event: string, data: any) {
+    if (event === "transfer") {
+      console.log("Transfer event");
+      if (data.message === "SUCCESS") {
+        const user = await this.userModel.findOne({
+          virtual_account_number: data.accountnumber,
+        });
+        if (!user) {
+          return {
+            success: true,
+            code: "00",
+            status: "SUCCESS",
+            message: "Acknowledged",
+          };
+        }
+        const creditMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `You have received ₦${data.amount} from ${data.sendername}`,
+          },
+          headings: {en: "Credit Alert"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        await this.sendNotificationToDevice(creditMessage, user.id);
+        if (containsOrderSettlementIncludes(data.narration)) {
+          const transactionObject: Record<string, any> = {
+            Session_id: data.nipsessionid,
+            status: data.message,
+            currency:"NGN" as const,
+            userId: user.id,
+            Type: "ORDER CREDIT" as const,
+            AmountSettled: data.amount,
+            Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+            accountNumber: user.virtual_account_number,
+            accountName: user.virtual_account_name,
+            bank: user.virtual_account_bank_name,
+            naration: data.narration,
+          };
+
+          const transaction = await this.transactionModel.findOne({
+            userId: user.id,
+          });
+          if (!transaction) {
+            await this.transactionModel.create(transactionObject);
+            return {
+              success: true,
+              code: "00",
+              status: "SUCCESS",
+              message: "Acknowledged",
+            };
+          }
+          const transactionArrayObject = {
+            Session_id: data.nipsessionid,
+            Type: "ORDER CREDIT" as const,
+            AmountSettled: data.amount,
+            AmountSent: data.amount,
+            currency:"NGN" as const,
+            status: data.message,
+            Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+            accountNumber: user.virtual_account_number,
+            accountName: user.virtual_account_name,
+            bank: user.virtual_account_bank_name,
+          };
+          console.log(transactionArrayObject, transactionArrayObject);
+          transaction.transactions.push(transactionArrayObject);
+          await transaction.save();
+          return {
+            success: true,
+            code: "00",
+            status: "SUCCESS",
+            message: "Acknowledged",
+          };
+        }
+        const transactionObject: Record<string, any> = {
+          Session_id: data.nipsessionid,
+          status: data.message,
+          userId: user.id,
+          Type: "CREDIT" as const,
+          currency:"NGN" as const,
+          AmountSettled: data.amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          accountNumber: user.virtual_account_number,
+          accountName: user.virtual_account_name,
+          bank: user.virtual_account_bank_name,
+          naration: data.narration,
+        };
+
+        const transaction = await this.transactionModel.findOne({
+          userId: user.id,
+        });
+        if (!transaction) {
+          await this.transactionModel.create(transactionObject);
+          return {
+            success: true,
+            code: "00",
+            status: "SUCCESS",
+            message: "Acknowledged",
+          };
+        }
+        const transactionArrayObject = {
+          Session_id: data.nipsessionid,
+          Type: "CREDIT" as const,
+          currency:"NGN" as const,
+          AmountSettled: data.amount,
+          AmountSent: data.amount,
+          status: data.message,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          accountNumber: user.virtual_account_number,
+          accountName: user.virtual_account_name,
+          bank: user.virtual_account_bank_name,
+        };
+        console.log(transactionArrayObject, transactionArrayObject);
+        transaction.transactions.push(transactionArrayObject);
+        await transaction.save();
+        return {
+          success: true,
+          code: "00",
+          status: "SUCCESS",
+          message: "Acknowledged",
+        };
+      }
+    }
+
+    if (event === "account-upgrade") {
+      console.log("account upgrade event");
+      const user = await this.userModel.findOne({
+        virtual_account_number: data.accountNumber,
+      });
+      if (!user) {
+        return {
+          success: true,
+          code: "00",
+          status: "SUCCESS",
+          message: "Acknowledged",
+        };
+      }
+      if (data.status === "Approved") {
+        const message = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en:
+              `${data.message}` ||
+              "Congratulations, your wallet upgrade has been approved",
+          },
+          headings: {en: "Wallet Upgrade"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        await this.sendNotificationToDevice(message, user.id);
+        this.userMailer.sendWalletUpgradeSuccessMail(user.email);
+        return {
+          success: true,
+          code: "00",
+          status: "SUCCESS",
+          message: "Acknowledged",
+        };
+      }
+      if (data.status === "Declined") {
+        const message = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `${data.message}` || "Your wallet upgrade has been declined",
+          },
+          headings: {en: "Wallet Upgrade"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        await this.sendNotificationToDevice(message, user.id);
+        this.userMailer.sendWalletUpgradeFailedMail(user.email);
+        return {
+          success: true,
+          code: "00",
+          status: "SUCCESS",
+          message: "Acknowledged",
+        };
+      }
     }
   }
 
@@ -648,23 +848,52 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
+  // async generateToken() {
+  //   try {
+  //     const base_url = process.env.MINTYN_BASE_URL;
+  //     const id = process.env.MERCHANT_ID;
+  //     const secret = process.env.MINTYN_SECRET;
+  //     const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
+  //     const tokenHeaders = {
+  //       "secret-key": secret,
+  //     };
+
+  //     const response = await axios.get(tokenUrl, {headers: tokenHeaders});
+
+  //     if (!response.data.data.token) {
+  //       throw new InternalServerErrorException(response.data.message);
+  //     }
+  //     const token = response.data.data.token;
+  //     return token;
+  //   } catch (error: any) {
+  //     console.error(error);
+  //     throw new HttpException(
+  //       {
+  //         success: false,
+  //         message: error.message,
+  //       },
+  //       error.status,
+  //     );
+  //   }
+  // }
+
   async generateToken() {
     try {
-      const base_url = process.env.MINTYN_BASE_URL;
-      const id = process.env.MERCHANT_ID;
-      const secret = process.env.MINTYN_SECRET;
-      const tokenUrl = `${base_url}/api/v1/authorization/generate-token/${id}`;
-      const tokenHeaders = {
-        "secret-key": secret,
-      };
-
-      const response = await axios.get(tokenUrl, {headers: tokenHeaders});
-
-      if (!response.data.data.token) {
-        throw new InternalServerErrorException(response.data.message);
+      const url = `${process.env["9PSB_BASE_URL"]}/authenticate`;
+      const username = process.env["9PSB_USERNAME"];
+      const password = process.env["9PSB_PASSWORD"];
+      const clientId = process.env["9PSB_CLIENT_ID"];
+      const clientSecret = process.env["9PSB_CLIENT_SECRET"];
+      const request = await axios.post(url, {
+        username,
+        password,
+        clientId,
+        clientSecret,
+      });
+      if (request.data.message !== "successful") {
+        throw new InternalServerErrorException("Failed To Authenticate");
       }
-      const token = response.data.data.token;
-      return token;
+      return request.data.accessToken;
     } catch (error: any) {
       console.error(error);
       throw new HttpException(
@@ -744,14 +973,71 @@ export class UserService extends GenericService<UserDocument> {
   // }
 
   ////// TORONET IMPLEMENTATION
-  async virtualAccount(userId: string) {
+  // async virtualAccount(userId: string) {
+  //   try {
+  //     const user = await this.userModel.findById(userId);
+  //     if (!user) {
+  //       throw new BadRequestException("Login and try again");
+  //     }
+  //     if (!user.fiat_wallet_address) {
+  //       throw new BadRequestException("Login and try again");
+  //     }
+  //     const toroData = {
+  //       op: "generatevirtualwallet",
+  //       params: [
+  //         {
+  //           name: "address",
+  //           value: `${user.fiat_wallet_address}`, //wallet address
+  //         },
+  //         {
+  //           name: "payername",
+  //           value: `${user.first_name} ${user.last_name}`, //name of the account holder
+  //         },
+  //         {
+  //           name: "currency",
+  //           value: "NGN", //current options are USD, EUR, NGN - default
+  //         },
+  //       ],
+  //     };
+  //     const baseUrl = process.env.TORONET_BASE_URL;
+
+  //     const toronetRequest = await axios.post(
+  //       `${baseUrl}/payment/toro/`,
+  //       toroData,
+  //       {headers: toronetHeaders},
+  //     );
+  //     if (toronetRequest.data.result === false) {
+  //       throw new BadRequestException(toronetRequest.data.error);
+  //     }
+
+  //     user.virtual_account_bank_name = toronetRequest.data.bankname;
+  //     user.virtual_account_name = toronetRequest.data.accountname;
+  //     user.virtual_account_number = toronetRequest.data.accountnumber;
+  //     await user.save();
+  //     return toronetRequest.data;
+  //   } catch (error: any) {
+  //     console.error(error);
+  //     throw new HttpException(
+  //       {
+  //         success: false,
+  //         message: error.message,
+  //       },
+  //       error.status,
+  //     );
+  //   }
+  // }
+
+  ////// 9PSB IMPLEMENTATION
+  async virtualAccount(userId: string, gender: number, address?: string) {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new BadRequestException("Login and try again");
       }
-      if (!user.fiat_wallet_address) {
-        throw new BadRequestException("Login and try again");
+      if (!user.bvnVerified) {
+        throw new BadRequestException(
+          "Must verify bvn before creating virtual account",
+        );
       }
       if (!user.bvnVerified) {
         throw new BadRequestException(
@@ -766,39 +1052,238 @@ export class UserService extends GenericService<UserDocument> {
             value: `${user.fiat_wallet_address}`, //wallet address
           },
           {
-            name: "payername",
-            value: `${user.first_name} ${user.last_name}`, //name of the account holder
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
           },
-          {
-            name: "currency",
-            value: "NGN", //current options are USD, EUR, NGN - default
-          },
-        ],
-      };
-      const baseUrl = process.env.TORONET_BASE_URL;
-
-      const toronetRequest = await axios.post(
-        `${baseUrl}/payment/toro/`,
-        toroData,
-        {headers: toronetHeaders},
-      );
-      if (toronetRequest.data.result === false) {
-        throw new BadRequestException(toronetRequest.data.error);
+          error.getStatus(), // Use the status code from the exception
+        );
       }
 
-      user.virtual_account_bank_name = toronetRequest.data.bankname;
-      user.virtual_account_name = toronetRequest.data.accountname;
-      user.virtual_account_number = toronetRequest.data.accountnumber;
-      await user.save();
-      return toronetRequest.data;
-    } catch (error: any) {
-      console.error(error);
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
       throw new HttpException(
         {
           success: false,
-          message: error.message,
+          message: error.message || "An unexpected error occurred",
         },
-        error.status,
+        400,
+      );
+    }
+  }
+
+  async upgradeWallet(
+    idType: string,
+    idNumber: string,
+    idIssueDate: string,
+    idExpiryDate: string,
+    nearestLandmark: string,
+    idCardBack: Express.Multer.File,
+    idCardFront: Express.Multer.File,
+    pep: string,
+    customerSignature: Express.Multer.File,
+    utilityBill: Express.Multer.File,
+    placeOfBirth: string,
+    tier: string,
+    localGovernment: string,
+    userPhoto: Express.Multer.File,
+    userId: string,
+    proofOfAddressVerification: Express.Multer.File,
+    houseNumber: string,
+    streetName: string,
+    city: string,
+    state: string,
+  ) {
+    try {
+      await this.getUserBalance(userId);
+      const user = await this.userModel.findById(userId);
+      if (!user.virtual_account_number) {
+        throw new BadRequestException(
+          "Must have created virtual account first",
+        );
+      }
+      if (!user.bvnVerified) {
+        throw new BadRequestException(
+          "Must verify bvn before upgrading wallet",
+        );
+      }
+      if (!user.ninVerified) {
+        throw new BadRequestException(
+          "Must verify nin before upgrading wallet",
+        );
+      }
+      if (!user)
+        throw new BadRequestException("Login and try again, Invalid token");
+      if (idType !== "1" && !idExpiryDate) {
+        throw new BadRequestException(
+          "Expiry date is required if id type is not NIN",
+        );
+      }
+      if (tier === "3" && !proofOfAddressVerification) {
+        throw new BadRequestException(
+          "Proof of address verification is required for tier 3",
+        );
+      }
+      if (parseInt(tier) <= parseInt(user.tier)) {
+        throw new BadRequestException("You cannot downgrade your wallet");
+      }
+      // Upload files and convert URLs to base64
+      const proofOfAddressVerificationFile = proofOfAddressVerification
+        ? await this.cloudinaryService.uploadFile(proofOfAddressVerification)
+        : null;
+
+      const idCardFrontFile = await this.cloudinaryService.uploadFile(
+        idCardFront,
+      );
+      const idCardBackFile = idCardBack
+        ? await this.cloudinaryService.uploadFile(idCardBack)
+        : null;
+      const customerSignatureFile = await this.cloudinaryService.uploadFile(
+        customerSignature,
+      );
+      const utilityBillFile = await this.cloudinaryService.uploadFile(
+        utilityBill,
+      );
+      const userPhotoFile = await this.cloudinaryService.uploadFile(userPhoto);
+
+      // Convert to base64-encoded strings
+      const proofOfAddressVerificationBase64 = proofOfAddressVerificationFile
+        ? btoa(proofOfAddressVerificationFile.secure_url)
+        : undefined;
+
+      const idCardFrontBase64 = btoa(idCardFrontFile.secure_url);
+      const idCardBackBase64 = idCardBackFile
+        ? btoa(idCardBackFile.secure_url)
+        : undefined;
+      const customerSignatureBase64 = btoa(customerSignatureFile.secure_url);
+      const utilityBillBase64 = btoa(utilityBillFile.secure_url);
+      const userPhotoBase64 = btoa(userPhotoFile.secure_url);
+
+      // Prepare data payload
+      const data = {
+        accountNumber: user.virtual_account_number,
+        bvn: user.bvn,
+        nin: user.nin,
+        accountName: user.virtual_account_name,
+        phoneNumber: user.phone,
+        tier,
+        email: user.email,
+        userPhoto: userPhotoBase64,
+        idType,
+        idNumber,
+        idIssueDate,
+        idExpiryDate,
+        idCardFront: idCardFrontBase64,
+        idCardBack: idCardBackBase64,
+        houseNumber,
+        streetName,
+        state,
+        city,
+        localGovernment,
+        pep,
+        customerSignature: customerSignatureBase64,
+        utilityBill: utilityBillBase64,
+        nearestLandmark,
+        placeOfBirth,
+        proofOfAddressVerification: proofOfAddressVerificationBase64,
+      };
+      console.log(data);
+
+      removeUndefinedProperties(data);
+      const token = await this.generateToken();
+      const url = `${process.env["9PSB_BASE_URL"]}/wallet_upgrade`;
+      const request = await axios.post(url, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (request.data.status !== "SUCCESS") {
+        throw new BadRequestException(request.data.message);
+      }
+      //@ts-ignore
+      data.userId = userId;
+      this.eventEmitter.emit("Wallet Upgrade", data);
+      return request.data;
+    } catch (error) {
+      console.log("error:", error);
+
+      // Handle NestJS exceptions (e.g., ConflictException, NotFoundException)
+      if (error instanceof HttpException) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
+          },
+          error.getStatus(), // Use the status code from the exception
+        );
+      }
+
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message || "An unexpected error occurred",
+        },
+        400,
+      );
+    }
+  }
+
+  async getUpgradeStatus(userId: string) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user)
+        throw new BadRequestException("Login and try again, Invalid token");
+      if (!user.virtual_account_number) {
+        throw new BadRequestException(
+          "Must have created virtual account first",
+        );
+      }
+      const url = `${process.env["9PSB_BASE_URL"]}/upgrade_status`;
+      const token = await this.generateToken();
+      const request = await axios.post(
+        url,
+        {accountNumber: `${user.virtual_account_number}`},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      if (request.data.status !== "SUCCESS") {
+        throw new BadRequestException(request.data.message);
+      }
+      return request.data;
+    } catch (error) {
+      console.error(error.response.data);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.response.data.message,
+        },
+        400,
       );
     }
   }
@@ -811,88 +1296,127 @@ export class UserService extends GenericService<UserDocument> {
     if (user.balance < parseFloat(amount)) {
       throw new BadRequestException(`Insufficient funds`);
     }
+    // const data = {
+    //   op: "transfer",
+    //   params: [
+    //     {
+    //       name: "client",
+    //       value: `${user.fiat_wallet_address}`,
+    //     },
+    //     {
+    //       name: "clientpwd",
+    //       value: `${user.email}`,
+    //     },
+    //     {
+    //       name: "to",
+    //       value: "0x2d113511a9a64744a3424e9614534bd037bbf1a8",
+    //     },
+    //     {
+    //       name: "val",
+    //       value: amount,
+    //     },
+    //   ],
+    // };
+
+    // console.log(data);
+
+    // const res = await axios.post(`${toronetBaseUrl}/currency/naira/cl`, data, {
+    //   headers: toronetHeaders,
+    // });
+    // console.log(res.data);
+    // if (res.data.result !== true) {
+    //   throw new BadRequestException(res.data.error);
+    // }
+    const url = `${process.env["9PSB_BASE_URL"]}/debit/transfer`;
     const data = {
-      op: "transfer",
-      params: [
-        {
-          name: "client",
-          value: `${user.fiat_wallet_address}`,
-        },
-        {
-          name: "clientpwd",
-          value: `${user.email}`,
-        },
-        {
-          name: "to",
-          value: "0x2d113511a9a64744a3424e9614534bd037bbf1a8",
-        },
-        {
-          name: "val",
-          value: amount,
-        },
-      ],
+      accountNo: `${user.virtual_account_number}`,
+      narration: `ORDER DEBIT`,
+      totalAmount: parseFloat(amount),
+      transactionId: this.generateRandomString(20),
+      merchant: {
+        isFee: false,
+        merchantFeeAccount: `${process.env["9PSB_TEST_FEE_ACCOUNT"]}`,
+        merchantFeeAmount: "",
+      },
     };
-
-    console.log(data);
-
-    const res = await axios.post(`${toronetBaseUrl}/currency/naira/cl`, data, {
-      headers: toronetHeaders,
+    const request = await axios.post(url, data, {
+      headers: {
+        Authorization: `Bearer ${await this.generateToken()}`,
+        "Content-Type": "application/json",
+      },
     });
-    console.log(res.data);
-    if (res.data.result !== true) {
-      throw new BadRequestException(res.data.error);
-    }
-    return res.data.data;
+    return {
+      data: request.data,
+      status: (request.data.status as string).toUpperCase(),
+    };
   }
 
   async transferFromEscrowToUser(userId: string, amount: string) {
     const user = await this.userModel.findById(userId);
     if (!user) return;
-    const toroData = {
-      op: "updatevirtualwallettransactions",
-      params: [
-        {
-          name: "walletaddress",
-          value: gonanaAccountNumber, //blockchain address
-        },
-      ],
-    };
-    await axios.post(`${toronetBaseUrl}/payment`, toroData, {
-      headers: toronetHeaders,
-    });
+    // const toroData = {
+    //   op: "updatevirtualwallettransactions",
+    //   params: [
+    //     {
+    //       name: "walletaddress",
+    //       value: gonanaAccountNumber, //blockchain address
+    //     },
+    //   ],
+    // };
+    // await axios.post(`${toronetBaseUrl}/payment`, toroData, {
+    //   headers: toronetHeaders,
+    // });
 
     const narration = "Order Settlement from Gonana";
+    // const data = {
+    //   op: "transfer",
+    //   params: [
+    //     {
+    //       name: "client",
+    //       value: gonanaAdminAddress,
+    //     },
+    //     {
+    //       name: "clientpwd",
+    //       value: gonanaAdminPassword,
+    //     },
+    //     {
+    //       name: "to",
+    //       value: `${user.fiat_wallet_address}`,
+    //     },
+    //     {
+    //       name: "val",
+    //       value: amount,
+    //     },
+    //   ],
+    // };
+
+    // console.log(data);
+
+    // const res = await axios.post(`${toronetBaseUrl}/currency/naira/cl`, data, {
+    //   headers: toronetHeaders,
+    // });
+    // console.log(res.data);
+    // if (res.data.result !== true) {
+    //   throw new BadRequestException(res.data.error);
+    // }
+    const url = `${process.env["9PSB_BASE_URL"]}/credit/transfer`;
     const data = {
-      op: "transfer",
-      params: [
-        {
-          name: "client",
-          value: gonanaAdminAddress,
-        },
-        {
-          name: "clientpwd",
-          value: gonanaAdminPassword,
-        },
-        {
-          name: "to",
-          value: `${user.fiat_wallet_address}`,
-        },
-        {
-          name: "val",
-          value: amount,
-        },
-      ],
+      accountNo: `${user.virtual_account_number}`,
+      narration: narration,
+      totalAmount: parseFloat(amount),
+      transactionId: this.generateRandomString(20),
+      merchant: {
+        isFee: false,
+        merchantFeeAccount: `${process.env["9PSB_TEST_FEE_ACCOUNT"]}`,
+        merchantFeeAmount: "10",
+      },
     };
-
-    console.log(data);
-
-    const res = await axios.post(`${toronetBaseUrl}/currency/naira/cl`, data, {
-      headers: toronetHeaders,
+    const request = await axios.post(url, data, {
+      headers: {
+        Authorization: `Bearer ${await this.generateToken()}`,
+        "Content-Type": "application/json",
+      },
     });
-    console.log(res.data);
-    if (res.data.result !== true) {
-      throw new BadRequestException(res.data.error);
-    }
     const creditMessage = {
       app_id: process.env.ONESIGNAL_APP_ID,
       contents: {
@@ -906,51 +1430,27 @@ export class UserService extends GenericService<UserDocument> {
         "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
     };
     await this.sendNotificationToDevice(creditMessage, user.id);
-    return res.data;
+
+    return request.data;
   }
 
-  async verifyTransaction(data: any) {
-    console.log(data);
+  // async verifyTransaction(data: any) {
+  //   console.log(data);
 
-    const user = await this.userModel.findOne({bvn: data.payload.customerBVN});
-    if (!user) {
-      console.log("email not sent");
-      return {success: false, message: "Email not sent"};
-    }
-    const session_id = data.payload.sessionId;
+  //   const user = await this.userModel.findOne({bvn: data.payload.customerBVN});
+  //   if (!user) {
+  //     console.log("email not sent");
+  //     return {success: false, message: "Email not sent"};
+  //   }
+  //   const session_id = data.payload.sessionId;
 
-    const email = user.email;
-    try {
-      this.userMailer.transactionVerification(
-        email,
-        data.eventType,
-        data.payload.transactionAmount,
-      );
-
-      setTimeout(() => {
-        this.confirmTransaction(session_id, email);
-      }, 300000);
-      return {success: true, message: `Notification sent to ${email}`};
-    } catch (error: any) {
-      console.error(error);
-      return {success: false, error: error.message};
-    }
-  }
-  async confirmTransaction(session_id: string, email: string) {
-    try {
-      const user = await this.userModel.findOne({email: email});
-      if (!user) {
-        console.log("User not found");
-        return;
-      }
-      const token = await this.generateToken();
-      const Headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-      const base_url = process.env.MINTYN_BASE_URL;
-      const url = `${base_url}/api/v1/merchant/virtual-account/verify-transaction?sessionId=${session_id}`;
-      const res = await axios.get(url, {headers: Headers});
+  //   const email = user.email;
+  //   try {
+  //     this.userMailer.transactionVerification(
+  //       email,
+  //       data.eventType,
+  //       data.payload.transactionAmount,
+  //     );
 
       if (res.data.data.settlementStatus !== "SETTLED") {
         console.log(res.data.data);
@@ -970,20 +1470,37 @@ export class UserService extends GenericService<UserDocument> {
           userId: user.id,
         });
 
-        if (!transactions) {
-          transactionObject.userId = user.id;
-          const transaction = await this.transactionModel.create(
-            transactionObject,
-          );
-          transaction.transactions.push(transactionObject);
-          await transaction.save();
-          return;
-        }
+  //     if (res.data.data.settlementStatus !== "SETTLED") {
+  //       console.log(res.data.data);
+  //       console.log(
+  //         `Transaction with sessionId:${session_id} is still pending`,
+  //       );
+  //       const transactionObject = {
+  //         userId: user.id,
+  //         Session_id: session_id,
+  //         Type: "PENDING" as const,
+  //         AmountSent: res.data.data.transactionAmount,
+  //         AmountSettled: res.data.data.amountSettled,
+  //         Time: res.data.data.transactionTime,
+  //       };
+  //       const transactions = await this.transactionModel.findOne({
+  //         userId: user.id,
+  //       });
 
-        transactions.transactions.push(transactionObject);
-        await transactions.save();
-        return;
-      }
+  //       if (!transactions) {
+  //         transactionObject.userId = user.id;
+  //         const transaction = await this.transactionModel.create(
+  //           transactionObject,
+  //         );
+  //         transaction.transactions.push(transactionObject);
+  //         await transaction.save();
+  //         return;
+  //       }
+
+  //       transactions.transactions.push(transactionObject);
+  //       await transactions.save();
+  //       return;
+  //     }
 
       const transactionObject = {
         userId: user.id,
@@ -995,18 +1512,18 @@ export class UserService extends GenericService<UserDocument> {
         Time: res.data.data.transactionTime,
       };
 
-      // Handle updating the user balance and saving the transaction asynchronously
-      await this.updateUserBalanceAndSaveTransaction(user, transactionObject);
+  //     // Handle updating the user balance and saving the transaction asynchronously
+  //     await this.updateUserBalanceAndSaveTransaction(user, transactionObject);
 
-      const transactionAmount = transactionObject.AmountSettled;
-      this.userMailer.transactionSucess(email, transactionAmount);
+  //     const transactionAmount = transactionObject.AmountSettled;
+  //     this.userMailer.transactionSucess(email, transactionAmount);
 
-      return true;
-    } catch (error) {
-      console.error(error);
-      return;
-    }
-  }
+  //     return true;
+  //   } catch (error) {
+  //     console.error(error);
+  //     return;
+  //   }
+  // }
 
   async updateUserBalanceAndSaveTransaction(user: any, transactionObject: any) {
     const balance =
@@ -1031,16 +1548,23 @@ export class UserService extends GenericService<UserDocument> {
   }
 
   async getBanks() {
-    ///TORONET IMPLEMENTATION
     try {
-      const base_url = process.env.TORONET_BASE_URL;
-      const url = `${base_url}/payment/toro/`;
-      const toroData = {
-        op: "getbanklist_ngn",
-        params: [],
-      };
-      const response = await axios.post(url, toroData);
-      const banks = response.data.data;
+      ///TORONET IMPLEMENTATION
+      // const base_url = process.env.TORONET_BASE_URL;
+      // const url = `${base_url}/payment/toro/`;
+      // const toroData = {
+      //   op: "getbanklist_ngn",
+      //   params: [],
+      // };
+      const url = `${process.env["9PSB_BASE_URL"]}/get_banks`;
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${await this.generateToken()}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const banks = response.data.data.bankList as any[];
       const sortedBanks = banks.sort((a: any, b: any) => {
         return a.bankName.toLowerCase().localeCompare(b.bankName.toLowerCase());
       });
@@ -1155,73 +1679,73 @@ export class UserService extends GenericService<UserDocument> {
     // }
   }
 
-  async recoverVirtualAccount(bvn: string, userId: string) {
-    try {
-      const token = await this.generateToken();
-      if (!token) {
-        throw new InternalServerErrorException("Failed To Get Token");
-      }
-      const accountHeaders = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-      const user = await this.userModel.findById(userId);
+  // async recoverVirtualAccount(bvn: string, userId: string) {
+  //   try {
+  //     const token = await this.generateToken();
+  //     if (!token) {
+  //       throw new InternalServerErrorException("Failed To Get Token");
+  //     }
+  //     const accountHeaders = {
+  //       Authorization: `Bearer ${token}`,
+  //       "Content-Type": "application/json",
+  //     };
+  //     const user = await this.userModel.findById(userId);
 
-      if (!user) {
-        throw new NotFoundException(`User Not Found, Login and try again`);
-      }
+  //     if (!user) {
+  //       throw new NotFoundException(`User Not Found, Login and try again`);
+  //     }
 
-      // if (user.bvn !== undefined) {
-      //   `You have already generated a virtual account`;
-      // }
+  //     // if (user.bvn !== undefined) {
+  //     //   `You have already generated a virtual account`;
+  //     // }
 
-      if (bvn.length !== 11) {
-        throw new BadRequestException("Bvn should be 11 digits");
-      }
-      const bvnExists = await this.userModel.findOne({bvn: bvn});
+  //     if (bvn.length !== 11) {
+  //       throw new BadRequestException("Bvn should be 11 digits");
+  //     }
+  //     const bvnExists = await this.userModel.findOne({bvn: bvn});
 
-      if (bvnExists && bvnExists?.id !== userId) {
-        throw new BadRequestException(
-          `Another Gonana Account is already associated with this bvn`,
-        );
-      }
+  //     if (bvnExists && bvnExists?.id !== userId) {
+  //       throw new BadRequestException(
+  //         `Another Gonana Account is already associated with this bvn`,
+  //       );
+  //     }
 
-      const base_url = process.env.MINTYN_BASE_URL;
+  //     const base_url = process.env.MINTYN_BASE_URL;
 
-      const url = `${base_url}/api/v1/merchant/virtual-account/accounts?bvn=${bvn}&page=0&size=100`;
-      const response = await axios.get(url, {headers: accountHeaders});
-      if (response.data.data.records.length < 1) {
-        throw new BadRequestException("Bvn not previously validated");
-      }
-      user.virtual_account_bank_name = response.data.data.records[0].bankName;
-      user.bvn = response.data.data.records[0].bvn;
-      user.virtual_account_name = response.data.data.records[0].accountName;
-      user.virtual_account_number = response.data.data.records[0].accountNumber;
-      await user.save();
-      return {
-        success: true,
-        message: "Virtual Account Recovered",
-        accountDetails: {
-          accountNumber: user.virtual_account_number,
-          accountName: user.virtual_account_name,
-          bankName: user.virtual_account_bank_name,
-        },
-      };
-    } catch (error: any) {
-      console.log(error);
-      throw new HttpException(
-        {
-          success: false,
-          message: error.message,
-        },
-        error.status,
-      );
-    }
-  }
+  //     const url = `${base_url}/api/v1/merchant/virtual-account/accounts?bvn=${bvn}&page=0&size=100`;
+  //     const response = await axios.get(url, {headers: accountHeaders});
+  //     if (response.data.data.records.length < 1) {
+  //       throw new BadRequestException("Bvn not previously validated");
+  //     }
+  //     user.virtual_account_bank_name = response.data.data.records[0].bankName;
+  //     user.bvn = response.data.data.records[0].bvn;
+  //     user.virtual_account_name = response.data.data.records[0].accountName;
+  //     user.virtual_account_number = response.data.data.records[0].accountNumber;
+  //     await user.save();
+  //     return {
+  //       success: true,
+  //       message: "Virtual Account Recovered",
+  //       accountDetails: {
+  //         accountNumber: user.virtual_account_number,
+  //         accountName: user.virtual_account_name,
+  //         bankName: user.virtual_account_bank_name,
+  //       },
+  //     };
+  //   } catch (error: any) {
+  //     console.log(error);
+  //     throw new HttpException(
+  //       {
+  //         success: false,
+  //         message: error.message,
+  //       },
+  //       error.status,
+  //     );
+  //   }
+  // }
 
   async resolveAccountNumber(account_number: string, bank: string) {
-    ///  TORONET IMPLEMENTATION
     try {
+      ///  TORONET IMPLEMENTATION
       const bankCode = await this.getBankCode(bank);
       console.log("baNKCODE:", bankCode);
       const toroData = {
@@ -1235,23 +1759,23 @@ export class UserService extends GenericService<UserDocument> {
             name: "accountNumber",
             value: account_number,
           },
-        ],
-      };
-      const base_url = process.env.TORONET_BASE_URL;
-      const url = `${base_url}/payment/toro/`;
-      const response = await axios.post(url, toroData, {
-        headers: toronetHeaders,
-      });
-      if (response.data.data === null) {
-        throw new HttpException(
-          {
-            success: false,
-            message: response.data.responseMessage,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${await this.generateToken()}`,
+            "Content-Type": "application/json",
           },
-          400,
-        );
-      }
-      console.log(response.data.data.accountName);
+        },
+      );
+      // if (response.data.data === null) {
+      //   throw new HttpException(
+      //     {
+      //       success: false,
+      //       message: response.data.responseMessage,
+      //     },
+      //     400,
+      //   );
+      // }
 
       return {success: true, data: response.data, bankCode: bankCode};
     } catch (error: any) {
@@ -1307,34 +1831,29 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new NotFoundException("User not found, Login and Try again.");
       }
-
-      if (!user.fiat_wallet_address || user.fiat_wallet_address.length < 1) {
-        throw new BadRequestException("Login and try again");
+      if (!user.virtual_account_number) {
+        return {
+          success: true,
+          balance: "0",
+        };
       }
-      const toroData = {
-        op: "updatevirtualwallettransactions",
-        params: [
-          {
-            name: "walletaddress",
-            value: user.virtual_account_number, //blockchain address
-          },
-        ],
-      };
-      await axios.post(`${toronetBaseUrl}/payment`, toroData, {
-        headers: toronetHeaders,
-      });
-      const response = await axios.get(`${toronetBaseUrl}/query`, {
-        params: {
-          op: "getaddrbalance",
-          params: [
-            {
-              name: "addr",
-              value: `${user.fiat_wallet_address}`,
-            },
-          ],
+      const token = await this.generateToken();
+      const url = `${process.env["9PSB_BASE_URL"]}/wallet_enquiry`;
+      if (!user.virtual_account_number) {
+        throw new BadRequestException(
+          "User has not generated a virtual account",
+        );
+      }
+      const request = await axios.post(
+        url,
+        {
+          accountNo: `${user.virtual_account_number}`,
         },
-        headers: {
-          "Content-Type": "application/json",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         },
       });
       if (response.data.result !== true || response.data.result === undefined) {
@@ -1361,19 +1880,30 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
-  async kycVerification(userId: string, dob: string, bvn?: string) {
+  async bvnVerification(userId: string, bvn: string) {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new NotFoundException("User not found, Login and Try again.");
       }
+      const blacklistedBvns = walletBvns.map(values => values.bvn);
+      if (blacklistedBvns.includes(bvn)) {
+        user.disabled = true;
+        await user.save();
+        throw new BadRequestException(
+          "Account disabled due to suspicious activity",
+        );
+      }
+      if (user.bvnVerified === true) {
+        throw new BadRequestException("Bvn already verified.");
+      }
       if (!user.bvn && !bvn) {
         throw new BadRequestException("Invalid Bvn");
       }
 
-      if (!user.fiat_wallet_address) {
-        throw new BadRequestException("Login and try again");
-      }
+      // if (!user.fiat_wallet_address) {
+      //   throw new BadRequestException("Login and try again");
+      // }
       const bvnExists = await this.userModel.findOne({bvn: bvn});
       if (bvnExists && bvnExists.id !== user.id) {
         throw new ConflictException(`Gonana user with this bvn exists`);
@@ -1398,80 +1928,271 @@ export class UserService extends GenericService<UserDocument> {
             value: user.bvn || bvn,
           },
           {
-            name: "firstName",
-            value: user.first_name,
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
           },
-          {
-            name: "lastName",
-            value: user.last_name,
-          },
-          {
-            name: "middleName",
-            value: "",
-          },
-          {
-            name: "phoneNumber",
-            value: user.phone,
-          },
-          {
-            name: "dob",
-            value: dob,
-          },
-          {
-            name: "address",
-            value: user.fiat_wallet_address,
-          },
-        ],
-      };
+          error.getStatus(), // Use the status code from the exception
+        );
+      }
 
-      const res = await axios.post(
-        `${toronetBaseUrl}/payment/toro/`,
-        toroData,
-        {headers: toronetHeaders},
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message || "An unexpected error occurred",
+        },
+        400,
       );
-      console.log(toroData);
+    }
+  }
+  async sendBvnOtp(
+    userId: string,
+    method: string,
+    sessionId: string,
+    phone_number?: string,
+  ) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException("User not found, Login and Try again.");
+      }
+      const data: any = {
+        method: method,
+        phone_number: phone_number,
+      };
+      if (!phone_number) {
+        delete data.phone_number;
+      }
+      const url = `${process.env.MONO_BASE_URL}/v2/lookup/bvn/verify`;
+      const res = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+          "mono-sec-key": `${process.env.MONO_SECRET_KEY}`,
+          "x-session-id": sessionId,
+        },
+      });
+      return res.data;
+    } catch (error: any) {
+      console.log("error:", error);
 
+      // Handle NestJS exceptions (e.g., ConflictException, NotFoundException)
+      if (error instanceof HttpException) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
+          },
+          error.getStatus(), // Use the status code from the exception
+        );
+      }
+
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message || "An unexpected error occurred",
+        },
+        400,
+      );
+    }
+  }
+
+  async verifyBvnOtp(
+    userId: string,
+    sessionId: string,
+    otp: string,
+    dob: string,
+  ) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException("User not found, Login and Try again.");
+      }
+      const url = `${process.env.MONO_BASE_URL}/v2/lookup/bvn/details`;
+      const data = {
+        otp: otp,
+      };
+      const res = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+          "mono-sec-key": `${process.env.MONO_SECRET_KEY}`,
+          "x-session-id": sessionId,
+        },
+      });
+      console.log("bvn:", res.data.data.bvn);
+
+      const errors: string[] = [];
+
+      if (!compareKeys(user, res.data.data, "first_name", "first_name")) {
+        errors.push("First name in Bvn does not match first name in profile.");
+      }
+      if (!compareKeys(user, res.data.data, "last_name", "last_name")) {
+        errors.push("Last name in Bvn does not match last name in profile.");
+      }
+      if (dob !== res.data.data.dob) {
+        errors.push(
+          "Date of Birth in Bvn does not match date of birth submitted.",
+        );
+      }
+
+      // If any errors exist, throw them at once
+      if (errors.length > 0) {
+        throw new ConflictException(errors.join(", "));
+      }
+
+      user.bvn = res.data.data.bvn;
+      user.bvnVerified = true;
+      user.date_of_birth = reverseDateFormat(dob.replace(/-/g, "/"));
+      console.log(user.date_of_birth);
+
+      await user.save();
+      return {
+        succes: true,
+        message: "Bvn verified sucessfully",
+      };
+    } catch (error: any) {
+      console.log("error:", error);
+
+      // Handle NestJS exceptions (e.g., ConflictException, NotFoundException)
+      if (error instanceof HttpException) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
+          },
+          error.getStatus(), // Use the status code from the exception
+        );
+      }
+
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message || "An unexpected error occurred",
+        },
+        400,
+      );
+    }
+  }
+
+  async verifyNin(userId: string, nin: string) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException("User not found, Login and Try again.");
+      }
+      if (!user.bvnVerified) {
+        throw new BadRequestException(
+          "Bvn must be verified before verifying nin",
+        );
+      }
+      if (user.ninVerified) {
+        throw new BadRequestException("Nin has already been verified");
+      }
+      const ninExists = await this.userModel.findOne({nin: nin});
+      if (ninExists && ninExists.id !== user.id) {
+        throw new ConflictException(`User with this nin already exists`);
+      }
+      const url = `${process.env.MONO_BASE_URL}/v3/lookup/nin`;
+      const data = {
+        nin: nin,
+      };
+      const res = await axios.post(url, data, {
+        headers: {
+          "Content-Type": "application/json",
+          "mono-sec-key": `${process.env.MONO_SECRET_KEY}`,
+        },
+      });
       console.log(res.data);
 
-      if (res.data.result === false) {
-        throw new BadRequestException(res.data.error);
+      const errors: string[] = [];
+      if (!compareKeys(user, res.data.data, "first_name", "firstname")) {
+        errors.push("First name in Bvn does not match first name in nin.");
       }
-      if (res.data.data.passed === false) {
-        const failedProps = Object.keys(res.data.data).filter(
-          key => res.data.data[key] === "N",
-        );
-        if (failedProps.includes("dob")) {
-          throw new BadRequestException(
-            "Date of Birth provided does not match the one associated with your bvn",
-          );
-        } else {
-          throw new BadRequestException(
-            `${failedProps.join(
-              ", ",
-            )} in your profile does not match the one associated with your bvn`,
-          );
-        }
+      if (!compareKeys(user, res.data.data, "last_name", "surname")) {
+        errors.push("Last name in Bvn does not match last name in nin.");
       }
-      user.date_of_birth = dob;
-      if (!user.bvn && bvn) {
-        user.bvn = bvn as string;
-        await user.save();
+      // if (user.date_of_birth !== res.data.data.birthdate) {
+      //   errors.push(
+      //     "Date of Birth in Bvn does not match date of birth in nin.",
+      //   );
+      // }
+
+      // If any errors exist, throw them at once
+      if (errors.length > 0) {
+        throw new ConflictException(errors.join(", "));
       }
       user.bvnVerified = true;
       await user.save();
       return {
-        success: true,
-        message: "Kyc completed",
+        sucess: true,
+        message: "Nin verified sucessfully",
       };
     } catch (error: any) {
       console.log("error:", error);
+
+      // Handle NestJS exceptions (e.g., ConflictException, NotFoundException)
+      if (error instanceof HttpException) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.message, // Use error.message for NestJS exceptions
+          },
+          error.getStatus(), // Use the status code from the exception
+        );
+      }
+
+      // Handle Axios errors
+      if (error.response) {
+        throw new HttpException(
+          {
+            success: false,
+            message: error.response.data.message || error.message,
+          },
+          error.response.status || 400,
+        );
+      }
+
+      // Handle generic errors
       throw new HttpException(
         {
           success: false,
-          message: error.message,
-          data: error.response.data,
+          message: error.message || "An unexpected error occurred",
         },
-        error.status,
+        400,
       );
     }
   }
@@ -1543,6 +2264,32 @@ export class UserService extends GenericService<UserDocument> {
     }
   }
 
+  async getGonaTransactions(userId: string) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException("Invalid Token");
+      }
+      const gonaTransaction = await this.transactionModel.findOne({
+        userId: userId,
+      });
+      const gonaTransactionsArray = gonaTransaction.transactions;
+      const gonaTransactions = gonaTransactionsArray.filter(
+        transaction => transaction.currency === "GONA",
+      );
+
+      return {success: true, transactions: gonaTransactions};
+    } catch (error) {
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
   async transfer(
     user_id: string,
     accountNumber: string,
@@ -1552,7 +2299,7 @@ export class UserService extends GenericService<UserDocument> {
     narration?: string,
     debitProperty?: object,
   ) {
-    //// TORONET IMPLEMENTATION
+    //// 9PSB IMPLEMENTATION
     try {
       throw new BadRequestException("This feature is currently disabled");
       await this.getUserBalance(user_id);
@@ -1568,13 +2315,11 @@ export class UserService extends GenericService<UserDocument> {
       //@ts-ignore
       const balance = parseFloat(user.balance);
       console.log(balance);
-      const updatedAmount = amount + 10;
-      if (balance < updatedAmount) {
+      if (balance < amount) {
         throw new BadRequestException("Insuffient balance");
       }
       const resolve = await this.resolveAccountNumber(accountNumber, bankName);
       const bankCode = resolve.bankCode;
-
       const data = {
         op: "recordfiatwithdrawal",
         params: [
@@ -1630,64 +2375,39 @@ export class UserService extends GenericService<UserDocument> {
             name: "description",
             value: narration || "",
           },
-          {
-            name: "amount",
-            value: updatedAmount.toString(),
-          },
-          {
-            name: "accounttype",
-            value: "ach",
-          },
-          {
-            name: "bankname",
-            value: bankName,
-          },
-          {
-            name: "routingno",
-            value: "nil",
-          },
-          {
-            name: "accountno",
-            value: accountNumber,
-          },
-          {
-            name: "expirydate",
-            value: "nil",
-          },
-          {
-            name: "accountname",
-            value: account_name,
-          },
-          {
-            name: "recipientstate",
-            value: "nil",
-          },
-          {
-            name: "recipientzip",
-            value: "nil",
-          },
-          {
-            name: "recipientphone",
-            value: "nil",
-          },
-        ],
+        },
+        narration: narration || "",
+        order: {
+          amount: amount.toString(),
+          country: "NGA",
+          currency: "NGN",
+          description: narration || "",
+        },
+        transaction: {
+          reference: this.generateRandomString(25),
+        },
+        merchant: {
+          isFee: false,
+          merchantFeeAccount: `${process.env["9PSB_TEST_FEE_ACCOUNT"]}`,
+          merchantFeeAmount: "0",
+        },
       };
-
-      console.log("transfer request data:", data);
-
-      const res = await axios.post(`${toronetBaseUrl}/payment/toro/`, data, {
-        headers: toronetHeaders,
+      console.log(data);
+      const url = `${process.env["9PSB_BASE_URL"]}/wallet_other_banks`;
+      const request = await axios.post(url, data, {
+        headers: {
+          Authorization: `Bearer ${await this.generateToken()}`,
+          "Content-Type": "application/json",
+        },
       });
-      console.log("trasnfer request response:", res.data);
-      if (res.data.result !== true) {
-        throw new BadRequestException(res.data.error || res.data.message);
-      }
-
+      console.log(request.data);
       const transactionObject: Record<string, any> = {
-        Session_id: res.data.data.data.sessionID || res.data.transactionid,
+        Session_id: request.data.data.transaction.sessionId,
         userId: user.id,
         Type: "DEBIT" as const,
-        AmountSettled: res.data.data.data.amount || updatedAmount,
+        currency:"NGN" as const,
+        status: request.data.status,
+        AmountSettled: request.data.data.order.amount,
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
         currency: "NGN" as const,
         accountNumber: accountNumber,
@@ -1703,7 +2423,34 @@ export class UserService extends GenericService<UserDocument> {
       });
       if (!transaction) {
         await this.transactionModel.create(transactionObject);
-        return {success: true, data: res.data};
+        if (request.data.status === "SUCCESS") {
+          const debitMessage = {
+            app_id: process.env.ONESIGNAL_APP_ID,
+            contents: {
+              en: `₦${amount} has been debited from your account`,
+            },
+            headings: {en: "Debit Notification"},
+            included_segments: ["include_player_ids"],
+            include_player_ids: [user.onesignal_id],
+            content_available: true,
+            small_icon:
+              "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+          };
+
+          if (debitProperty) {
+            await this.sendNotificationToDevice(debitProperty, user.id);
+          }
+          await this.sendNotificationToDevice(debitMessage, user.id);
+          return {success: true, data: request.data};
+        } else {
+          throw new HttpException(
+            {
+              success: false,
+              message: request.data.data.message,
+            },
+            500,
+          );
+        }
       }
       const transactionArrayObject = {
         Session_id: res.data.data.data.sessionID || res.data.transactionid,
@@ -1735,10 +2482,8 @@ export class UserService extends GenericService<UserDocument> {
       if (debitProperty) {
         await this.sendNotificationToDevice(debitProperty, user.id);
       }
-      await this.sendNotificationToDevice(debitMessage, user.id);
-      return {success: true, data: res.data.data.data || res.data};
     } catch (error: any) {
-      console.log(error);
+      console.error(error);
       throw new HttpException(
         {
           success: false,
@@ -1747,6 +2492,194 @@ export class UserService extends GenericService<UserDocument> {
         error.status,
       );
     }
+    //// TORONET IMPLEMENTATION
+    // try {
+    //   await this.getUserBalance(user_id);
+    //   const user = await this.userModel.findById(user_id);
+    //   if (!user) {
+    //     throw new NotFoundException("user not found. login and try again");
+    //   }
+
+    //   //@ts-ignore
+    //   const balance = parseFloat(user.balance);
+    //   console.log(balance);
+    //   const updatedAmount = amount + 10;
+    //   if (balance < updatedAmount) {
+    //     throw new BadRequestException("Insuffient balance");
+    //   }
+    //   const resolve = await this.resolveAccountNumber(accountNumber, bankName);
+    //   const bankCode = resolve.bankCode;
+
+    //   const data = {
+    //     op: "recordfiatwithdrawal",
+    //     params: [
+    //       {
+    //         name: "addr",
+    //         value: user.fiat_wallet_address,
+    //       },
+    //       {
+    //         name: "pwd",
+    //         value: user.email,
+    //       },
+    //       {
+    //         name: "currency",
+    //         value: "NGN",
+    //       },
+    //       {
+    //         name: "token",
+    //         value: "NGN",
+    //       },
+    //       {
+    //         name: "payername",
+    //         value: `${user.first_name} ${user.last_name}`,
+    //       },
+    //       {
+    //         name: "payeremail",
+    //         value: user.email,
+    //       },
+    //       {
+    //         name: "payeraddress",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "payercity",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "payerstate",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "payercountry",
+    //         value: "NG",
+    //       },
+    //       {
+    //         name: "payerzipcode",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "payerphone",
+    //         value: user.phone,
+    //       },
+    //       {
+    //         name: "description",
+    //         value: narration,
+    //       },
+    //       {
+    //         name: "amount",
+    //         value: updatedAmount.toString(),
+    //       },
+    //       {
+    //         name: "accounttype",
+    //         value: "ach",
+    //       },
+    //       {
+    //         name: "bankname",
+    //         value: bankName,
+    //       },
+    //       {
+    //         name: "routingno",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "accountno",
+    //         value: accountNumber,
+    //       },
+    //       {
+    //         name: "expirydate",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "accountname",
+    //         value: account_name,
+    //       },
+    //       {
+    //         name: "recipientstate",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "recipientzip",
+    //         value: "nil",
+    //       },
+    //       {
+    //         name: "recipientphone",
+    //         value: "nil",
+    //       },
+    //     ],
+    //   };
+
+    //   console.log("transfer request data:", data);
+
+    //   const res = await axios.post(`${toronetBaseUrl}/payment/toro/`, data, {
+    //     headers: toronetHeaders,
+    //   });
+    //   console.log("trasnfer request response:", res.data);
+    //   if (res.data.result !== true) {
+    //     throw new BadRequestException(res.data.error || res.data.message);
+    //   }
+
+    //   const transactionObject: Record<string, any> = {
+    //     Session_id: res.data.data.data.sessionID || res.data.transactionid,
+    //     userId: user.id,
+    //     Type: "DEBIT" as const,
+    //     AmountSettled: res.data.data.data.amount || updatedAmount,
+    //     Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+    //     accountNumber: accountNumber,
+    //     accountName: account_name,
+    //     bank: bankName,
+    //   };
+
+    //   if (narration !== undefined) {
+    //     transactionObject.narration = narration;
+    //   }
+    //   const transaction = await this.transactionModel.findOne({
+    //     userId: user.id,
+    //   });
+    //   if (!transaction) {
+    //     await this.transactionModel.create(transactionObject);
+    //     return {success: true, data: res.data};
+    //   }
+    //   const transactionArrayObject = {
+    //     Session_id: res.data.data.data.sessionID || res.data.transactionid,
+    //     Type: "DEBIT" as const,
+    //     AmountSettled: res.data.data.data.amount || updatedAmount,
+    //     AmountSent: res.data.data.data.amount || updatedAmount,
+    //     Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+    //     accountNumber: accountNumber,
+    //     accountName: account_name,
+    //     bank: bankName,
+    //   };
+    //   transaction.transactions.push(transactionArrayObject);
+    //   await transaction.save();
+    //   const debitMessage = {
+    //     app_id: process.env.ONESIGNAL_APP_ID,
+    //     contents: {
+    //       en: `₦${
+    //         res.data.data.data.amount || updatedAmount
+    //       } has been debited from your account`,
+    //     },
+    //     headings: {en: "Debit Notification"},
+    //     included_segments: ["include_player_ids"],
+    //     include_player_ids: [user.onesignal_id],
+    //     content_available: true,
+    //     small_icon:
+    //       "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+    //   };
+    //   if (debitProperty) {
+    //     await this.sendNotificationToDevice(debitProperty, user.id);
+    //   }
+    //   await this.sendNotificationToDevice(debitMessage, user.id);
+    //   return {success: true, data: res.data.data.data || res.data};
+    // } catch (error: any) {
+    //   console.log(error);
+    //   throw new HttpException(
+    //     {
+    //       success: false,
+    //       message: error.message,
+    //     },
+    //     error.status,
+    //   );
+    // }
 
     ////MINTYN IMPLEMENTATION
     // try {
@@ -1869,31 +2802,39 @@ export class UserService extends GenericService<UserDocument> {
       if (!user) {
         throw new BadRequestException("User Not Found");
       }
-      const data = {
-        op: "transfer",
-        params: [
-          {
-            name: "client",
-            value: `${crediter.fiat_wallet_address}`,
-          },
-          {
-            name: "clientpwd",
-            value: `${crediter.email}`,
-          },
-          {
-            name: "to",
-            value: `${user.fiat_wallet_address}`,
-          },
-          {
-            name: "val",
-            value: `${amount}`,
-          },
-        ],
-      };
-      const res = await axios.post(
-        `${toronetBaseUrl}/currency/naira/cl`,
-        data,
-        {headers: toronetHeaders},
+      // const data = {
+      //   op: "transfer",
+      //   params: [
+      //     {
+      //       name: "client",
+      //       value: `${crediter.fiat_wallet_address}`,
+      //     },
+      //     {
+      //       name: "clientpwd",
+      //       value: `${crediter.email}`,
+      //     },
+      //     {
+      //       name: "to",
+      //       value: `${user.fiat_wallet_address}`,
+      //     },
+      //     {
+      //       name: "val",
+      //       value: `${amount}`,
+      //     },
+      //   ],
+      // };
+      // const res = await axios.post(
+      //   `${toronetBaseUrl}/currency/naira/cl`,
+      //   data,
+      //   {headers: toronetHeaders},
+      // );
+      const request = await this.transfer(
+        crediter.id,
+        crediter.virtual_account_number,
+        crediter.virtual_account_bank_name,
+        amount,
+        crediter.virtual_account_name,
+        narration,
       );
       console.log("transfer to user response", res.data.transaction);
       if (res.data.result !== true) {
@@ -2408,6 +3349,34 @@ export class UserService extends GenericService<UserDocument> {
           small_icon:
             "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
         };
+        const transactionObject: Record<string, any> = {
+          userId: user.id,
+          status: "SUCCESS",
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet: recipientWallet,
+          currency: "GONA",
+        };
+
+        const transaction = await this.transactionModel.findOne({
+          userId: user.id,
+        });
+        if (!transaction) {
+          await this.transactionModel.create(transactionObject);
+        }
+        const transactionArrayObject = {
+          currency: "GONA" as const,
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          status: "SUCCESS" as const,
+          AmountSent: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet,
+        };
+        console.log(transactionArrayObject, transactionArrayObject);
+        transaction.transactions.push(transactionArrayObject);
+        await transaction.save();
 
         await this.sendNotificationToDevice(
           creditMessage,
@@ -2469,13 +3438,13 @@ export class UserService extends GenericService<UserDocument> {
       if (query.balance < amount) {
         throw new BadRequestException("Insufficient Gona Token Balance");
       }
-      const transaction = await this.ccdService.withdrawCis2Token(
+      const request = await this.ccdService.withdrawCis2Token(
         amount,
         recipientWallet,
         id,
         gonaAdminToken,
       );
-      if (!transaction) {
+      if (!request) {
         throw new BadRequestException("Transaction Failed");
       }
       return {success: true, messsage: "Withdrawal Successful"};
@@ -2504,19 +3473,98 @@ export class UserService extends GenericService<UserDocument> {
       }
       if (recipientWallet.length === 64) {
         await this.transferGonaToken(id, amount, recipientWallet);
+        const debitMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `${amount} gona has been debited from your wallet`,
+          },
+          headings: {en: "Debit Notification"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        const transactionObject: Record<string, any> = {
+          userId: user.id,
+          status: "SUCCESS",
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet: recipientWallet,
+          currency: "GONA",
+        };
+
+        const transaction = await this.transactionModel.findOne({
+          userId: user.id,
+        });
+        if (!transaction) {
+          await this.transactionModel.create(transactionObject);
+        }
+        const transactionArrayObject = {
+          currency: "GONA" as const,
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          status: "SUCCESS" as const,
+          AmountSent: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet,
+        };
+        console.log(transactionArrayObject, transactionArrayObject);
+        transaction.transactions.push(transactionArrayObject);
+        await transaction.save();
+        await this.sendNotificationToDevice(debitMessage, user.id);
         return {success: true, message: "Transfer Successful"};
       }
 
       const isCcdWallet = new AccountAddress(recipientWallet);
       if (isCcdWallet) {
-        const transaction = await this.withdrawGona(
-          id,
-          amount,
-          recipientWallet,
-        );
-        if (!transaction) {
+        const request = await this.withdrawGona(id, amount, recipientWallet);
+        if (!request) {
           throw new BadRequestException("Transaction Failed");
         }
+        const debitMessage = {
+          app_id: process.env.ONESIGNAL_APP_ID,
+          contents: {
+            en: `${amount} gona has been debited from your wallet`,
+          },
+          headings: {en: "Debit Notification"},
+          included_segments: ["include_player_ids"],
+          include_player_ids: [user.onesignal_id],
+          content_available: true,
+          small_icon:
+            "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+        };
+        const transactionObject: Record<string, any> = {
+          userId: user.id,
+          status: "SUCCESS",
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet: recipientWallet,
+          currency: "GONA",
+        };
+
+        const transaction = await this.transactionModel.findOne({
+          userId: user.id,
+        });
+        if (!transaction) {
+          await this.transactionModel.create(transactionObject);
+        }
+        const transactionArrayObject = {
+          currency: "GONA" as const,
+          Type: "DEBIT" as const,
+          AmountSettled: amount,
+          status: "SUCCESS" as const,
+          AmountSent: amount,
+          Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+          recipientWallet,
+        };
+        console.log(transactionArrayObject, transactionArrayObject);
+        transaction.transactions.push(transactionArrayObject);
+        await transaction.save();
+        await this.sendNotificationToDevice(debitMessage, user.id);
+
         return {success: true, messsage: "Withdrawal Successful"};
       }
     } catch (error) {
@@ -2548,6 +3596,45 @@ export class UserService extends GenericService<UserDocument> {
         },
         gonaModuleRef,
       );
+      const creditMessage = {
+        app_id: process.env.ONESIGNAL_APP_ID,
+        contents: {
+          en: `${amount} gona has been credited into your wallet`,
+        },
+        headings: {en: "Credit Notification"},
+        included_segments: ["include_player_ids"],
+        include_player_ids: [user.onesignal_id],
+        content_available: true,
+        small_icon:
+          "https://res.cloudinary.com/du63jingj/image/upload/v1709077508/launcher_icon_evcy0u.png",
+      };
+      const transactionObject: Record<string, any> = {
+        userId: user.id,
+        status: "SUCCESS",
+        Type: "CREDIT" as const,
+        AmountSettled: amount,
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+        currency: "GONA",
+      };
+
+      const transaction = await this.transactionModel.findOne({
+        userId: user.id,
+      });
+      if (!transaction) {
+        await this.transactionModel.create(transactionObject);
+      }
+      const transactionArrayObject = {
+        currency: "GONA" as const,
+        Type: "CREDIT" as const,
+        AmountSettled: amount,
+        status: "SUCCESS" as const,
+        AmountSent: amount,
+        Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+      };
+      console.log(transactionArrayObject, transactionArrayObject);
+      transaction.transactions.push(transactionArrayObject);
+      await transaction.save();
+      await this.sendNotificationToDevice(creditMessage, user.id);
       return {success: true, message: "Deposit Succesful"};
     } catch (error: any) {
       console.log(error);
@@ -2668,6 +3755,8 @@ export class UserService extends GenericService<UserDocument> {
     });
 
     console.log(req.data);
+    console.log("Sent push notification to" + userId);
+
     return req.data;
   }
   async sendTestNotificationToDevice(data: Array<string>) {
@@ -2806,6 +3895,7 @@ export class UserService extends GenericService<UserDocument> {
       };
       const transactionObject: Record<string, any> = {
         userId: user.id,
+        status: "SUCCESS",
         Type: "DEBIT" as const,
         AmountSettled: amount,
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
@@ -2823,6 +3913,7 @@ export class UserService extends GenericService<UserDocument> {
         currency: "CCD" as const,
         Type: "DEBIT" as const,
         AmountSettled: amount,
+        status: "SUCCESS" as const,
         AmountSent: amount,
         Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
         recipientWallet,
@@ -3124,6 +4215,7 @@ export class UserService extends GenericService<UserDocument> {
     const transactionObject: Record<string, any> = {
       userId: user.id,
       Type: "DEBIT" as const,
+      status: "SUCCESS",
       AmountSettled: amount,
       Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
       recipientWallet: "ADMIN",
@@ -3139,6 +4231,7 @@ export class UserService extends GenericService<UserDocument> {
     const transactionArrayObject = {
       currency: "CCD" as const,
       Type: "DEBIT" as const,
+      status: "SUCCESS" as const,
       AmountSettled: amount,
       AmountSent: amount,
       Time: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
@@ -3232,8 +4325,11 @@ export class UserService extends GenericService<UserDocument> {
     };
   }
   async getByReferralCode(code: string) {
+    // Escape special regex characters in the code
+    const escapedCode = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
     const user = await this.userModel.findOne({
-      referral_code: {$regex: new RegExp(`^${code}$`, "i")}, // Case-insensitive match
+      referral_code: {$regex: new RegExp(`^${escapedCode}$`, "i")}, // Case-insensitive match
     });
 
     return user;

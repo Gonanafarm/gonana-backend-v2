@@ -7,12 +7,18 @@ import axios from "axios";
 import {toronetHeaders} from "../common/enums";
 import {ConcordiumService} from "./concordium.service";
 import {UserDocument} from "./user.schema";
+import {InjectModel} from "@nestjs/mongoose";
+import {Model} from "mongoose";
+import {WalletService} from "../wallet/wallet.service"; 
+import {Kyc} from "../kyc/kyc.schema";
 @Injectable()
 export class UserEventHanders {
   constructor(
     private readonly userMailer: UserMailerService,
     private userService: UserService,
     private ccdService: ConcordiumService,
+    private walletService: WalletService,
+    @InjectModel("Kyc") private readonly kycModel: Model<Kyc>,
   ) {}
   @OnEvent("account.created")
   async handleAccountCreatedEvent(payload: any) {
@@ -25,6 +31,12 @@ export class UserEventHanders {
     console.log("mail sent");
 
     const data = await this.userService.findByEmail(payload.user.email);
+    try {
+      await this.walletService.getOrCreateWallet(data.user.id);
+      console.log("BSC wallet created");
+    } catch (error) {
+      console.error("BSC wallet creation failed:", error);
+    }
     const wallet = await this.ccdService.getOrCreateConcordiumKeyPairs(
       data.user.id,
     );
@@ -49,25 +61,26 @@ export class UserEventHanders {
     data.user.ccd_wallet = balance.toString();
     data.user.ccd_wallet_address = address;
 
-    const torodata = {
-      op: "createkey",
-      params: [
-        {
-          name: "pwd",
-          value: `${data.user.email}`,
-        },
-      ],
-    };
-    const toronetResponse = await axios.post(
-      `${process.env.TORONET_BASE_URL}/keystore`,
-      torodata,
-      {
-        headers: toronetHeaders,
-      },
-    );
-    const fiat_wallet_address = toronetResponse.data.address;
-    data.user.fiat_wallet_address = fiat_wallet_address;
-    data.user.referral_code = await this.userService.generateUniqueReferralCode();
+    // const torodata = {
+    //   op: "createkey",
+    //   params: [
+    //     {
+    //       name: "pwd",
+    //       value: `${data.user.email}`,
+    //     },
+    //   ],
+    // };
+    // const toronetResponse = await axios.post(
+    //   `${process.env.TORONET_BASE_URL}/keystore`,
+    //   torodata,
+    //   {
+    //     headers: toronetHeaders,
+    //   },
+    // );
+    // const fiat_wallet_address = toronetResponse.data.address;
+    // data.user.fiat_wallet_address = fiat_wallet_address;
+    data.user.referral_code =
+      await this.userService.generateUniqueReferralCode();
     await data.user.save();
 
     console.log("Balance:", balance.toString());
@@ -92,7 +105,6 @@ export class UserEventHanders {
   @OnEvent("account.login")
   async handleAccountLogindEvent(user: UserDocument) {
     // handle and process "OrderCreatedEvent" event
-
   }
 
   @OnEvent("account.activated")
@@ -126,5 +138,37 @@ export class UserEventHanders {
       "Verification update",
       "This is to notify you that documents you submitted did not pass the verification stage, kindly update proceed to the verification page and request a new verification.",
     );
+  }
+  @OnEvent("Wallet Upgrade")
+  async createKycDocument(payload: any) {
+    try {
+      console.log("Wallet Upgrade Event Triggered with payload:", payload);
+
+      if (!payload || !payload.bvn || !payload.userId) {
+        console.error("Invalid payload received:", payload);
+        return;
+      }
+
+      const kycExists = await this.kycModel.findOne({
+        bvn: payload.bvn,
+        userId: payload.userId,
+      });
+
+      if (kycExists) {
+        console.log("Updating existing KYC document:", kycExists);
+        await this.kycModel.updateOne(
+          {bvn: payload.bvn, userId: payload.userId},
+          {$set: payload},
+        );
+      } else {
+        console.log("Creating new KYC document");
+        const newKyc = await this.kycModel.create(payload);
+      }
+
+      console.log("KYC document processed successfully");
+    } catch (error) {
+      console.error("Error processing KYC document:", error);
+      // Log error but do not throw to prevent stopping server operations
+    }
   }
 }

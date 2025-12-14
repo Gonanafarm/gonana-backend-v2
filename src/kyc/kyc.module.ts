@@ -1,0 +1,8 @@
+import {Module} from "@nestjs/common";
+import {KycModel} from "./kyc.model";
+
+@Module({
+  exports: [KycModel],
+  imports:[KycModel]
+})
+export class KycModule {}

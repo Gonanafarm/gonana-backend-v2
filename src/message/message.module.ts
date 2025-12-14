@@ -4,7 +4,6 @@ import {MessageService} from "./message.service";
 import {MessageModel} from "./message.model";
 import {OrderModule} from "../order/order.module";
 import {UserModel} from "../user/user.model";
-import {UserModule} from "../user/user.module";
 import { OrderService } from "../order/order.service";
 
 @Module({

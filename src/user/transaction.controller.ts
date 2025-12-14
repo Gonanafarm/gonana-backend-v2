@@ -7,35 +7,57 @@ import {
   Body,
   HttpCode,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  InternalServerErrorException,
+  BadRequestException,
+  UploadedFiles,
 } from "@nestjs/common";
 import {Request} from "express";
 import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/jwt-auth.guard";
 import {
+  BvnOtpVerification,
+  BvnVerification,
+  CreateVirtualAccount,
   GetUserTransactonsDto,
-  KycVerification,
   ResolveAccountNumber,
+  SendBvnOtp,
   TransferEthDto,
   TransferFundsDto,
   TransferToUser,
+  WalletUpgradeDto,
 } from "./user.dto";
 import {ConcordiumService} from "./concordium.service";
+import {CloudinaryService} from "../post/cloudinary.service";
+import {FileFieldsInterceptor, FileInterceptor} from "@nestjs/platform-express";
+import {BasicAuthGuard} from "../auth/basic-auth.guard";
 
 @Controller("api/transaction")
 export class TransactionController {
   constructor(
     private readonly userService: UserService,
     private readonly ccdService: ConcordiumService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post("/create-virtual-account")
-  virtualAccount(@Req() req: Request, @Body("bvn") bvn: string) {
+  virtualAccount(@Req() req: Request, @Body() data: CreateVirtualAccount) {
     //@ts-ignore
     const user_id = req.user?.id;
-    return this.userService.virtualAccount(user_id);
+    console.log(data);
+
+    return this.userService.virtualAccount(user_id, data.gender, data.address);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post("/kyc/nin")
+  verifyNin(@Body("nin") nin: string, @Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.verifyNin(user_id, nin);
+  }
   @UseGuards(JwtAuthGuard)
   @Get("/resolve-account-number")
   getBanks(@Query() body: ResolveAccountNumber) {
@@ -43,6 +65,15 @@ export class TransactionController {
       body.account_number,
       body.bank,
     );
+  }
+
+  @UseGuards(BasicAuthGuard)
+  @Post("/webhook")
+  async handleWebhook(@Query("event") event: string, @Body() data: any) {
+    console.log("event:", event);
+    console.log("data:", data);
+
+    return this.userService.handleWebhook(event, data);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -59,13 +90,13 @@ export class TransactionController {
     const user_id = req.user?.id;
     return this.userService.transferFromEscrowToUser(user_id, amount);
   }
-  @UseGuards(JwtAuthGuard)
-  @Post("recover-virtual-account")
-  recoverVirtualAccount(@Body("bvn") bvn: string, @Req() req: Request) {
-    //@ts-ignore
-    const user_id = req.user?.id;
-    return this.userService.recoverVirtualAccount(bvn, user_id);
-  }
+  // @UseGuards(JwtAuthGuard)
+  // @Post("recover-virtual-account")
+  // recoverVirtualAccount(@Body("bvn") bvn: string, @Req() req: Request) {
+  //   //@ts-ignore
+  //   const user_id = req.user?.id;
+  //   return this.userService.recoverVirtualAccount(bvn, user_id);
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Post("/transfer-to-user")
@@ -91,6 +122,101 @@ export class TransactionController {
       body.bank,
       user_id,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      {name: "userPhoto", maxCount: 1},
+      {name: "idCardFront", maxCount: 1},
+      {name: "idCardBack", maxCount: 1},
+      {name: "customerSignature", maxCount: 1},
+      {name: "utilityBill", maxCount: 1},
+      {name: "proofOfAddressVerification", maxCount: 1},
+    ]),
+  )
+  @Post("/upgrade-wallet")
+  async upgradeWallet(
+    @Req() req: Request,
+    @Body() data: WalletUpgradeDto,
+    @UploadedFiles()
+    files: {
+      userPhoto?: Express.Multer.File[];
+      idCardFront?: Express.Multer.File[];
+      idCardBack?: Express.Multer.File[];
+      customerSignature?: Express.Multer.File[];
+      utilityBill?: Express.Multer.File[];
+      proofOfAddressVerification?: Express.Multer.File[];
+    },
+  ) {
+    try {
+      //@ts-ignore
+      const user_id = req.user?.id;
+      if (!user_id) {
+        throw new BadRequestException("User not authenticated");
+      }
+
+      return this.userService.upgradeWallet(
+        data.idType,
+        data.idNumber,
+        data.idIssueDate,
+        data.idExpiryDate,
+        data.nearestLandmark,
+        files.idCardBack?.[0],
+        files.idCardFront?.[0],
+        data.pep,
+        files.customerSignature?.[0],
+        files.utilityBill?.[0],
+        data.placeOfBirth,
+        data.tier,
+        data.localGovernment,
+        files.userPhoto?.[0],
+        user_id,
+        files.proofOfAddressVerification?.[0],
+        data.houseNumber,
+        data.streetName,
+        data.city,
+        data.state,
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException("File upload failed");
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor("file"))
+  @Post("/upload-file")
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException("No file uploaded");
+    }
+
+    const allowedMimeTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        "Invalid file type. Only JPG, PNG and PDF files are allowed",
+      );
+    }
+
+    try {
+      const result = await this.cloudinaryService.uploadFile(file);
+      return {
+        message: "File uploaded successfully",
+        url: result.secure_url,
+      };
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException("File upload failed");
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("upgrade-status")
+  getUpgradeStatus(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.getUpgradeStatus(user_id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -140,11 +266,37 @@ export class TransactionController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post("/kyc")
-  verify(@Req() req: Request, @Body() data: KycVerification) {
+  @Post("/kyc/bvn")
+  verify(@Req() req: Request, @Body() data: BvnVerification) {
     //@ts-ignore
     const user_id = req.user?.id;
-    return this.userService.kycVerification(user_id, data.dob, data.bvn);
+    return this.userService.bvnVerification(user_id, data.bvn);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("kyc/bvn/otp")
+  bvnOtp(@Req() req: Request, @Body() data: SendBvnOtp) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.sendBvnOtp(
+      user_id,
+      data.method,
+      data.sessionId,
+      data.phone_number,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("kyc/bvn/otp/verify")
+  verifyBvnOtp(@Req() req: Request, @Body() data: BvnOtpVerification) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.verifyBvnOtp(
+      user_id,
+      data.sessionId,
+      data.otp,
+      data.dob,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -288,6 +440,14 @@ export class TransactionController {
     //@ts-ignore
     const user_id = req.user?.id;
     return this.userService.getCcdTransactions(user_id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("gona")
+  getGonaTransactions(@Req() req: Request) {
+    //@ts-ignore
+    const user_id = req.user?.id;
+    return this.userService.getGonaTransactions(user_id);
   }
 
   // @Post("test")

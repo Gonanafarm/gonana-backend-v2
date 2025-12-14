@@ -103,10 +103,10 @@ export class UserController {
     return this.userService.updateImage(email, file);
   }
 
-  @Post("/verify-transaction")
-  verifyTransaction(@Body() body: any) {
-    return this.userService.verifyTransaction(body);
-  }
+  // @Post("/verify-transaction")
+  // verifyTransaction(@Body() body: any) {
+  //   return this.userService.verifyTransaction(body);
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Post("/update-player-id")

@@ -13,6 +13,9 @@ import {
   registerDecorator,
   ValidationOptions,
   ValidationArguments,
+  IsIn,
+  IsUrl,
+  isString,
 } from "class-validator";
 import {AccountStatus} from "../common/enums";
 
@@ -103,6 +106,15 @@ export class UpdateUserDto {
   @IsOptional()
   @Trim()
   last_name: string;
+
+  @IsString()
+  @IsOptional()
+  @Trim()
+  @IsNotEmpty()
+  @Matches(/^\d{2}\/\d{2}\/\d{4}$/, {
+    message: 'dob must be in the format "dd/mm/yyyy"',
+  })
+  date_of_birth: string;
 
   @IsString()
   @IsOptional()
@@ -242,6 +254,48 @@ export class TransferFundsDto {
   amount: number;
 }
 
+export class BvnVerification {
+  @IsString()
+  @IsNumberString()
+  @Length(11, 11)
+  bvn: string;
+}
+
+export class SendBvnOtp {
+  @IsString()
+  @IsNotEmpty()
+  @IsIn(["phone", "email", "alternate_phone", "phone_1"])
+  method: string;
+
+  @IsString()
+  @IsNumberString()
+  @IsOptional()
+  @Length(11, 11)
+  @IsNotEmpty()
+  phone_number: string;
+
+  @IsString()
+  @IsNotEmpty()
+  sessionId: string;
+}
+export class BvnOtpVerification {
+  @IsNumberString()
+  @IsNotEmpty()
+  @Length(6,6)
+  otp: string;
+
+  @IsNotEmpty()
+  @IsString()
+  sessionId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'dob must be in the format "YYYY-MM-DD"',
+  })
+  dob: string;
+}
+
 export class UpdateAccountStatus {
   @ApiProperty({enum: AccountStatus})
   @IsEnum(AccountStatus)
@@ -295,16 +349,78 @@ export interface ShipmentData {
   insurance_code?: string;
 }
 
-export class KycVerification {
-  @IsString()
-  @Length(11)
+export class CreateVirtualAccount {
+  @IsNumber()
   @IsNotEmpty()
-  bvn: string;
+  gender: number;
 
   @IsString()
   @IsNotEmpty()
-  @Matches(/^[0-9]{2}-[A-Z]{3}-[0-9]{4}$/, {
-    message: "DOB must be in the format DD-MMM-YYYY (e.g., 30-OCT-2001)",
+  @Trim()
+  address: string;
+}
+
+export class WalletUpgradeDto {
+  @IsString()
+  @IsNotEmpty()
+  phoneNumber: string;
+
+  @IsString()
+  @IsIn(["2", "3"]) // Example: Validate tier is one of these values
+  tier: string;
+
+  @IsString()
+  @IsNotEmpty()
+  idType: string;
+
+  @IsString()
+  @IsNotEmpty()
+  idNumber: string;
+
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: "idIssueDate must be in the format YYYY-MM-DD",
   })
-  dob: string;
+  @IsNotEmpty()
+  idIssueDate: string;
+
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: "idExpiryDate must be in the format YYYY-MM-DD",
+  })
+  @IsOptional()
+  idExpiryDate: string;
+
+  @IsString()
+  @IsNotEmpty()
+  houseNumber: string;
+
+  @IsString()
+  @IsNotEmpty()
+  streetName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  state: string;
+
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @IsString()
+  @IsNotEmpty()
+  localGovernment: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsIn(["YES", "NO"])
+  pep: string;
+
+  @IsString()
+  @IsNotEmpty()
+  nearestLandmark: string;
+
+  @IsString()
+  @IsNotEmpty()
+  placeOfBirth: string;
 }

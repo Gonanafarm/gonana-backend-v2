@@ -340,6 +340,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         if (product.self_shipping === true) {
           selfShippingItems.push(item);
         } else {
+          throw new BadRequestException("Product must be self-shipped");
           const farmer = await this.userModel.findById(product.publisher_id);
           if (!farmer?.virtual_account_number) {
             throw new BadRequestException(
@@ -351,80 +352,74 @@ export class CartItemService extends GenericService<CartItemDocument> {
       }
 
       // Process items to ship with courier service
-      const shippingItems = await Promise.all(
-        itemsToShip.map(async item => {
-          const product = productMap.get(item.id);
-          const user = await this.userModel.findById(user_id);
+      // const shippingItems = await Promise.all(
+      //   itemsToShip.map(async item => {
+      //     const product = productMap.get(item.id);
+      //     const user = await this.userModel.findById(user_id);
 
-          if (!user) throw new NotFoundException("User not logged in");
+      //     if (!user) throw new NotFoundException("User not logged in");
 
-          const packageItem = {
-            name: product.title,
-            description: product.body,
-            unit_weight: product.weight,
-            unit_amount: product.amount,
-            quantity: item.units,
-          };
+      //     const packageItem = {
+      //       name: product.title,
+      //       description: product.body,
+      //       unit_weight: product.weight,
+      //       unit_amount: product.amount,
+      //       quantity: item.units,
+      //     };
 
-          const senderAddressCode =
-            product.address[product.address.length - 1]?.code;
-          const receiverAddressCode =
-            user.address[user.address.length - 1]?.code;
+      //     const senderAddressCode =
+      //       product.address[product.address.length - 1]?.code;
+      //     const receiverAddressCode =
+      //       user.address[user.address.length - 1]?.code;
 
-          if (!senderAddressCode || !receiverAddressCode) {
-            throw new BadRequestException(
-              `Invalid address codes for shipping calculation`,
-            );
-          }
+      //     if (!senderAddressCode || !receiverAddressCode) {
+      //       throw new BadRequestException(
+      //         `Invalid address codes for shipping calculation`,
+      //       );
+      //     }
 
-          const shippingRates = await this.logisticsService.getShippingRates(
-            service_code,
-            senderAddressCode,
-            receiverAddressCode,
-            packageItem,
-          );
+      //     const shippingRates = await this.logisticsService.getShippingRates(
+      //       service_code,
+      //       senderAddressCode,
+      //       receiverAddressCode,
+      //       packageItem,
+      //     );
 
-          const fastestCourier = shippingRates.data.fastest_courier;
-          return {
-            packageItem,
-            courier: fastestCourier,
-            request_token: shippingRates.data.request_token,
-            shipping_cost: fastestCourier.total,
-            service_codes: fastestCourier.service_code,
-            courier_ids: fastestCourier.courier_id,
-          };
-        }),
-      );
+      //     const fastestCourier = shippingRates.data.fastest_courier;
+      //     return {
+      //       packageItem,
+      //       courier: fastestCourier,
+      //       request_token: shippingRates.data.request_token,
+      //       shipping_cost: fastestCourier.total,
+      //       service_codes: fastestCourier.service_code,
+      //       courier_ids: fastestCourier.courier_id,
+      //     };
+      //   }),
+      // );
 
       // Calculate total shipping and product costs
-      const shippingCosts = shippingItems.map(item => item.shipping_cost);
-      const totalShippingCost = shippingCosts.reduce(
-        (sum, cost) => sum + cost,
-        0,
-      );
+      // const shippingCosts = shippingItems.map(item => item.shipping_cost);
+      // const totalShippingCost = shippingCosts.reduce(
+      //   (sum, cost) => sum + cost,
+      //   0,
+      // );
 
-      const totalProductCost = orderItems.reduce((sum, orderItem) => {
-        const cartProduct = cartItems.products.find(
-          prod => prod.id === orderItem.id,
-        );
-        return sum + (cartProduct ? orderItem.units * cartProduct.Amount : 0);
+      const totalProductCost = orderItems.reduce((sum, {id, units}) => {
+        const cartProduct = cartItems.products.find(prod => prod.id === id);
+        return sum + (cartProduct?.Amount ? units * cartProduct.Amount : 0);
       }, 0);
 
       const [totalCostInUsd, totalCostInEth] = await Promise.all([
-        this.userService.convertNgntoUsd(
-          (totalProductCost + totalShippingCost).toString(),
-        ),
-        this.userService.convertNgntoEth(
-          (totalProductCost + totalShippingCost).toString(),
-        ),
+        this.userService.convertNgntoUsd(totalProductCost.toString()),
+        this.userService.convertNgntoEth(totalProductCost.toString()),
       ]);
 
       return {
-        product_cost: totalProductCost,
-        shipping_req_token: shippingItems.map(item => item.request_token),
-        service_code: shippingItems.map(item => item.service_codes),
-        total_shipping_cost: totalShippingCost,
-        courier_id: shippingItems.map(item => item.courier_ids),
+        //product_cost: totalProductCost,
+        shipping_req_token: ["redacted"],
+        service_code: ["redacted"],
+        total_shipping_cost: totalProductCost,
+        courier_id: ["redacted"],
         total_shipping_cost_in_usd: totalCostInUsd,
         total_shipping_cost_in_eth: totalCostInEth,
       };
@@ -443,21 +438,20 @@ export class CartItemService extends GenericService<CartItemDocument> {
   ) {
     try {
       const rates = await this.getRates(orderItems, user_id, service_code);
-      let totalCost: number;
-      if (!rates.total_shipping_cost) {
-        totalCost = rates.product_cost;
-      } else {
-        totalCost = rates.total_shipping_cost + rates.product_cost;
-      }
+      console.log("rates:", rates);
+
+      const totalCost = rates.total_shipping_cost || rates.product_cost;
+      console.log("totalcost:", totalCost);
 
       const user = await this.userModel.findById(user_id);
       if (!user) {
         throw new BadRequestException(`User Not found`);
       }
 
-      const balance = (await this.userService.getUserBalance(user_id)).balance;
+      let balance = (await this.userService.getUserBalance(user_id)).balance;
       console.log("Balance Gotten");
-
+      //@ts-ignore
+      balance = parseFloat(balance);
       if (balance < totalCost) {
         throw new BadRequestException(
           `Insufficient balance fund wallet and try again`,
@@ -491,7 +485,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
         return ids.join(", ");
       };
 
-      await this.userService.transferToEscrowFromUser(
+      const transfer = await this.userService.transferToEscrowFromUser(
         totalCost.toString(),
         user_id,
       );
@@ -507,6 +501,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
               Session_Id: generateRandomString(),
               currency:"NGN" as const,
               AmountSent: totalCost.toString(),
+              status: transfer.status,
+              currency: "NGN" as const,
               AmountSettled: totalCost.toString(),
               productId: getIds(orderItems),
             },
@@ -518,7 +514,9 @@ export class CartItemService extends GenericService<CartItemDocument> {
           currency:"NGN" as const,
           Type: "ORDER DEBIT" as const, // Represents debits from orders
           AmountSent: totalCost,
+          status: transfer.status as "SUCCESS" | "FAILED" | "PENDING",
           AmountSettled: totalCost,
+          currency: "NGN" as const,
           productId: getIds(orderItems),
           Time: new Date().toISOString(),
         };
@@ -675,6 +673,8 @@ export class CartItemService extends GenericService<CartItemDocument> {
         message: "Orders Placed Successfully",
       };
     } catch (error: any) {
+      console.log(error);
+
       throw new HttpException(
         {
           success: false,

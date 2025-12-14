@@ -242,6 +242,21 @@ export class UserMailerService {
       console.log(error);
     }
   }
+
+  sendWalletUpgradeSuccessMail(email:string){
+    this.mailerService.sendMail({
+      to: email,
+      subject: "Wallet Upgrade Successful",
+      html: "Your wallet has been successfully upgraded. You can now enjoy more features on the platform"
+    })
+  }
+  sendWalletUpgradeFailedMail(email:string){
+    this.mailerService.sendMail({
+      to: email,
+      subject: "Wallet Upgrade Failed",
+      html: "Your wallet upgrade failed. Please try again"
+    })
+  }
   selfShipmentMail(
     farmerEmail: string,
     product: Post,

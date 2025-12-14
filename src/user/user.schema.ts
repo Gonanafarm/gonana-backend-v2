@@ -9,7 +9,7 @@ import {OtpDocument} from "./otp.schema";
 export type UserMethods = {
   getPublicData: () => UserPublicData | any;
 };
-
+export const gender = ["MALE", "FEMALE"];
 export type UserDocument = User & Document & UserMethods & OtpDocument;
 
 @Schema({
@@ -114,7 +114,7 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.String, default: undefined})
   virtual_account_name: string;
 
-  @Prop({type: mongoose.SchemaTypes.Array})
+  @Prop({type: mongoose.SchemaTypes.Array, default: []})
   address: Array<Record<string, any>>;
 
   @Prop({type: mongoose.SchemaTypes.Array})
@@ -183,6 +183,27 @@ export class User {
   @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
   airdropped: boolean;
 
+  @Prop({type: mongoose.SchemaTypes.String, enum: gender})
+  gender: string;
+
+  @Prop({
+    type: mongoose.SchemaTypes.String,
+    default: "1",
+    enum: ["1", "2", "3"],
+  })
+  tier: string;
+
+  @Prop({type: mongoose.SchemaTypes.String})
+  nin: string;
+
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  bvnVerified: boolean;
+
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  ninVerified: boolean;
+
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  disabled: boolean;
   @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
   disabled: boolean;
 
@@ -222,6 +243,9 @@ UserSchema.methods.getPublicData = function () {
     onesignal_id,
     referral_code,
     firebaseToken,
+    tier,
+    bvnVerified,
+    ninVerified,
   } = this;
   const publicData = {
     id,
@@ -249,6 +273,9 @@ UserSchema.methods.getPublicData = function () {
     onesignal_id,
     referral_code,
     firebaseToken,
+    tier,
+    bvnVerified,
+    ninVerified,
   };
   return publicData;
 };
