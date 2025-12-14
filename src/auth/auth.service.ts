@@ -27,6 +27,12 @@ export class AuthService {
   ) {}
   async validateUser(email: string, password: string): Promise<UserDocument> {
     const res = await this.userService.findByEmail(email);
+    if (res.user.disabled === true) {
+      throw new HttpException(
+        "Account has been disabled, Contact customer care to gain accesss",
+        HttpStatus.FORBIDDEN,
+      );
+    }
     const user = res.user;
 
     if (res.user.disabled === true) {
@@ -92,10 +98,10 @@ export class AuthService {
       }
     }
     const user = await this.userService.createAccount(
-      userData.first_name.trim(),
-      userData.last_name.trim(),
+      userData.first_name.toLowerCase().trim(),
+      userData.last_name.toLowerCase().trim(),
       userData.phone.trim(),
-      userData.email.trim(),
+      userData.email.toLowerCase().trim(),
       userData.password.trim(),
       origin,
       userData.account_type,

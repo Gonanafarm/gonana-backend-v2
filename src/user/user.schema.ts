@@ -118,9 +118,6 @@ export class User {
   address: Array<Record<string, any>>;
 
   @Prop({type: mongoose.SchemaTypes.Array})
-  transactions: Array<Record<string, any>>;
-
-  @Prop({type: mongoose.SchemaTypes.Array})
   account_details: Array<Record<string, any>>;
 
   @Prop({type: mongoose.SchemaTypes.Array})
@@ -207,6 +204,11 @@ export class User {
 
   @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
   disabled: boolean;
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  disabled: boolean;
+
+  @Prop({type: mongoose.SchemaTypes.Boolean, default: false})
+  bvnVerified: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -139,6 +139,20 @@ export class UserMailerService {
       console.error(error);
     }
   }
+  sendBulkEmails(emails: string[], subject: string, htmlContent: string) {
+    try {
+      emails.forEach(email => {
+        this.mailerService.sendMail({
+          to: email,
+          subject: subject,
+          html: htmlContent,
+        });
+      });
+      console.log("Bulk emails sent successfully");
+    } catch (error) {
+      console.error("Error sending bulk emails:", error);
+    }
+  }
   notSelfShipOrderSuccessMail(
     user: User,
     url: string,
@@ -436,5 +450,33 @@ export class UserMailerService {
       from: "gonanadev@gmail.com",
       html: `complaint from ${customerName} about order : ${orderId}`,
     });
+  }
+
+  async sendContactEmail(name: string, email: string, subject: string, message: string) {
+    try {
+      await this.mailerService.sendMail({
+        to: 'contact@gonana.farm',
+        from: email,
+        subject: subject,
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #0056b3;">New Contact Form Submission</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Message:</strong></p>
+            <div style="background-color: #f4f4f4; padding: 10px; border-left: 4px solid #0056b3;">
+              <p>${message.replace(/\n/g, '<br>')}</p>
+            </div>
+            <hr>
+            <p style="font-size: 12px; color: #777;">This email was sent from the website contact form.</p>
+          </div>
+        `,      });
+
+      return { success: true, message: 'Email sent successfully' };
+    } catch (error) {
+      console.error('Error sending email:', error);
+      return { success: false, message: 'Failed to send email' };
+    }
   }
 }

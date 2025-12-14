@@ -499,6 +499,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
             {
               Type: "ORDER DEBIT", // Represents debits from orders
               Session_Id: generateRandomString(),
+              currency:"NGN" as const,
               AmountSent: totalCost.toString(),
               status: transfer.status,
               currency: "NGN" as const,
@@ -510,6 +511,7 @@ export class CartItemService extends GenericService<CartItemDocument> {
       } else {
         const transactionObject = {
           Session_id: generateRandomString(),
+          currency:"NGN" as const,
           Type: "ORDER DEBIT" as const, // Represents debits from orders
           AmountSent: totalCost,
           status: transfer.status as "SUCCESS" | "FAILED" | "PENDING",
